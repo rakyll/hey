@@ -42,6 +42,9 @@ func (b *Boom) summary() {
 	for {
 		select {
 		case r := <-b.results:
+			if !r.is2xx {
+				continue
+			}
 			avgTotal += r.dur.Nanoseconds()
 			if fastest.Nanoseconds() == 0 || r.dur.Nanoseconds() < fastest.Nanoseconds() {
 				fastest = r.dur
@@ -49,19 +52,17 @@ func (b *Boom) summary() {
 			if r.dur.Nanoseconds() > slowest.Nanoseconds() {
 				slowest = r.dur
 			}
-			if r.is2xx {
-				totalSuccessful++
-			}
+			totalSuccessful++
 		default:
 			rps := float64(b.N) / total.Seconds()
 			fmt.Printf("\n")
-			fmt.Printf("Results:\n")
+			fmt.Printf("Summary:\n")
 			fmt.Printf("  total:\t%v requests\n", b.N)
 			fmt.Printf("  concurrency:\t%v concurrent requests\n", b.C)
 			fmt.Printf("  total 2xx:\t%v requests\n", totalSuccessful)
-			fmt.Printf("  total:\t%v\n", total.Nanoseconds())
-			fmt.Printf("  slowest:\t%v\n", slowest.Nanoseconds())
-			fmt.Printf("  fastest:\t%v\n", fastest.Nanoseconds())
+			fmt.Printf("  total:\t%v\n", total.Seconds())
+			fmt.Printf("  slowest:\t%v\n", slowest.Seconds())
+			fmt.Printf("  fastest:\t%v\n", fastest.Seconds())
 			fmt.Printf("  average:\t%v\n", avgTotal/int64(b.N))
 			fmt.Printf("  requests/sec:\t%v\n", rps)
 			fmt.Printf("  speed index:\t%v\n", speedIndex(rps))
