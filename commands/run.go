@@ -32,18 +32,29 @@ func (b *Boom) teardown() {
 }
 
 func (b *Boom) run() {
-	var wg sync.WaitGroup
-	wg.Add(b.N)
+	remaining := b.N
+	for {
+		if remaining < 1 {
+			break
+		}
 
-	for i := 0; i < b.N; i++ {
-		go func() {
-			b.runOneReq()
-			b.bar.Increment()
-			wg.Done()
-		}()
+		c := b.C
+		if remaining < b.C {
+			c = remaining
+		}
+
+		var wg sync.WaitGroup
+		wg.Add(c)
+		for i := 0; i < c; i++ {
+			go func() {
+				b.runOneReq()
+				b.bar.Increment()
+				wg.Done()
+			}()
+		}
+		wg.Wait()
+		remaining = remaining - c
 	}
-
-	wg.Wait()
 }
 
 func (b *Boom) runOneReq() {
