@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"math"
 	"time"
 )
 
@@ -35,7 +36,7 @@ func (b *Boom) Print() {
 			fmt.Printf("  total:\t%v secs\n", total.Seconds())
 			fmt.Printf("  slowest:\t%v secs\n", slowest.Seconds())
 			fmt.Printf("  fastest:\t%v secs\n", fastest.Seconds())
-			fmt.Printf("  average:\t%v nanoseconds\n", avgTotal/int64(b.N)) // TODO: in seconds
+			fmt.Printf("  average:\t%v secs\n", float64(avgTotal)/float64(b.N)*math.Pow(10, 9)) // TODO: in seconds
 			fmt.Printf("  requests/sec:\t%v\n", rps)
 			fmt.Printf("  speed index:\t%v\n", speedIndex(rps))
 			return
