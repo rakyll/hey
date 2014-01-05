@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/rakyll/boom/commands"
 )
@@ -22,16 +23,25 @@ var (
 func main() {
 	flag.Parse()
 	if flag.NArg() < 1 {
-		fmt.Fprintf(os.Stderr, "no url provided")
-	}
-
-	url := flag.Args()[0]
-	req, err := http.NewRequest(*flagMethod, url, nil)
-	if err != nil {
-		fmt.Errorf("error: %v", err)
+		fmt.Fprintf(os.Stderr, "no url provided\n")
 		os.Exit(1)
 	}
 
-	b := &commands.Boom{N: *flagN, C: *flagC, Req: req}
-	b.Run()
+	url := flag.Args()[0]
+	method := strings.ToUpper(*flagMethod)
+	n := *flagN
+	c := *flagC
+
+	if c > n {
+		fmt.Fprintf(os.Stderr, "total number of requests to make cannot be smaller than concurrency level\n")
+		os.Exit(1)
+	}
+
+	req, err := http.NewRequest(method, url, nil)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v", err)
+		os.Exit(1)
+	}
+
+	(&commands.Boom{N: n, C: c, Req: req}).Run()
 }
