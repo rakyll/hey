@@ -32,9 +32,9 @@ func (b *Boom) Print() {
 			fmt.Printf("  total:\t%v requests\n", b.N)
 			fmt.Printf("  concurrency:\t%v concurrent requests\n", b.C)
 			fmt.Printf("  total 2xx:\t%v requests\n", totalSuccessful)
-			fmt.Printf("  total:\t%v\n", total.Seconds())
-			fmt.Printf("  slowest:\t%v\n", slowest.Seconds())
-			fmt.Printf("  fastest:\t%v\n", fastest.Seconds())
+			fmt.Printf("  total:\t%v secs\n", total.Seconds())
+			fmt.Printf("  slowest:\t%v secs\n", slowest.Seconds())
+			fmt.Printf("  fastest:\t%v secs\n", fastest.Seconds())
 			fmt.Printf("  average:\t%v nanoseconds\n", avgTotal/int64(b.N)) // TODO: in seconds
 			fmt.Printf("  requests/sec:\t%v\n", rps)
 			fmt.Printf("  speed index:\t%v\n", speedIndex(rps))
@@ -45,7 +45,7 @@ func (b *Boom) Print() {
 
 func speedIndex(rps float64) string {
 	if rps > 500 {
-		return ""
+		return "Whoa, pretty neat"
 	} else if rps > 100 {
 		return "Pretty good"
 	} else if rps > 50 {
