@@ -10,7 +10,6 @@ var statusCodeDist map[int]int = make(map[int]int)
 
 func (b *Boom) Print() {
 	total := b.end.Sub(b.start)
-	totalSuccessful := 0
 	var avgTotal int64
 	var fastest, slowest time.Duration
 
@@ -18,9 +17,7 @@ func (b *Boom) Print() {
 		select {
 		case r := <-b.results:
 			statusCodeDist[r.statusCode]++
-			if r.statusCode >= 200 && r.statusCode < 300 {
-				continue
-			}
+
 			avgTotal += r.dur.Nanoseconds()
 			if fastest.Nanoseconds() == 0 || r.dur.Nanoseconds() < fastest.Nanoseconds() {
 				fastest = r.dur
@@ -28,11 +25,9 @@ func (b *Boom) Print() {
 			if r.dur.Nanoseconds() > slowest.Nanoseconds() {
 				slowest = r.dur
 			}
-			totalSuccessful++
 		default:
 			rps := float64(b.N) / total.Seconds()
 			fmt.Printf("\nSummary:\n")
-			fmt.Printf("  total 2xx:\t%v requests\n", totalSuccessful)
 			fmt.Printf("  total:\t%v secs\n", total.Seconds())
 			fmt.Printf("  slowest:\t%v secs\n", slowest.Seconds())
 			fmt.Printf("  fastest:\t%v secs\n", fastest.Seconds())
