@@ -61,14 +61,16 @@ func main() {
 	req.Header.Set("Content-Type", *flagType)
 
 	// set any other additional headers
-	headers := strings.Split(*flagHeaders, ";")
-	for _, h := range headers {
-		re := regexp.MustCompile("(\\w+):(\\w+)")
-		matches := re.FindAllStringSubmatch(h, -1)
-		if len(matches) < 1 {
-			usageAndExit()
+	if *flagHeaders != "" {
+		headers := strings.Split(*flagHeaders, ";")
+		for _, h := range headers {
+			re := regexp.MustCompile("(\\w+):(\\w+)")
+			matches := re.FindAllStringSubmatch(h, -1)
+			if len(matches) < 1 {
+				usageAndExit()
+			}
+			req.Header.Set(matches[0][1], matches[0][2])
 		}
-		req.Header.Set(matches[0][1], matches[0][2])
 	}
 
 	// set basic auth if set
