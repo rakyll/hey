@@ -11,29 +11,47 @@ import (
 )
 
 var (
-	flagMethod  = flag.String("m", "GET", "http method: {GET,POST,DELETE,PUT,HEAD,OPTIONS}")
-	flagHeaders = flag.String("h", "", "custom headers name1:value1,name2:value2")
-	flagD       = flag.String("d", "", "request body")
-	flagAuth    = flag.String("auth", "", "basic authentication user:password")
+	flagMethod  = flag.String("m", "GET", "")
+	flagHeaders = flag.String("h", "", "")
+	flagD       = flag.String("d", "", "")
+	flagType    = flag.String("t", "text/html", "")
+	// TODO: add basic auth flag
 
-	flagC = flag.Int("c", 50, "concurrency")
-	flagN = flag.Int("n", 200, "number of requests to make")
+	flagC = flag.Int("c", 50, "")
+	flagN = flag.Int("n", 200, "")
 )
 
+var usage = `Usage: boom [options...] <url>
+
+Options:
+  -n	Number of requests to run.
+  -c 	Number of requests to run concurrently. Total number of requests cannot
+  	be smaller than the concurency level.
+
+  -m	HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.
+  -h	Custom HTTP headers, name1:value1;name2:value2.
+  -d	HTTP request body.
+  -t	Content-type, defaults to "text/html".
+`
+
 func main() {
+	flag.Usage = func() {
+		fmt.Fprint(os.Stderr, usage)
+	}
 	flag.Parse()
 	if flag.NArg() < 1 {
-		fmt.Fprintf(os.Stderr, "no url provided\n")
+		flag.Usage()
 		os.Exit(1)
 	}
 
 	url := flag.Args()[0]
 	method := strings.ToUpper(*flagMethod)
+	contentType := *flagType
 	n := *flagN
 	c := *flagC
 
 	if c > n {
-		fmt.Fprintf(os.Stderr, "total number of requests to make cannot be smaller than concurrency level\n")
+		flag.Usage()
 		os.Exit(1)
 	}
 
@@ -43,5 +61,6 @@ func main() {
 		os.Exit(1)
 	}
 
+	req.Header.Set("content-type", contentType)
 	(&commands.Boom{N: n, C: c, Req: req}).Run()
 }
