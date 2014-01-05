@@ -18,12 +18,12 @@ func (b *Boom) Print() {
 		case r := <-b.results:
 			statusCodeDist[r.statusCode]++
 
-			avgTotal += r.dur.Nanoseconds()
-			if fastest.Nanoseconds() == 0 || r.dur.Nanoseconds() < fastest.Nanoseconds() {
-				fastest = r.dur
+			avgTotal += r.duration.Nanoseconds()
+			if fastest.Nanoseconds() == 0 || r.duration.Nanoseconds() < fastest.Nanoseconds() {
+				fastest = r.duration
 			}
-			if r.dur.Nanoseconds() > slowest.Nanoseconds() {
-				slowest = r.dur
+			if r.duration.Nanoseconds() > slowest.Nanoseconds() {
+				slowest = r.duration
 			}
 		default:
 			rps := float64(b.N) / total.Seconds()

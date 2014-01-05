@@ -65,5 +65,9 @@ func (b *Boom) runOneReq() {
 	if resp != nil {
 		code = resp.StatusCode
 	}
-	b.results <- &result{statusCode: code, err: err, dur: time.Now().Sub(s)}
+	b.results <- &result{
+		statusCode: code,
+		duration:   time.Now().Sub(s),
+		err:        err,
+	}
 }

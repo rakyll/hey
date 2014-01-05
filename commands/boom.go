@@ -10,7 +10,7 @@ import (
 type result struct {
 	err        error
 	statusCode int
-	dur        time.Duration
+	duration   time.Duration
 }
 
 type Boom struct {
@@ -19,10 +19,8 @@ type Boom struct {
 	C      int
 	Client *http.Client
 
-	start time.Time
-	end   time.Time
-
-	bar *pb.ProgressBar
-
+	start   time.Time
+	end     time.Time
 	results chan *result
+	bar     *pb.ProgressBar
 }
