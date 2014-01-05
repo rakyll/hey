@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+var statusCodeDist map[int]int = make(map[int]int)
+
 func (b *Boom) Print() {
 	total := b.end.Sub(b.start)
 	totalSuccessful := 0
@@ -15,7 +17,8 @@ func (b *Boom) Print() {
 	for {
 		select {
 		case r := <-b.results:
-			if !r.is2xx {
+			statusCodeDist[r.statusCode]++
+			if r.statusCode >= 200 && r.statusCode < 300 {
 				continue
 			}
 			avgTotal += r.dur.Nanoseconds()
@@ -28,10 +31,7 @@ func (b *Boom) Print() {
 			totalSuccessful++
 		default:
 			rps := float64(b.N) / total.Seconds()
-			fmt.Printf("\n")
-			fmt.Printf("Summary:\n")
-			fmt.Printf("  total:\t%v requests\n", b.N)
-			fmt.Printf("  concurrency:\t%v concurrent requests\n", b.C)
+			fmt.Printf("\nSummary:\n")
 			fmt.Printf("  total 2xx:\t%v requests\n", totalSuccessful)
 			fmt.Printf("  total:\t%v secs\n", total.Seconds())
 			fmt.Printf("  slowest:\t%v secs\n", slowest.Seconds())
@@ -39,8 +39,16 @@ func (b *Boom) Print() {
 			fmt.Printf("  average:\t%v secs\n", float64(avgTotal)/float64(b.N)*math.Pow(10, 9)) // TODO: in seconds
 			fmt.Printf("  requests/sec:\t%v\n", rps)
 			fmt.Printf("  speed index:\t%v\n", speedIndex(rps))
+			b.printStatusCodes()
 			return
 		}
+	}
+}
+
+func (b *Boom) printStatusCodes() {
+	fmt.Printf("\nStatus code distrubution:\n")
+	for code, num := range statusCodeDist {
+		fmt.Printf("  [%d]\t%d responses\n", code, num)
 	}
 }
 

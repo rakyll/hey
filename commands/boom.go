@@ -8,9 +8,9 @@ import (
 )
 
 type result struct {
-	err   error
-	is2xx bool
-	dur   time.Duration
+	err        error
+	statusCode int
+	dur        time.Duration
 }
 
 type Boom struct {

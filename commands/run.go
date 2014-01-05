@@ -32,15 +32,15 @@ func (b *Boom) teardown() {
 }
 
 func (b *Boom) run() {
-	remaining := b.N
+	rem := b.N
 	for {
-		if remaining < 1 {
+		if rem == 0 {
 			break
 		}
 
 		c := b.C
-		if remaining < b.C {
-			c = remaining
+		if rem < b.C {
+			c = rem
 		}
 
 		var wg sync.WaitGroup
@@ -53,7 +53,7 @@ func (b *Boom) run() {
 			}()
 		}
 		wg.Wait()
-		remaining = remaining - c
+		rem -= c
 	}
 }
 
@@ -61,6 +61,9 @@ func (b *Boom) runOneReq() {
 	s := time.Now()
 	resp, err := b.Client.Do(b.Req)
 
-	is2xx := resp != nil && resp.StatusCode >= 200 && resp.StatusCode < 300
-	b.results <- &result{is2xx: is2xx, err: err, dur: time.Now().Sub(s)}
+	code := 0
+	if resp != nil {
+		code = resp.StatusCode
+	}
+	b.results <- &result{statusCode: code, err: err, dur: time.Now().Sub(s)}
 }
