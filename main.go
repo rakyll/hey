@@ -63,8 +63,10 @@ func main() {
 	n := *flagN
 	c := *flagC
 
+	// If total number is smaller than concurrency level,
+	// make the total number c.
 	if c > n {
-		usageAndExit()
+		n = c
 	}
 
 	url := flag.Args()[0]
