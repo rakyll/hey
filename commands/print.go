@@ -41,7 +41,7 @@ func (b *Boom) Print() {
 }
 
 func (b *Boom) printStatusCodes() {
-	fmt.Printf("\nStatus code distrubution:\n")
+	fmt.Printf("\nStatus code distribution:\n")
 	for code, num := range statusCodeDist {
 		fmt.Printf("  [%d]\t%d responses\n", code, num)
 	}
