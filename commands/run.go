@@ -56,7 +56,7 @@ func (b *Boom) run() {
 	}
 
 	wg := new(sync.WaitGroup)
-	ch := make(chan *http.Request)
+	ch := make(chan *http.Request, c)
 	// Create c amount worker goroutines.
 	for i := 0; i < c; i++ {
 		wg.Add(1)
@@ -73,7 +73,7 @@ func (b *Boom) run() {
 
 func (b *Boom) worker(clientChan chan *http.Request, wg *sync.WaitGroup) {
 	defer wg.Done()
-
+	// Pick one request from channel and process.
 	for req := range clientChan {
 		s := time.Now()
 		resp, err := b.Client.Do(req)
