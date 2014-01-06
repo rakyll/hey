@@ -15,10 +15,11 @@
 package commands
 
 import (
-	"github.com/cheggaaa/pb"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/cheggaaa/pb"
 )
 
 func (b *Boom) Run() {
