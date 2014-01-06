@@ -16,7 +16,6 @@ package commands
 
 import (
 	"fmt"
-	"math"
 	"time"
 )
 
@@ -24,7 +23,7 @@ var statusCodeDist map[int]int = make(map[int]int)
 
 func (b *Boom) Print() {
 	total := b.end.Sub(b.start)
-	var avgTotal int64
+	var avgTotal float64
 	var fastest, slowest time.Duration
 
 	for {
@@ -32,7 +31,7 @@ func (b *Boom) Print() {
 		case r := <-b.results:
 			statusCodeDist[r.statusCode]++
 
-			avgTotal += r.duration.Nanoseconds()
+			avgTotal += r.duration.Seconds()
 			if fastest.Nanoseconds() == 0 || r.duration.Nanoseconds() < fastest.Nanoseconds() {
 				fastest = r.duration
 			}
@@ -42,12 +41,12 @@ func (b *Boom) Print() {
 		default:
 			rps := float64(b.N) / total.Seconds()
 			fmt.Printf("\nSummary:\n")
-			fmt.Printf("  total:\t%v secs\n", total.Seconds())
-			fmt.Printf("  slowest:\t%v secs\n", slowest.Seconds())
-			fmt.Printf("  fastest:\t%v secs\n", fastest.Seconds())
-			fmt.Printf("  average:\t%v secs\n", float64(avgTotal)/float64(b.N)*math.Pow(10, 9)) // TODO: in seconds
-			fmt.Printf("  requests/sec:\t%v\n", rps)
-			fmt.Printf("  speed index:\t%v\n", speedIndex(rps))
+			fmt.Printf("  Total:\t%4.4f secs.\n", total.Seconds())
+			fmt.Printf("  Slowest:\t%4.4f secs.\n", slowest.Seconds())
+			fmt.Printf("  Fastest:\t%4.4f secs.\n", fastest.Seconds())
+			fmt.Printf("  Average:\t%4.4f secs.\n", avgTotal/float64(b.N))
+			fmt.Printf("  Requests/sec:\t%4.4f\n", rps)
+			fmt.Printf("  Speed index:\t%v\n", speedIndex(rps))
 			b.printStatusCodes()
 			return
 		}
