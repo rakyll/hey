@@ -17,6 +17,7 @@ package commands
 import (
 	"fmt"
 	"time"
+	"sort"
 )
 
 var statusCodeDist map[int]int = make(map[int]int)
@@ -25,10 +26,12 @@ func (b *Boom) Print() {
 	total := b.end.Sub(b.start)
 	var avgTotal float64
 	var fastest, slowest time.Duration
+	var latencies []float64
 
 	for {
 		select {
 		case r := <-b.results:
+			latencies = append(latencies, r.duration.Seconds())
 			statusCodeDist[r.statusCode]++
 
 			avgTotal += r.duration.Seconds()
@@ -47,10 +50,35 @@ func (b *Boom) Print() {
 			fmt.Printf("  Average:\t%4.4f secs.\n", avgTotal/float64(b.N))
 			fmt.Printf("  Requests/sec:\t%4.4f\n", rps)
 			fmt.Printf("  Speed index:\t%v\n", speedIndex(rps))
+			// Calculate and print percentile latencies.
+			pctls := []int{10,25,50,75,90,95,99};
+   		    pctlLatencies := b.getLatencyPercentiles(pctls, latencies)
+			fmt.Printf("\nLatency distribution:\n",)
+  			for i := 0; i < len(pctls); i++ {
+  				if pctlLatencies[i] > 0 {
+					fmt.Printf("  %vth percentile: %4.4f\n", pctls[i], pctlLatencies[i])
+				}
+			}
 			b.printStatusCodes()
 			return
 		}
 	}
+}
+
+// Returns percentile latencies for given duration list.
+func (b *Boom) getLatencyPercentiles(percentiles []int, latencies []float64) []float64 {
+    // Sort the array
+    sort.Float64s(latencies)
+    var pctl []float64 = make([]float64, len(percentiles));
+    var j int = 0;
+    for i := 0; i < len(latencies) && j < len(percentiles); i++ {
+    	currentPercentile := (i + 1) * 100 / len(latencies)
+    	if currentPercentile >= percentiles[j] {
+    		pctl[j] = latencies[i]
+     		j++
+    	}
+    }
+    return pctl;
 }
 
 func (b *Boom) printStatusCodes() {
