@@ -22,11 +22,12 @@ import (
 
 var statusCodeDist map[int]int = make(map[int]int)
 
+var latencies []float64
+
 func (b *Boom) Print() {
 	total := b.end.Sub(b.start)
 	var avgTotal float64
 	var fastest, slowest time.Duration
-	var latencies []float64
 
 	for {
 		select {
@@ -50,37 +51,36 @@ func (b *Boom) Print() {
 			fmt.Printf("  Average:\t%4.4f secs.\n", avgTotal/float64(b.N))
 			fmt.Printf("  Requests/sec:\t%4.4f\n", rps)
 			fmt.Printf("  Speed index:\t%v\n", speedIndex(rps))
-			// Calculate and print percentile latencies.
-			pctls := []int{10, 25, 50, 75, 90, 95, 99}
-			pctlLatencies := b.getLatencyPercentiles(pctls, latencies)
-			fmt.Printf("\nLatency distribution:\n")
-			for i := 0; i < len(pctls); i++ {
-				if pctlLatencies[i] > 0 {
-					fmt.Printf("  %vth percentile: %4.4f\n", pctls[i], pctlLatencies[i])
-				}
-			}
+			b.printLatencies()
 			b.printStatusCodes()
 			return
 		}
 	}
 }
 
-// Returns percentile latencies for given duration list.
-func (b *Boom) getLatencyPercentiles(percentiles []int, latencies []float64) []float64 {
+// Prints percentile latencies.
+func (b *Boom) printLatencies() {
+	pctls := []int{10, 25, 50, 75, 90, 95, 99}
 	// Sort the array
 	sort.Float64s(latencies)
-	var pctl []float64 = make([]float64, len(percentiles))
-	var j int = 0
-	for i := 0; i < len(latencies) && j < len(percentiles); i++ {
-		currentPercentile := (i + 1) * 100 / len(latencies)
-		if currentPercentile >= percentiles[j] {
-			pctl[j] = latencies[i]
+	data := make([]float64, len(pctls))
+	j := 0
+	for i := 0; i < len(latencies) && j < len(pctls); i++ {
+		current := (i + 1) * 100 / len(latencies)
+		if current >= pctls[j] {
+			data[j] = latencies[i]
 			j++
 		}
 	}
-	return pctl
+	fmt.Printf("\nLatency distribution:\n")
+	for i := 0; i < len(pctls); i++ {
+		if data[i] > 0 {
+			fmt.Printf("  %v%% in %4.4f secs.\n", pctls[i], data[i])
+		}
+	}
 }
 
+// Prints status code distribution.
 func (b *Boom) printStatusCodes() {
 	fmt.Printf("\nStatus code distribution:\n")
 	for code, num := range statusCodeDist {
