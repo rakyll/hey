@@ -14,7 +14,7 @@ Simple as it takes to type the following command:
 
 boom supports custom headers, request body and basic authentication. It runs provided number of requests in the provided concurrency level, and prints stats.
     
-	Usage: boom [options...] <url>
+    Usage: boom [options...] <url>
 	
 	Options:
 	  -n	Number of requests to run.
@@ -30,21 +30,30 @@ boom supports custom headers, request body and basic authentication. It runs pro
 
 This is what happens when you run boom:
   
-	$ boom -n 300 -c 100 http://google.com
-	300 / 300 [=================================================] 100.00 %
-	
+	$ boom  http://google.com
+	200 / 200 [====================] 100.00 %
+
 	Summary:
-	  total:        63.005635867 secs
-	  slowest:      39.885779975 secs
-	  fastest:      1.119809052 secs
-	  average:      7.823576417270001e+18 secs
-	  requests/sec: 4.761478808550979
-	  speed index:  Hahahaha
-	
+	  Total:        1.2723 secs.
+	  Slowest:      0.3447 secs.
+	  Fastest:      0.2359 secs.
+	  Average:      0.2714 secs.
+	  Requests/sec: 157.1997
+	  Speed index:  Pretty good
+
+	Latency distribution:
+	  10% in 0.2412 secs.
+	  25% in 0.2551 secs.
+	  50% in 0.2681 secs.
+	  75% in 0.2800 secs.
+	  90% in 0.3063 secs.
+	  95% in 0.3078 secs.
+	  99% in 0.3158 secs.
+
 	Status code distribution:
-	  [200]	233 responses
-	  [503]	67 responses
-	  
+	  [200]	197 responses
+	  [503]	3 responses
+
 ## License
 
 Copyright 2014 Google Inc. All Rights Reserved.
