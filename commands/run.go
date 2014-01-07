@@ -46,42 +46,43 @@ func (b *Boom) teardown() {
 }
 
 func (b *Boom) run() {
-	rem := b.N
-	for {
-		if rem == 0 {
-			break
-		}
-
-		c := b.C
-		if rem < b.C {
-			c = rem
-		}
-
-		var wg sync.WaitGroup
-		wg.Add(c)
-		for i := 0; i < c; i++ {
-			go func() {
-				b.runOneReq()
-				b.bar.Increment()
-				wg.Done()
-			}()
-		}
-		wg.Wait()
-		rem -= c
+	c := b.C
+	if b.N < b.C {
+		c = b.N
 	}
+
+	var wg sync.WaitGroup
+	ch := make(chan int, c)
+	// Create c amount worker goroutines.
+	for i := 0; i < c; i++ {
+		wg.Add(1)
+		go b.worker(ch, &wg)
+	}
+	// Push requests to channel.
+	for i := 0; i < b.N; i++ {
+		ch <- i
+	}
+	close(ch)
+	// Wait all goroutines to finish.
+	wg.Wait()
 }
 
-func (b *Boom) runOneReq() {
-	s := time.Now()
-	resp, err := b.Client.Do(b.Req)
+func (b *Boom) worker(clientChan chan int, wg *sync.WaitGroup) {
+	defer wg.Done()
+	// Pick one request from channel and process.
+	for _ = range clientChan {
+		s := time.Now()
+		resp, err := b.Client.Do(b.Req)
 
-	code := 0
-	if resp != nil {
-		code = resp.StatusCode
-	}
-	b.results <- &result{
-		statusCode: code,
-		duration:   time.Now().Sub(s),
-		err:        err,
+		code := 0
+		if resp != nil {
+			code = resp.StatusCode
+		}
+		b.results <- &result{
+			statusCode: code,
+			duration:   time.Now().Sub(s),
+			err:        err,
+		}
+		b.bar.Increment()
 	}
 }
