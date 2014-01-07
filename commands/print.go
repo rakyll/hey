@@ -88,10 +88,9 @@ func (b *Boom) printHistogram() {
 	counts := make([]int, bc+1)
 	fastest := latencies[0]
 	slowest := latencies[len(latencies)-1]
-	// TODO: Intead of slowest, 95th percentile etc.
 	bs := (slowest - fastest) / float64(bc)
 	for i := 0; i < bc; i++ {
-		buckets[i] = fastest + bs * float64(i)
+		buckets[i] = fastest + bs*float64(i)
 	}
 	buckets[bc] = slowest
 	var bi int
@@ -103,7 +102,7 @@ func (b *Boom) printHistogram() {
 			if max < counts[bi] {
 				max = counts[bi]
 			}
-		} else if bi < len(buckets) - 1 {
+		} else if bi < len(buckets)-1 {
 			bi++
 		}
 	}
@@ -114,13 +113,8 @@ func (b *Boom) printHistogram() {
 		if max > 0 {
 			barLen = counts[i] * 40 / max
 		}
-		var bar string = ""
-		if barLen > 0 {
-			bar = strings.Repeat("#", barLen)
-		}
-		fmt.Printf("  %4.3f [%v]\t|%v\n", buckets[i], counts[i], bar)
+		fmt.Printf("  %4.3f [%v]\t|%v\n", buckets[i], counts[i], strings.Repeat("#", barLen))
 	}
-
 }
 
 // Prints status code distribution.
