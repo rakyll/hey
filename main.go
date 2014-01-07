@@ -39,7 +39,7 @@ var (
 var usage = `Usage: boom [options...] <url>
 
 Options:
-  -n	Number of requests to run.
+  -n	Number of requests to run. Can not be 
   -c	Number of requests to run concurrently. Total number of requests cannot
   	be smaller than the concurency level.
 
@@ -62,6 +62,10 @@ func main() {
 
 	n := *flagN
 	c := *flagC
+
+	if  n <= 0 || c <= 0 {
+		usageAndExit()
+	}
 
 	// If total number is smaller than concurrency level,
 	// make the total number c.
