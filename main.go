@@ -63,6 +63,10 @@ func main() {
 	n := *flagN
 	c := *flagC
 
+	if  n <= 0 || c <= 0 {
+		usageAndExit()
+	}
+
 	// If total number is smaller than concurrency level,
 	// make the total number c.
 	if c > n {

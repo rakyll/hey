@@ -17,6 +17,7 @@ package commands
 import (
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -51,6 +52,8 @@ func (b *Boom) Print() {
 			fmt.Printf("  Average:\t%4.4f secs.\n", avgTotal/float64(b.N))
 			fmt.Printf("  Requests/sec:\t%4.4f\n", rps)
 			fmt.Printf("  Speed index:\t%v\n", speedIndex(rps))
+			sort.Float64s(latencies)
+			b.printHistogram()
 			b.printLatencies()
 			b.printStatusCodes()
 			return
@@ -62,7 +65,6 @@ func (b *Boom) Print() {
 func (b *Boom) printLatencies() {
 	pctls := []int{10, 25, 50, 75, 90, 95, 99}
 	// Sort the array
-	sort.Float64s(latencies)
 	data := make([]float64, len(pctls))
 	j := 0
 	for i := 0; i < len(latencies) && j < len(pctls); i++ {
@@ -77,6 +79,41 @@ func (b *Boom) printLatencies() {
 		if data[i] > 0 {
 			fmt.Printf("  %v%% in %4.4f secs.\n", pctls[i], data[i])
 		}
+	}
+}
+
+func (b *Boom) printHistogram() {
+	bc := 10
+	buckets := make([]float64, bc+1)
+	counts := make([]int, bc+1)
+	fastest := latencies[0]
+	slowest := latencies[len(latencies)-1]
+	bs := (slowest - fastest) / float64(bc)
+	for i := 0; i < bc; i++ {
+		buckets[i] = fastest + bs*float64(i)
+	}
+	buckets[bc] = slowest
+	var bi int
+	var max int
+	for i := 0; i < len(latencies); {
+		if latencies[i] <= buckets[bi] {
+			i++
+			counts[bi]++
+			if max < counts[bi] {
+				max = counts[bi]
+			}
+		} else if bi < len(buckets)-1 {
+			bi++
+		}
+	}
+	fmt.Printf("\nResponse time histogram:\n")
+	for i := 0; i < len(buckets); i++ {
+		// Normalize bar lengths.
+		var barLen int
+		if max > 0 {
+			barLen = counts[i] * 40 / max
+		}
+		fmt.Printf("  %4.3f [%v]\t|%v\n", buckets[i], counts[i], strings.Repeat("#", barLen))
 	}
 }
 
