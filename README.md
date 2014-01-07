@@ -1,6 +1,6 @@
 # boom
 
-`boom` is a tiny program that sends some load to a web application. It's similar to Apache Benchmark, but with better availability across different platforms and a less troubling installation experience.
+`boom` is a tiny program that sends some load to a web application. It's similar to Apache Bench ([ab](http://httpd.apache.org/docs/2.2/programs/ab.html)), but with better availability across different platforms and a less troubling installation experience.
 
 `boom` is originally written by Tarek Ziade in Python and is available on [tarekziade/boom](https://github.com/tarekziade/boom). But, due to its dependency requirements and my personal annoyance of maintaining concurrent programs in Python, I decided to rewrite it in Go.
 
