@@ -39,7 +39,7 @@ var (
 var usage = `Usage: boom [options...] <url>
 
 Options:
-  -n	Number of requests to run. Can not be 
+  -n	Number of requests to run.
   -c	Number of requests to run concurrently. Total number of requests cannot
   	be smaller than the concurency level.
 
