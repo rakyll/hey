@@ -32,29 +32,43 @@ boom supports custom headers, request body and basic authentication. It runs pro
 
 This is what happens when you run boom:
   
-	$ boom  http://google.com
-	200 / 200 [====================] 100.00 %
-
+	$ boom -n 100 https://google.com
+	
+	100 / 100 [==============================] 100.00 %
+	
 	Summary:
-	  Total:        1.2723 secs.
-	  Slowest:      0.3447 secs.
-	  Fastest:      0.2359 secs.
-	  Average:      0.2714 secs.
-	  Requests/sec: 157.1997
-	  Speed index:  Pretty good
-
+	  Total:	222.2607 secs.
+	  Slowest:	84.5743 secs.
+	  Fastest:	6.7543 secs.
+	  Average:	20.8187 secs.
+	  Requests/sec:	0.4499
+	  Speed index:	Hahahaha
+	
+	Response time histogram:
+	  6.754 [1]	|
+	  14.536 [30]	|###########################
+	  22.318 [44]	|########################################
+	  30.100 [14]	|############
+	  37.882 [5]	|####
+	  45.664 [1]	|
+	  53.446 [0]	|
+	  61.228 [1]	|
+	  69.010 [1]	|
+	  76.792 [1]	|
+	  84.574 [2]	|#
+	
 	Latency distribution:
-	  10% in 0.2412 secs.
-	  25% in 0.2551 secs.
-	  50% in 0.2681 secs.
-	  75% in 0.2800 secs.
-	  90% in 0.3063 secs.
-	  95% in 0.3078 secs.
-	  99% in 0.3158 secs.
-
+	  10% in 10.4375 secs.
+	  25% in 13.2917 secs.
+	  50% in 17.3346 secs.
+	  75% in 21.9699 secs.
+	  90% in 33.0562 secs.
+	  95% in 39.3120 secs.
+	  99% in 82.1295 secs.
+	
 	Status code distribution:
-	  [200]	197 responses
-	  [503]	3 responses
+	  [200]	75 responses
+	  [0]	25 responses
 
 ## License
 
