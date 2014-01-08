@@ -46,34 +46,28 @@ func (b *Boom) teardown() {
 }
 
 func (b *Boom) run() {
-	c := b.C
-	if b.N < b.C {
-		c = b.N
-	}
-
 	var wg sync.WaitGroup
-	ch := make(chan int, c)
+	ch := make(chan bool, b.C)
 	// Create c amount worker goroutines.
-	for i := 0; i < c; i++ {
+	for i := 0; i < b.C; i++ {
 		wg.Add(1)
 		go b.worker(ch, &wg)
 	}
 	// Push requests to channel.
 	for i := 0; i < b.N; i++ {
-		ch <- i
+		ch <- true
 	}
 	close(ch)
 	// Wait all goroutines to finish.
 	wg.Wait()
 }
 
-func (b *Boom) worker(clientChan chan int, wg *sync.WaitGroup) {
+func (b *Boom) worker(ch chan bool, wg *sync.WaitGroup) {
 	defer wg.Done()
 	// Pick one request from channel and process.
-	for _ = range clientChan {
+	for _ = range ch {
 		s := time.Now()
 		resp, err := b.Client.Do(b.Req)
-
 		code := 0
 		if resp != nil {
 			code = resp.StatusCode
