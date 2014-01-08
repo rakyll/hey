@@ -31,42 +31,42 @@ boom supports custom headers, request body and basic authentication. It runs pro
 	  
 
 This is what happens when you run boom:
-  
-	$ boom -n 500 -c 100  https://google.com
-	500 / 500 [========================================] 100.00 % 
+
+	% boom -n 1000 -c 100 https://google.com
+	1000 / 1000 [=======================================================] 100.00 % 
 
 	Summary:
-	  Total:	9.9329 secs.
-	  Slowest:	2.5537 secs.
-	  Fastest:	1.0360 secs.
-	  Average:	1.9430 secs.
-	  Requests/sec:	50.3378
-	  Speed index:	Meh
+	  Total:        21.1307 secs.
+	  Slowest:      2.9959 secs.
+	  Fastest:      0.9868 secs.
+	  Average:      2.0827 secs.
+	  Requests/sec: 47.3246
+	  Speed index:  Hahahaha
 
 	Response time histogram:
-	  1.036 [1]	|
-	  1.188 [1]	|
-	  1.340 [2]	|
-	  1.491 [14]	|##
-	  1.643 [12]	|##
-	  1.795 [26]	|####
-	  1.947 [157]	|##########################
-	  2.098 [237]	|########################################
-	  2.250 [27]	|####
-	  2.402 [12]	|##
-	  2.554 [11]	|#
+	  0.987 [1]     |
+	  1.188 [2]     |
+	  1.389 [3]     |
+	  1.590 [18]    |##
+	  1.790 [85]    |###########
+	  1.991 [244]   |################################
+	  2.192 [284]   |#####################################
+	  2.393 [304]   |########################################
+	  2.594 [50]    |######
+	  2.795 [5]     |
+	  2.996 [4]     |
 
 	Latency distribution:
-	  10% in 1.7334 secs.
-	  25% in 1.8870 secs.
-	  50% in 1.9653 secs.
-	  75% in 2.0251 secs.
-	  90% in 2.0841 secs.
-	  95% in 2.1688 secs.
-	  99% in 2.5250 secs.
+	  10% in 1.7607 secs.
+	  25% in 1.9770 secs.
+	  50% in 2.0961 secs.
+	  75% in 2.2385 secs.
+	  90% in 2.3681 secs.
+	  95% in 2.4451 secs.
+	  99% in 2.5393 secs.
 
 	Status code distribution:
-	  [200]	500 responses
+	  [200]	1000 responses
 
 ## License
 
