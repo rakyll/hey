@@ -28,10 +28,11 @@ type result struct {
 }
 
 type Boom struct {
-	Req    *http.Request
-	N      int
-	C      int
-	Client *http.Client
+	Req           *http.Request
+	N             int
+	C             int
+	Client        *http.Client
+	AllowInsecure bool
 
 	start   time.Time
 	end     time.Time

@@ -15,6 +15,7 @@
 package commands
 
 import (
+	"crypto/tls"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -35,7 +36,10 @@ func (b *Boom) Run() {
 
 func (b *Boom) init() {
 	if b.Client == nil {
-		b.Client = &http.Client{}
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: b.AllowInsecure},
+		}
+		b.Client = &http.Client{Transport: tr}
 	}
 	b.results = make(chan *result, b.N)
 	b.bar = pb.StartNew(b.N)
