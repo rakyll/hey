@@ -68,8 +68,8 @@ WORKER_LOOP:
 				err:        err,
 			}
 			b.bar.Increment()
-		case <-b.timeout:
-			b.timedOut = true
+		case <-timeout:
+			timedOut = true
 		}
 	}
 }

@@ -45,7 +45,6 @@ type Boom struct {
 	end      time.Time
 	results  chan *result
 	bar      *pb.ProgressBar
-	timeout  <-chan time.Time
 	timedOut bool
 	report   Report
 }
