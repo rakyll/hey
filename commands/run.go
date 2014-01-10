@@ -27,7 +27,6 @@ func (b *Boom) Run() {
 	b.init()
 	b.run()
 	b.teardown()
-
 	b.Print()
 }
 
@@ -35,9 +34,12 @@ func (b *Boom) init() {
 	if b.Client == nil {
 		b.Client = &http.Client{}
 	}
-	b.results = make(chan *result, b.N)
+	b.results = make(chan *result, b.C)
+	b.timeout = make(chan time.Time)
 	b.bar = pb.StartNew(b.N)
+	b.report.statusCodeDist = make(map[int]int)
 	b.start = time.Now()
+	b.timedOut = false
 }
 
 func (b *Boom) teardown() {
@@ -45,38 +47,69 @@ func (b *Boom) teardown() {
 	b.bar.Finish()
 }
 
-func (b *Boom) run() {
-	var wg sync.WaitGroup
-	ch := make(chan bool, b.C)
-	// Create c amount worker goroutines.
-	for i := 0; i < b.C; i++ {
-		wg.Add(1)
-		go b.worker(ch, &wg)
+func (b *Boom) worker(jobs chan bool, wg *sync.WaitGroup, timeout <-chan time.Time) {
+	defer wg.Done()
+WORKER_LOOP:
+	for !b.timedOut {
+		select {
+		case _, chOpen := <-jobs:
+			if !chOpen {
+				break WORKER_LOOP
+			}
+			s := time.Now()
+			resp, err := b.Client.Do(b.Req)
+			code := 0
+			if resp != nil {
+				code = resp.StatusCode
+			}
+			b.results <- &result{
+				statusCode: code,
+				duration:   time.Now().Sub(s),
+				err:        err,
+			}
+			b.bar.Increment()
+		case <-b.timeout:
+			b.timedOut = true
+		}
 	}
-	// Push requests to channel.
-	for i := 0; i < b.N; i++ {
-		ch <- true
-	}
-	close(ch)
-	// Wait all goroutines to finish.
-	wg.Wait()
 }
 
-func (b *Boom) worker(ch chan bool, wg *sync.WaitGroup) {
-	defer wg.Done()
-	// Pick one request from channel and process.
-	for _ = range ch {
-		s := time.Now()
-		resp, err := b.Client.Do(b.Req)
-		code := 0
-		if resp != nil {
-			code = resp.StatusCode
+func (b *Boom) collector() {
+	for {
+		select {
+		case r := <-b.results:
+			b.report.latencies = append(b.report.latencies, r.duration.Seconds())
+			b.report.statusCodeDist[r.statusCode]++
+			b.report.avgTotal += r.duration.Seconds()
 		}
-		b.results <- &result{
-			statusCode: code,
-			duration:   time.Now().Sub(s),
-			err:        err,
-		}
-		b.bar.Increment()
 	}
+}
+
+func (b *Boom) run() {
+	jobs := make(chan bool, b.C)
+	var wg sync.WaitGroup
+	// Start collector.
+	go b.collector()
+	// Start throttler if rate limit is specified.
+	var throttle <-chan time.Time
+	if b.Q > 0 {
+		throttle = time.Tick(time.Duration(1e6/b.Q) * time.Microsecond)
+	}
+	// Start timeout counter if time limit is specified
+	var timeout <-chan time.Time
+	if b.S > 0 {
+		timeout = time.After(time.Duration(b.S) * time.Second)
+	}
+	for i := 0; i < b.C; i++ {
+		wg.Add(1)
+		go b.worker(jobs, &wg, timeout)
+	}
+	for i := 0; i < b.N; i++ {
+		if b.Q > 0 {
+			<-throttle
+		}
+		jobs <- true
+	}
+	close(jobs)
+	wg.Wait()
 }

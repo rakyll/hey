@@ -27,14 +27,25 @@ type result struct {
 	duration   time.Duration
 }
 
+type Report struct {
+	latencies      []float64
+	avgTotal       float64
+	statusCodeDist map[int]int
+}
+
 type Boom struct {
 	Req    *http.Request
-	N      int
-	C      int
+	N      int // Number of requests
+	C      int // Number of Concurrent workers
+	S      int // Timeout
+	Q      int // Rate limit (QPS)
 	Client *http.Client
 
-	start   time.Time
-	end     time.Time
-	results chan *result
-	bar     *pb.ProgressBar
+	start    time.Time
+	end      time.Time
+	results  chan *result
+	bar      *pb.ProgressBar
+	timeout  <-chan time.Time
+	timedOut bool
+	report   Report
 }
