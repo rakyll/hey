@@ -26,11 +26,12 @@ import (
 )
 
 var (
-	flagMethod  = flag.String("m", "GET", "")
-	flagHeaders = flag.String("h", "", "")
-	flagD       = flag.String("d", "", "")
-	flagType    = flag.String("t", "text/html", "")
-	flagAuth    = flag.String("a", "", "")
+	flagMethod   = flag.String("m", "GET", "")
+	flagHeaders  = flag.String("h", "", "")
+	flagD        = flag.String("d", "", "")
+	flagType     = flag.String("t", "text/html", "")
+	flagAuth     = flag.String("a", "", "")
+	flagInsecure = flag.Bool("allow-insecure", false, "")
 
 	flagC = flag.Int("c", 50, "")
 	flagN = flag.Int("n", 200, "")
@@ -52,6 +53,9 @@ Options:
   -d	HTTP request body.
   -t	Content-type, defaults to "text/html".
   -a	Basic authentication, username:password.
+
+  -allow-insecure	Allow bad/expired TLS/SSL certificates.
+
 `
 
 func main() {
@@ -109,7 +113,7 @@ func main() {
 		req.SetBasicAuth(matches[0][1], matches[0][2])
 	}
 
-	(&commands.Boom{N: n, C: c, Q: q, S: s, Req: req}).Run()
+	(&commands.Boom{N: n, C: c, Q: q, S: s, Req: req, AllowInsecure: *flagInsecure}).Run()
 }
 
 func usageAndExit() {

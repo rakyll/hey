@@ -36,12 +36,13 @@ type report struct {
 }
 
 type Boom struct {
-	Req    *http.Request
-	N      int // Number of requests
-	C      int // Number of Concurrent workers
-	S      int // Timeout
-	Q      int // Rate limit (QPS)
-	Client *http.Client
+	Req           *http.Request
+	N             int // Number of requests
+	C             int // Number of Concurrent workers
+	S             int // Timeout
+	Q             int // Rate limit (QPS)
+	Client        *http.Client
+	AllowInsecure bool
 
 	start    time.Time
 	end      time.Time

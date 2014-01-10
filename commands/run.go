@@ -15,6 +15,9 @@
 package commands
 
 import (
+	"crypto/tls"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"sync"
 	"time"
@@ -32,7 +35,10 @@ func (b *Boom) Run() {
 
 func (b *Boom) init() {
 	if b.Client == nil {
-		b.Client = &http.Client{}
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: b.AllowInsecure},
+		}
+		b.Client = &http.Client{Transport: tr}
 	}
 	b.results = make(chan *result, b.C)
 	b.jobs = make(chan bool, b.C)
@@ -70,6 +76,12 @@ workerLoop:
 				duration:   time.Now().Sub(s),
 				err:        err,
 			}
+
+			if resp != nil {
+				io.Copy(ioutil.Discard, resp.Body)
+				resp.Body.Close()
+			}
+
 			b.bar.Increment()
 		}
 	}
