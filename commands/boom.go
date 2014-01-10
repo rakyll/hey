@@ -27,10 +27,12 @@ type result struct {
 	duration   time.Duration
 }
 
-type Report struct {
-	latencies      []float64
-	avgTotal       float64
-	statusCodeDist map[int]int
+type report struct {
+	total                          time.Duration
+	lats                           []float64
+	avgTotal                       float64
+	statusCodeDist                 map[int]int
+	fastest, slowest, average, rps float64
 }
 
 type Boom struct {
@@ -47,5 +49,5 @@ type Boom struct {
 	jobs     chan bool
 	bar      *pb.ProgressBar
 	timedOut bool
-	report   Report
+	rpt      report
 }

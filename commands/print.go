@@ -20,39 +20,34 @@ import (
 	"strings"
 )
 
-func (b *Boom) Print() {
-	total := b.end.Sub(b.start)
-	var fastest, slowest float64
-	rps := float64(b.N) / total.Seconds()
-	lat := b.report.latencies
-	if len(lat) > 0 {
-		fastest = lat[0]
-		slowest = lat[len(lat)-1]
-		sort.Float64s(b.report.latencies)
+func (r *report) Print() {
+	if len(r.lats) > 0 {
+		sort.Float64s(r.lats)
+		r.fastest = r.lats[0]
+		r.slowest = r.lats[len(r.lats)-1]
 		fmt.Printf("\nSummary:\n")
-		fmt.Printf("  Total:\t%4.4f secs.\n", total.Seconds())
-		fmt.Printf("  Slowest:\t%4.4f secs.\n", slowest)
-		fmt.Printf("  Fastest:\t%4.4f secs.\n", fastest)
-		fmt.Printf("  Average:\t%4.4f secs.\n", b.report.avgTotal/float64(b.N))
-		fmt.Printf("  Requests/sec:\t%4.4f\n", rps)
-		fmt.Printf("  Speed index:\t%v\n", speedIndex(rps))
-		b.printStatusCodes()
-		b.printHistogram(&lat)
-		b.printLatencies(&lat)
+		fmt.Printf("  Total:\t%4.4f secs.\n", r.total.Seconds())
+		fmt.Printf("  Slowest:\t%4.4f secs.\n", r.slowest)
+		fmt.Printf("  Fastest:\t%4.4f secs.\n", r.fastest)
+		fmt.Printf("  Average:\t%4.4f secs.\n", r.average)
+		fmt.Printf("  Requests/sec:\t%4.4f\n", r.rps)
+		fmt.Printf("  Speed index:\t%v\n", speedIndex(r.rps))
+		r.printStatusCodes()
+		r.printHistogram()
+		r.printLatencies()
 	}
 }
 
 // Prints percentile latencies.
-func (b *Boom) printLatencies(latPtr *[]float64) {
-	lat := *latPtr
+func (r *report) printLatencies() {
 	pctls := []int{10, 25, 50, 75, 90, 95, 99}
 	// Sort the array
 	data := make([]float64, len(pctls))
 	j := 0
-	for i := 0; i < len(lat) && j < len(pctls); i++ {
-		current := (i + 1) * 100 / len(lat)
+	for i := 0; i < len(r.lats) && j < len(pctls); i++ {
+		current := (i + 1) * 100 / len(r.lats)
 		if current >= pctls[j] {
-			data[j] = lat[i]
+			data[j] = r.lats[i]
 			j++
 		}
 	}
@@ -64,22 +59,19 @@ func (b *Boom) printLatencies(latPtr *[]float64) {
 	}
 }
 
-func (b *Boom) printHistogram(latPtr *[]float64) {
-	lat := *latPtr
+func (r *report) printHistogram() {
 	bc := 10
 	buckets := make([]float64, bc+1)
 	counts := make([]int, bc+1)
-	fastest := lat[0]
-	slowest := lat[len(lat)-1]
-	bs := (slowest - fastest) / float64(bc)
+	bs := (r.slowest - r.fastest) / float64(bc)
 	for i := 0; i < bc; i++ {
-		buckets[i] = fastest + bs*float64(i)
+		buckets[i] = r.fastest + bs*float64(i)
 	}
-	buckets[bc] = slowest
+	buckets[bc] = r.slowest
 	var bi int
 	var max int
-	for i := 0; i < len(lat); {
-		if lat[i] <= buckets[bi] {
+	for i := 0; i < len(r.lats); {
+		if r.lats[i] <= buckets[bi] {
 			i++
 			counts[bi]++
 			if max < counts[bi] {
@@ -101,9 +93,9 @@ func (b *Boom) printHistogram(latPtr *[]float64) {
 }
 
 // Prints status code distribution.
-func (b *Boom) printStatusCodes() {
+func (r *report) printStatusCodes() {
 	fmt.Printf("\nStatus code distribution:\n")
-	for code, num := range b.report.statusCodeDist {
+	for code, num := range r.statusCodeDist {
 		fmt.Printf("  [%d]\t%d responses\n", code, num)
 	}
 }

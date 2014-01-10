@@ -27,7 +27,7 @@ func (b *Boom) Run() {
 	b.init()
 	b.run()
 	b.teardown()
-	b.Print()
+	b.rpt.Print()
 }
 
 func (b *Boom) init() {
@@ -37,24 +37,27 @@ func (b *Boom) init() {
 	b.results = make(chan *result, b.C)
 	b.jobs = make(chan bool, b.C)
 	b.bar = pb.StartNew(b.N)
-	b.report.statusCodeDist = make(map[int]int)
+	b.rpt.statusCodeDist = make(map[int]int)
 	b.start = time.Now()
 	b.timedOut = false
 }
 
 func (b *Boom) teardown() {
 	b.end = time.Now()
+	b.rpt.total = b.end.Sub(b.start)
+	b.rpt.rps = float64(b.N) / b.rpt.total.Seconds()
+	b.rpt.average = b.rpt.avgTotal / float64(b.N)
 	b.bar.Finish()
 }
 
 func (b *Boom) worker(wg *sync.WaitGroup) {
 	defer wg.Done()
-WORKER_LOOP:
+workerLoop:
 	for {
 		select {
 		case _, chOpen := <-b.jobs:
 			if !chOpen {
-				break WORKER_LOOP
+				break workerLoop
 			}
 			s := time.Now()
 			resp, err := b.Client.Do(b.Req)
@@ -76,9 +79,9 @@ func (b *Boom) collector() {
 	for {
 		select {
 		case r := <-b.results:
-			b.report.latencies = append(b.report.latencies, r.duration.Seconds())
-			b.report.statusCodeDist[r.statusCode]++
-			b.report.avgTotal += r.duration.Seconds()
+			b.rpt.lats = append(b.rpt.lats, r.duration.Seconds())
+			b.rpt.statusCodeDist[r.statusCode]++
+			b.rpt.avgTotal += r.duration.Seconds()
 		}
 	}
 }
@@ -103,18 +106,19 @@ func (b *Boom) run() {
 		go b.worker(&wg)
 	}
 	// Start sending requests.
-REQUEST_LOOP:
+requestLoop:
 	for i := 0; i < b.N; i++ {
 		select {
-		case <-timeout:
-			break REQUEST_LOOP
 		default:
 			if b.Q > 0 {
 				<-throttle
 			}
 			b.jobs <- true
+		case <-timeout:
+			break requestLoop
 		}
 	}
 	close(b.jobs)
 	wg.Wait()
+	close(b.results)
 }
