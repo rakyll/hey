@@ -44,6 +44,9 @@ type Boom struct {
 	start    time.Time
 	end      time.Time
 	results  chan *result
+	done     chan bool
+	timeout  chan bool
+	jobs     chan bool
 	bar      *pb.ProgressBar
 	timedOut bool
 	report   Report

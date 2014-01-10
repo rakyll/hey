@@ -15,7 +15,6 @@
 package commands
 
 import (
-	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -36,6 +35,9 @@ func (b *Boom) init() {
 		b.Client = &http.Client{}
 	}
 	b.results = make(chan *result, b.C)
+	b.timeout = make(chan bool, 1)
+	b.jobs = make(chan bool, b.C)
+	b.done = make(chan bool, 1)
 	b.bar = pb.StartNew(b.N)
 	b.report.statusCodeDist = make(map[int]int)
 	b.start = time.Now()
@@ -47,12 +49,12 @@ func (b *Boom) teardown() {
 	b.bar.Finish()
 }
 
-func (b *Boom) worker(jobs chan bool, wg *sync.WaitGroup, timeout <-chan time.Time) {
+func (b *Boom) worker(wg *sync.WaitGroup) {
 	defer wg.Done()
 WORKER_LOOP:
-	for !b.timedOut {
+	for {
 		select {
-		case _, chOpen := <-jobs:
+		case _, chOpen := <-b.jobs:
 			if !chOpen {
 				break WORKER_LOOP
 			}
@@ -68,8 +70,9 @@ WORKER_LOOP:
 				err:        err,
 			}
 			b.bar.Increment()
-		case <-timeout:
-			b.timedOut = true
+		case <-b.timeout:
+			b.done <- true
+			break WORKER_LOOP
 		}
 	}
 }
@@ -86,7 +89,6 @@ func (b *Boom) collector() {
 }
 
 func (b *Boom) run() {
-	jobs := make(chan bool, b.N)
 	var wg sync.WaitGroup
 	// Start collector.
 	go b.collector()
@@ -96,22 +98,28 @@ func (b *Boom) run() {
 		throttle = time.Tick(time.Duration(1e6/b.Q) * time.Microsecond)
 	}
 	// Start timeout counter if time limit is specified.
-	var timeout <-chan time.Time
 	if b.S > 0 {
-		timeout = time.After(time.Duration(b.S) * time.Second)
+		time.AfterFunc(time.Duration(b.S)*time.Second, func() {
+			close(b.timeout)
+		})
 	}
 	// Start workers.
 	for i := 0; i < b.C; i++ {
 		wg.Add(1)
-		go b.worker(jobs, &wg, timeout)
+		go b.worker(&wg)
 	}
 	// Start sending requests.
 	for i := 0; i < b.N; i++ {
-		if b.Q > 0 {
-			<-throttle
+		select {
+		case <-b.done:
+			return
+		default:
+			if b.Q > 0 {
+				<-throttle
+			}
+			b.jobs <- true
 		}
-		jobs <- true
 	}
-	close(jobs)
+	close(b.jobs)
 	wg.Wait()
 }
