@@ -15,6 +15,7 @@
 package commands
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -35,7 +36,6 @@ func (b *Boom) init() {
 		b.Client = &http.Client{}
 	}
 	b.results = make(chan *result, b.C)
-	b.timeout = make(chan time.Time)
 	b.bar = pb.StartNew(b.N)
 	b.report.statusCodeDist = make(map[int]int)
 	b.start = time.Now()
@@ -69,7 +69,7 @@ WORKER_LOOP:
 			}
 			b.bar.Increment()
 		case <-timeout:
-			timedOut = true
+			b.timedOut = true
 		}
 	}
 }
@@ -86,7 +86,7 @@ func (b *Boom) collector() {
 }
 
 func (b *Boom) run() {
-	jobs := make(chan bool, b.C)
+	jobs := make(chan bool, b.N)
 	var wg sync.WaitGroup
 	// Start collector.
 	go b.collector()
@@ -95,15 +95,17 @@ func (b *Boom) run() {
 	if b.Q > 0 {
 		throttle = time.Tick(time.Duration(1e6/b.Q) * time.Microsecond)
 	}
-	// Start timeout counter if time limit is specified
+	// Start timeout counter if time limit is specified.
 	var timeout <-chan time.Time
 	if b.S > 0 {
 		timeout = time.After(time.Duration(b.S) * time.Second)
 	}
+	// Start workers.
 	for i := 0; i < b.C; i++ {
 		wg.Add(1)
 		go b.worker(jobs, &wg, timeout)
 	}
+	// Start sending requests.
 	for i := 0; i < b.N; i++ {
 		if b.Q > 0 {
 			<-throttle
