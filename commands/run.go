@@ -30,8 +30,7 @@ func (b *Boom) Run() {
 	b.init()
 	b.run()
 	b.teardown()
-
-	b.Print()
+	b.rpt.Print()
 }
 
 func (b *Boom) init() {
@@ -41,55 +40,97 @@ func (b *Boom) init() {
 		}
 		b.Client = &http.Client{Transport: tr}
 	}
-	b.results = make(chan *result, b.N)
+	b.results = make(chan *result, b.C)
+	b.jobs = make(chan bool, b.C)
 	b.bar = pb.StartNew(b.N)
+	b.rpt.statusCodeDist = make(map[int]int)
 	b.start = time.Now()
+	b.timedOut = false
 }
 
 func (b *Boom) teardown() {
 	b.end = time.Now()
+	b.rpt.total = b.end.Sub(b.start)
+	b.rpt.rps = float64(b.N) / b.rpt.total.Seconds()
+	b.rpt.average = b.rpt.avgTotal / float64(b.N)
 	b.bar.Finish()
+}
+
+func (b *Boom) worker(wg *sync.WaitGroup) {
+	defer wg.Done()
+workerLoop:
+	for {
+		select {
+		case _, chOpen := <-b.jobs:
+			if !chOpen {
+				break workerLoop
+			}
+			s := time.Now()
+			resp, err := b.Client.Do(b.Req)
+			code := 0
+			if resp != nil {
+				code = resp.StatusCode
+			}
+			b.results <- &result{
+				statusCode: code,
+				duration:   time.Now().Sub(s),
+				err:        err,
+			}
+
+			if resp != nil {
+				io.Copy(ioutil.Discard, resp.Body)
+				resp.Body.Close()
+			}
+
+			b.bar.Increment()
+		}
+	}
+}
+
+func (b *Boom) collector() {
+	for {
+		select {
+		case r := <-b.results:
+			b.rpt.lats = append(b.rpt.lats, r.duration.Seconds())
+			b.rpt.statusCodeDist[r.statusCode]++
+			b.rpt.avgTotal += r.duration.Seconds()
+		}
+	}
 }
 
 func (b *Boom) run() {
 	var wg sync.WaitGroup
-	ch := make(chan bool, b.C)
-	// Create c amount worker goroutines.
+	// Start collector.
+	go b.collector()
+	// Start throttler if rate limit is specified.
+	var throttle <-chan time.Time
+	if b.Q > 0 {
+		throttle = time.Tick(time.Duration(1e6/b.Q) * time.Microsecond)
+	}
+	// Start timeout counter if time limit is specified.
+	var timeout <-chan time.Time
+	if b.S > 0 {
+		timeout = time.After(time.Duration(b.S) * time.Second)
+	}
+	// Start workers.
 	for i := 0; i < b.C; i++ {
 		wg.Add(1)
-		go b.worker(ch, &wg)
+		go b.worker(&wg)
 	}
-	// Push requests to channel.
+	// Start sending requests.
+requestLoop:
 	for i := 0; i < b.N; i++ {
-		ch <- true
+		select {
+		default:
+			if b.Q > 0 {
+				<-throttle
+			}
+			b.jobs <- true
+		case <-timeout:
+			break requestLoop
+		}
 	}
-	close(ch)
-	// Wait all goroutines to finish.
+	close(b.jobs)
 	wg.Wait()
-}
-
-func (b *Boom) worker(ch chan bool, wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	// Pick one request from channel and process.
-	for _ = range ch {
-		s := time.Now()
-		resp, err := b.Client.Do(b.Req)
-		code := 0
-		if resp != nil {
-			code = resp.StatusCode
-		}
-		b.results <- &result{
-			statusCode: code,
-			duration:   time.Now().Sub(s),
-			err:        err,
-		}
-
-		if resp != nil {
-			io.Copy(ioutil.Discard, resp.Body)
-			resp.Body.Close()
-		}
-
-		b.bar.Increment()
-	}
+	close(b.results)
 }

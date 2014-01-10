@@ -18,59 +18,36 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 )
 
-var statusCodeDist map[int]int = make(map[int]int)
-
-var latencies []float64
-
-func (b *Boom) Print() {
-	total := b.end.Sub(b.start)
-	var avgTotal float64
-	var fastest, slowest time.Duration
-
-	for {
-		select {
-		case r := <-b.results:
-			latencies = append(latencies, r.duration.Seconds())
-			statusCodeDist[r.statusCode]++
-
-			avgTotal += r.duration.Seconds()
-			if fastest.Nanoseconds() == 0 || r.duration.Nanoseconds() < fastest.Nanoseconds() {
-				fastest = r.duration
-			}
-			if r.duration.Nanoseconds() > slowest.Nanoseconds() {
-				slowest = r.duration
-			}
-		default:
-			rps := float64(b.N) / total.Seconds()
-			fmt.Printf("\nSummary:\n")
-			fmt.Printf("  Total:\t%4.4f secs.\n", total.Seconds())
-			fmt.Printf("  Slowest:\t%4.4f secs.\n", slowest.Seconds())
-			fmt.Printf("  Fastest:\t%4.4f secs.\n", fastest.Seconds())
-			fmt.Printf("  Average:\t%4.4f secs.\n", avgTotal/float64(b.N))
-			fmt.Printf("  Requests/sec:\t%4.4f\n", rps)
-			fmt.Printf("  Speed index:\t%v\n", speedIndex(rps))
-			sort.Float64s(latencies)
-			b.printHistogram()
-			b.printLatencies()
-			b.printStatusCodes()
-			return
-		}
+func (r *report) Print() {
+	if len(r.lats) > 0 {
+		sort.Float64s(r.lats)
+		r.fastest = r.lats[0]
+		r.slowest = r.lats[len(r.lats)-1]
+		fmt.Printf("\nSummary:\n")
+		fmt.Printf("  Total:\t%4.4f secs.\n", r.total.Seconds())
+		fmt.Printf("  Slowest:\t%4.4f secs.\n", r.slowest)
+		fmt.Printf("  Fastest:\t%4.4f secs.\n", r.fastest)
+		fmt.Printf("  Average:\t%4.4f secs.\n", r.average)
+		fmt.Printf("  Requests/sec:\t%4.4f\n", r.rps)
+		fmt.Printf("  Speed index:\t%v\n", speedIndex(r.rps))
+		r.printStatusCodes()
+		r.printHistogram()
+		r.printLatencies()
 	}
 }
 
 // Prints percentile latencies.
-func (b *Boom) printLatencies() {
+func (r *report) printLatencies() {
 	pctls := []int{10, 25, 50, 75, 90, 95, 99}
 	// Sort the array
 	data := make([]float64, len(pctls))
 	j := 0
-	for i := 0; i < len(latencies) && j < len(pctls); i++ {
-		current := (i + 1) * 100 / len(latencies)
+	for i := 0; i < len(r.lats) && j < len(pctls); i++ {
+		current := (i + 1) * 100 / len(r.lats)
 		if current >= pctls[j] {
-			data[j] = latencies[i]
+			data[j] = r.lats[i]
 			j++
 		}
 	}
@@ -82,21 +59,19 @@ func (b *Boom) printLatencies() {
 	}
 }
 
-func (b *Boom) printHistogram() {
+func (r *report) printHistogram() {
 	bc := 10
 	buckets := make([]float64, bc+1)
 	counts := make([]int, bc+1)
-	fastest := latencies[0]
-	slowest := latencies[len(latencies)-1]
-	bs := (slowest - fastest) / float64(bc)
+	bs := (r.slowest - r.fastest) / float64(bc)
 	for i := 0; i < bc; i++ {
-		buckets[i] = fastest + bs*float64(i)
+		buckets[i] = r.fastest + bs*float64(i)
 	}
-	buckets[bc] = slowest
+	buckets[bc] = r.slowest
 	var bi int
 	var max int
-	for i := 0; i < len(latencies); {
-		if latencies[i] <= buckets[bi] {
+	for i := 0; i < len(r.lats); {
+		if r.lats[i] <= buckets[bi] {
 			i++
 			counts[bi]++
 			if max < counts[bi] {
@@ -118,9 +93,9 @@ func (b *Boom) printHistogram() {
 }
 
 // Prints status code distribution.
-func (b *Boom) printStatusCodes() {
+func (r *report) printStatusCodes() {
 	fmt.Printf("\nStatus code distribution:\n")
-	for code, num := range statusCodeDist {
+	for code, num := range r.statusCodeDist {
 		fmt.Printf("  [%d]\t%d responses\n", code, num)
 	}
 }

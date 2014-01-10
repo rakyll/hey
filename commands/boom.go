@@ -27,15 +27,28 @@ type result struct {
 	duration   time.Duration
 }
 
+type report struct {
+	total                          time.Duration
+	lats                           []float64
+	avgTotal                       float64
+	statusCodeDist                 map[int]int
+	fastest, slowest, average, rps float64
+}
+
 type Boom struct {
 	Req           *http.Request
-	N             int
-	C             int
+	N             int // Number of requests
+	C             int // Number of Concurrent workers
+	S             int // Timeout
+	Q             int // Rate limit (QPS)
 	Client        *http.Client
 	AllowInsecure bool
 
-	start   time.Time
-	end     time.Time
-	results chan *result
-	bar     *pb.ProgressBar
+	start    time.Time
+	end      time.Time
+	results  chan *result
+	jobs     chan bool
+	bar      *pb.ProgressBar
+	timedOut bool
+	rpt      report
 }

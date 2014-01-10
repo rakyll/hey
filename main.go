@@ -35,6 +35,8 @@ var (
 
 	flagC = flag.Int("c", 50, "")
 	flagN = flag.Int("n", 200, "")
+	flagQ = flag.Int("q", 0, "")
+	flagS = flag.Int("s", 0, "")
 )
 
 var usage = `Usage: boom [options...] <url>
@@ -43,6 +45,8 @@ Options:
   -n	Number of requests to run.
   -c	Number of requests to run concurrently. Total number of requests cannot
   	be smaller than the concurency level.
+  -q    Rate limit, in seconds (QPS).
+  -s    Time limit in seconds. boom will stop after s seconds if specified.
 
   -m	HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.
   -h	Custom HTTP headers, name1:value1;name2:value2.
@@ -66,6 +70,8 @@ func main() {
 
 	n := *flagN
 	c := *flagC
+	q := *flagQ
+	s := *flagS
 
 	if n <= 0 || c <= 0 {
 		usageAndExit()
@@ -107,7 +113,7 @@ func main() {
 		req.SetBasicAuth(matches[0][1], matches[0][2])
 	}
 
-	(&commands.Boom{N: n, C: c, Req: req, AllowInsecure: *flagInsecure}).Run()
+	(&commands.Boom{N: n, C: c, Q: q, S: s, Req: req, AllowInsecure: *flagInsecure}).Run()
 }
 
 func usageAndExit() {
