@@ -16,6 +16,7 @@ package commands
 
 import (
 	"io"
+	"io/ioutil"
 	"net/http"
 	"sync"
 	"time"
@@ -66,8 +67,6 @@ func (b *Boom) run() {
 func (b *Boom) worker(ch chan bool, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	buffer := make([]byte, 1024*1024*2)
-
 	// Pick one request from channel and process.
 	for _ = range ch {
 		s := time.Now()
@@ -83,7 +82,7 @@ func (b *Boom) worker(ch chan bool, wg *sync.WaitGroup) {
 		}
 
 		if resp != nil {
-			io.ReadFull(resp.Body, buffer)
+			io.Copy(ioutil.Discard, resp.Body)
 			resp.Body.Close()
 		}
 
