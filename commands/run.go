@@ -35,9 +35,7 @@ func (b *Boom) init() {
 		b.Client = &http.Client{}
 	}
 	b.results = make(chan *result, b.C)
-	b.timeout = make(chan bool, 1)
 	b.jobs = make(chan bool, b.C)
-	b.done = make(chan bool, 1)
 	b.bar = pb.StartNew(b.N)
 	b.report.statusCodeDist = make(map[int]int)
 	b.start = time.Now()
@@ -70,9 +68,6 @@ WORKER_LOOP:
 				err:        err,
 			}
 			b.bar.Increment()
-		case <-b.timeout:
-			b.done <- true
-			break WORKER_LOOP
 		}
 	}
 }
@@ -98,10 +93,9 @@ func (b *Boom) run() {
 		throttle = time.Tick(time.Duration(1e6/b.Q) * time.Microsecond)
 	}
 	// Start timeout counter if time limit is specified.
+	var timeout <-chan time.Time
 	if b.S > 0 {
-		time.AfterFunc(time.Duration(b.S)*time.Second, func() {
-			close(b.timeout)
-		})
+		timeout = time.After(time.Duration(b.S) * time.Second)
 	}
 	// Start workers.
 	for i := 0; i < b.C; i++ {
@@ -109,10 +103,11 @@ func (b *Boom) run() {
 		go b.worker(&wg)
 	}
 	// Start sending requests.
+REQUEST_LOOP:
 	for i := 0; i < b.N; i++ {
 		select {
-		case <-b.done:
-			return
+		case <-timeout:
+			break REQUEST_LOOP
 		default:
 			if b.Q > 0 {
 				<-throttle
