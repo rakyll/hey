@@ -21,6 +21,10 @@ import (
 	"time"
 )
 
+const (
+	barChar = "█"
+)
+
 func (r *report) update(res *result) {
 	r.lats = append(r.lats, res.duration.Seconds())
 	r.statusCodeDist[res.statusCode]++
@@ -102,7 +106,7 @@ func (r *report) printHistogram() {
 		if max > 0 {
 			barLen = counts[i] * 40 / max
 		}
-		fmt.Printf("  %4.3f [%v]\t|%v\n", buckets[i], counts[i], strings.Repeat("#", barLen))
+		fmt.Printf("  %4.3f [%v]\t|%v\n", buckets[i], counts[i], strings.Repeat(barChar, barLen))
 	}
 }
 
