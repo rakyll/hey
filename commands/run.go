@@ -42,7 +42,7 @@ func (b *Boom) init() {
 	}
 	b.results = make(chan *result, b.C)
 	b.jobs = make(chan bool, b.C)
-	b.bar = pb.StartNew(b.N)
+	b.bar = newPb(b.N)
 	b.rpt.statusCodeDist = make(map[int]int)
 	b.rpt.start = time.Now()
 }
@@ -127,4 +127,11 @@ requestLoop:
 	close(b.jobs)
 	wg.Wait()
 	close(b.results)
+}
+
+func newPb(size int) *pb.ProgressBar {
+	pb.Current = barChar
+	pb.BarStart = ""
+	pb.BarEnd = ""
+	return pb.StartNew(size)
 }

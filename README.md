@@ -36,7 +36,7 @@ boom supports custom headers, request body and basic authentication. It runs pro
 This is what happens when you run boom:
 
 	% boom -n 1000 -c 100 https://google.com
-	1000 / 1000 [=======================================================] 100.00 % 
+	1000 / 1000 ████████████████████████████████████████████████████████ 100.00 % 
 
 	Summary:
 	  Total:        21.1307 secs.
