@@ -68,8 +68,8 @@ func (b *Boom) run() {
 	var wg sync.WaitGroup
 	// Start throttler if rate limit is specified.
 	var throttle <-chan time.Time
-	if b.Q > 0 {
-		throttle = time.Tick(time.Duration(1e6/b.Q) * time.Microsecond)
+	if b.Qps > 0 {
+		throttle = time.Tick(time.Duration(1e6/b.Qps) * time.Microsecond)
 	}
 	// Start C workers to consume.
 	for i := 0; i < b.C; i++ {
@@ -79,7 +79,7 @@ func (b *Boom) run() {
 	// Send N requests.
 	b.jobs = make(chan bool, b.C)
 	for i := 0; i < b.N; i++ {
-		if b.Q > 0 {
+		if b.Qps > 0 {
 			<-throttle
 		}
 		b.jobs <- true

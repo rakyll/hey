@@ -112,7 +112,7 @@ func main() {
 		req.SetBasicAuth(matches[0][1], matches[0][2])
 	}
 
-	(&commands.Boom{N: n, C: c, Q: q, T: t, Req: req, AllowInsecure: *flagInsecure}).Run()
+	(&commands.Boom{N: n, C: c, Qps: q, Timeout: t, Req: req, AllowInsecure: *flagInsecure}).Run()
 }
 
 func usageAndExit() {

@@ -28,12 +28,19 @@ type result struct {
 }
 
 type Boom struct {
-	Req           *http.Request
-	N             int // Number of requests
-	C             int // Number of Concurrent workers
-	T             int // Timeout
-	Q             int // Rate limit (QPS)
-	Client        *http.Client
+	// Request to make.
+	Req *http.Request
+	// Total number of requests to make.
+	N int
+	// Concurrency level, the number of concurrent workers to run.
+	C int
+	// Timeout in seconds.
+	Timeout int
+	// Rate limit.
+	Qps int
+	// HTTP client to make the requests.
+	Client *http.Client
+	// Option to allow insecure TLS/SSL certificates.
 	AllowInsecure bool
 
 	results chan *result
