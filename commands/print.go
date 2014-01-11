@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	barChar = "█"
+	barChar = "∎"
 )
 
 type report struct {
