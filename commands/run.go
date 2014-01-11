@@ -21,16 +21,13 @@ import (
 	"net/http"
 	"sync"
 	"time"
-
-	"github.com/cheggaaa/pb"
 )
 
 func (b *Boom) Run() {
 	b.Req.Header.Add("cache-control", "no-cache")
 	b.init()
 	b.run()
-	b.teardown()
-	b.rpt.Print()
+	b.rpt.finalize(b.results)
 }
 
 func (b *Boom) init() {
@@ -40,98 +37,54 @@ func (b *Boom) init() {
 		}
 		b.Client = &http.Client{Transport: tr}
 	}
-	b.results = make(chan *result, b.C)
-	b.jobs = make(chan bool, b.C)
+	b.results = make(chan *result, b.N)
 	b.bar = newPb(b.N)
-	b.rpt.statusCodeDist = make(map[int]int)
-	b.rpt.start = time.Now()
-}
-
-func (b *Boom) teardown() {
-	b.bar.Finish()
-	b.rpt.finalize(b.N)
+	b.rpt = newReport(b.N)
 }
 
 func (b *Boom) worker(wg *sync.WaitGroup) {
 	defer wg.Done()
-workerLoop:
-	for {
-		select {
-		case _, chOpen := <-b.jobs:
-			if !chOpen {
-				break workerLoop
-			}
-			s := time.Now()
-			resp, err := b.Client.Do(b.Req)
-			code := 0
-			if resp != nil {
-				code = resp.StatusCode
-			}
-			b.results <- &result{
-				statusCode: code,
-				duration:   time.Now().Sub(s),
-				err:        err,
-			}
-
-			if resp != nil {
-				io.Copy(ioutil.Discard, resp.Body)
-				resp.Body.Close()
-			}
-
-			b.bar.Increment()
+	for _ = range b.jobs {
+		s := time.Now()
+		resp, err := b.Client.Do(b.Req)
+		code := 0
+		if resp != nil {
+			code = resp.StatusCode
 		}
-	}
-}
-
-func (b *Boom) collector() {
-	for {
-		select {
-		case r := <-b.results:
-			b.rpt.update(r)
+		b.results <- &result{
+			statusCode: code,
+			duration:   time.Now().Sub(s),
+			err:        err,
 		}
+		if resp != nil {
+			io.Copy(ioutil.Discard, resp.Body)
+			resp.Body.Close()
+		}
+		b.bar.Increment()
 	}
 }
 
 func (b *Boom) run() {
 	var wg sync.WaitGroup
-	// Start collector.
-	go b.collector()
 	// Start throttler if rate limit is specified.
 	var throttle <-chan time.Time
 	if b.Q > 0 {
 		throttle = time.Tick(time.Duration(1e6/b.Q) * time.Microsecond)
 	}
-	// Start timeout counter if time limit is specified.
-	var timeout <-chan time.Time
-	if b.T > 0 {
-		timeout = time.After(time.Duration(b.T) * time.Second)
-	}
-	// Start workers.
+	// Start C workers to consume.
 	for i := 0; i < b.C; i++ {
 		wg.Add(1)
 		go b.worker(&wg)
 	}
-	// Start sending requests.
-requestLoop:
+	// Send N requests.
+	b.jobs = make(chan bool, b.C)
 	for i := 0; i < b.N; i++ {
-		select {
-		default:
-			if b.Q > 0 {
-				<-throttle
-			}
-			b.jobs <- true
-		case <-timeout:
-			break requestLoop
+		if b.Q > 0 {
+			<-throttle
 		}
+		b.jobs <- true
 	}
 	close(b.jobs)
 	wg.Wait()
-	close(b.results)
-}
-
-func newPb(size int) *pb.ProgressBar {
-	pb.Current = barChar
-	pb.BarStart = ""
-	pb.BarEnd = ""
-	return pb.StartNew(size)
+	b.bar.Finish()
 }

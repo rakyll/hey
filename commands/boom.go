@@ -27,17 +27,6 @@ type result struct {
 	duration   time.Duration
 }
 
-type report struct {
-	total                     time.Duration
-	lats                      []float64
-	avgTotal                  float64
-	statusCodeDist            map[int]int
-	fastest, slowest, average float64
-	rps                       float64
-	start                     time.Time
-	end                       time.Time
-}
-
 type Boom struct {
 	Req           *http.Request
 	N             int // Number of requests
@@ -50,5 +39,12 @@ type Boom struct {
 	results chan *result
 	jobs    chan bool
 	bar     *pb.ProgressBar
-	rpt     report
+	rpt     *report
+}
+
+func newPb(size int) *pb.ProgressBar {
+	pb.Current = barChar
+	pb.BarStart = ""
+	pb.BarEnd = ""
+	return pb.StartNew(size)
 }

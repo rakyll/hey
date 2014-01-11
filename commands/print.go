@@ -25,20 +25,48 @@ const (
 	barChar = "█"
 )
 
-func (r *report) update(res *result) {
-	r.lats = append(r.lats, res.duration.Seconds())
-	r.statusCodeDist[res.statusCode]++
-	r.avgTotal += res.duration.Seconds()
+type report struct {
+	avgTotal float64
+	fastest  float64
+	slowest  float64
+	average  float64
+	rps      float64
+
+	start time.Time
+	end   time.Time
+	total time.Duration
+
+	statusCodeDist map[int]int
+	lats           []float64
 }
 
-func (r *report) finalize(totalReq int) {
-	r.end = time.Now()
-	r.total = r.end.Sub(r.start)
-	r.rps = float64(totalReq) / r.total.Seconds()
-	r.average = r.avgTotal / float64(totalReq)
+func newReport(size int) *report {
+	return &report{
+		statusCodeDist: make(map[int]int),
+		start:          time.Now(),
+	}
 }
 
-func (r *report) Print() {
+func (r *report) finalize(results chan *result) {
+	for {
+		select {
+		case res := <-results:
+			r.lats = append(r.lats, res.duration.Seconds())
+			r.avgTotal += res.duration.Seconds()
+			r.statusCodeDist[res.statusCode]++
+		default:
+			r.end = time.Now()
+			r.total = r.end.Sub(r.start)
+			r.rps = float64(len(r.lats)) / r.total.Seconds()
+			r.average = r.avgTotal / float64(len(r.lats))
+
+			r.print()
+			return
+		}
+	}
+}
+
+func (r *report) print() {
 	if len(r.lats) > 0 {
 		sort.Float64s(r.lats)
 		r.fastest = r.lats[0]
@@ -49,7 +77,6 @@ func (r *report) Print() {
 		fmt.Printf("  Fastest:\t%4.4f secs.\n", r.fastest)
 		fmt.Printf("  Average:\t%4.4f secs.\n", r.average)
 		fmt.Printf("  Requests/sec:\t%4.4f\n", r.rps)
-		fmt.Printf("  Speed index:\t%v\n", speedIndex(r.rps))
 		r.printStatusCodes()
 		r.printHistogram()
 		r.printLatencies()
@@ -115,17 +142,5 @@ func (r *report) printStatusCodes() {
 	fmt.Printf("\nStatus code distribution:\n")
 	for code, num := range r.statusCodeDist {
 		fmt.Printf("  [%d]\t%d responses\n", code, num)
-	}
-}
-
-func speedIndex(rps float64) string {
-	if rps > 500 {
-		return "Whoa, pretty neat"
-	} else if rps > 100 {
-		return "Pretty good"
-	} else if rps > 50 {
-		return "Meh"
-	} else {
-		return "Hahahaha"
 	}
 }
