@@ -93,7 +93,7 @@ func main() {
 	if *flagHeaders != "" {
 		headers := strings.Split(*flagHeaders, ";")
 		for _, h := range headers {
-			re := regexp.MustCompile("(\\w+):(\\w+)")
+			re := regexp.MustCompile("([\\w|-]+):(.+)")
 			matches := re.FindAllStringSubmatch(h, -1)
 			if len(matches) < 1 {
 				usageAndExit()
