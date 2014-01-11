@@ -49,7 +49,7 @@ func (b *Boom) init() {
 
 func (b *Boom) teardown() {
 	b.bar.Finish()
-	b.rpt.finalize(b)
+	b.rpt.finalize(b.N)
 }
 
 func (b *Boom) worker(wg *sync.WaitGroup) {

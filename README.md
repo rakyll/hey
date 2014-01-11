@@ -22,13 +22,16 @@ boom supports custom headers, request body and basic authentication. It runs pro
 	  -n	Number of requests to run.
 	  -c	Number of requests to run concurrently. Total number of requests cannot
 	  		be smaller than the concurency level.
+	  -q    Rate limit, in seconds (QPS).
+	  -t    Time limit in seconds. boom will stop after s seconds if specified.
 	
 	  -m	HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.
 	  -h	Custom HTTP headers, name1:value1;name2:value2.
 	  -d	HTTP request body.
-	  -t	Content-type, defaults to "text/html".
+	  -T	Content-type, defaults to "text/html".
 	  -a	Basic authentication, username:password.
 	  
+	  -allow-insecure	Allow bad/expired TLS/SSL certificates.  
 
 This is what happens when you run boom:
 
