@@ -18,7 +18,21 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 )
+
+func (r *report) update(res *result) {
+	r.lats = append(r.lats, res.duration.Seconds())
+	r.statusCodeDist[res.statusCode]++
+	r.avgTotal += res.duration.Seconds()
+}
+
+func (r *report) finalize(totalReq int) {
+	r.end = time.Now()
+	r.total = r.end.Sub(r.start)
+	r.rps = float64(totalReq) / r.total.Seconds()
+	r.average = r.avgTotal / float64(totalReq)
+}
 
 func (r *report) Print() {
 	if len(r.lats) > 0 {

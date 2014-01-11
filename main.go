@@ -29,14 +29,14 @@ var (
 	flagMethod   = flag.String("m", "GET", "")
 	flagHeaders  = flag.String("h", "", "")
 	flagD        = flag.String("d", "", "")
-	flagType     = flag.String("t", "text/html", "")
+	flagType     = flag.String("T", "text/html", "")
 	flagAuth     = flag.String("a", "", "")
 	flagInsecure = flag.Bool("allow-insecure", false, "")
 
 	flagC = flag.Int("c", 50, "")
 	flagN = flag.Int("n", 200, "")
 	flagQ = flag.Int("q", 0, "")
-	flagS = flag.Int("s", 0, "")
+	flagT = flag.Int("t", 0, "")
 )
 
 var usage = `Usage: boom [options...] <url>
@@ -46,12 +46,12 @@ Options:
   -c	Number of requests to run concurrently. Total number of requests cannot
   	be smaller than the concurency level.
   -q    Rate limit, in seconds (QPS).
-  -s    Time limit in seconds. boom will stop after s seconds if specified.
+  -t    Time limit in seconds. boom will stop after s seconds if specified.
 
   -m	HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.
   -h	Custom HTTP headers, name1:value1;name2:value2.
   -d	HTTP request body.
-  -t	Content-type, defaults to "text/html".
+  -T	Content-type, defaults to "text/html".
   -a	Basic authentication, username:password.
 
   -allow-insecure	Allow bad/expired TLS/SSL certificates.
@@ -71,7 +71,7 @@ func main() {
 	n := *flagN
 	c := *flagC
 	q := *flagQ
-	s := *flagS
+	t := *flagT
 
 	if n <= 0 || c <= 0 {
 		usageAndExit()
@@ -113,7 +113,7 @@ func main() {
 		req.SetBasicAuth(matches[0][1], matches[0][2])
 	}
 
-	(&commands.Boom{N: n, C: c, Q: q, S: s, Req: req, AllowInsecure: *flagInsecure}).Run()
+	(&commands.Boom{N: n, C: c, Q: q, T: t, Req: req, AllowInsecure: *flagInsecure}).Run()
 }
 
 func usageAndExit() {

@@ -44,16 +44,12 @@ func (b *Boom) init() {
 	b.jobs = make(chan bool, b.C)
 	b.bar = pb.StartNew(b.N)
 	b.rpt.statusCodeDist = make(map[int]int)
-	b.start = time.Now()
-	b.timedOut = false
+	b.rpt.start = time.Now()
 }
 
 func (b *Boom) teardown() {
-	b.end = time.Now()
-	b.rpt.total = b.end.Sub(b.start)
-	b.rpt.rps = float64(b.N) / b.rpt.total.Seconds()
-	b.rpt.average = b.rpt.avgTotal / float64(b.N)
 	b.bar.Finish()
+	b.rpt.finalize(b.N)
 }
 
 func (b *Boom) worker(wg *sync.WaitGroup) {
@@ -91,9 +87,7 @@ func (b *Boom) collector() {
 	for {
 		select {
 		case r := <-b.results:
-			b.rpt.lats = append(b.rpt.lats, r.duration.Seconds())
-			b.rpt.statusCodeDist[r.statusCode]++
-			b.rpt.avgTotal += r.duration.Seconds()
+			b.rpt.update(r)
 		}
 	}
 }
@@ -109,8 +103,8 @@ func (b *Boom) run() {
 	}
 	// Start timeout counter if time limit is specified.
 	var timeout <-chan time.Time
-	if b.S > 0 {
-		timeout = time.After(time.Duration(b.S) * time.Second)
+	if b.T > 0 {
+		timeout = time.After(time.Duration(b.T) * time.Second)
 	}
 	// Start workers.
 	for i := 0; i < b.C; i++ {
