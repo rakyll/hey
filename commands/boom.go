@@ -54,5 +54,6 @@ func newPb(size int) (bar *pb.ProgressBar) {
 	bar.Current = barChar
 	bar.BarStart = ""
 	bar.BarEnd = ""
+	bar.Start()
 	return
 }
