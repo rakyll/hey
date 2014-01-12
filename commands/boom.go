@@ -49,9 +49,10 @@ type Boom struct {
 	rpt     *report
 }
 
-func newPb(size int) *pb.ProgressBar {
-	pb.Current = barChar
-	pb.BarStart = ""
-	pb.BarEnd = ""
-	return pb.StartNew(size)
+func newPb(size int) (bar *pb.ProgressBar) {
+	bar = pb.New(size)
+	bar.Current = barChar
+	bar.BarStart = ""
+	bar.BarEnd = ""
+	return
 }
