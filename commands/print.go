@@ -32,34 +32,31 @@ type report struct {
 	average  float64
 	rps      float64
 
-	start time.Time
-	end   time.Time
-	total time.Duration
+	results chan *result
+	total   time.Duration
 
 	statusCodeDist map[int]int
 	lats           []float64
 }
 
-func newReport(size int) *report {
+func newReport(size int, results chan *result) *report {
 	return &report{
 		statusCodeDist: make(map[int]int),
-		start:          time.Now(),
+		results:        results,
 	}
 }
 
-func (r *report) finalize(results chan *result) {
+func (r *report) finalize(total time.Duration) {
 	for {
 		select {
-		case res := <-results:
+		case res := <-r.results:
 			r.lats = append(r.lats, res.duration.Seconds())
 			r.avgTotal += res.duration.Seconds()
 			r.statusCodeDist[res.statusCode]++
 		default:
-			r.end = time.Now()
-			r.total = r.end.Sub(r.start)
+			r.total = total
 			r.rps = float64(len(r.lats)) / r.total.Seconds()
 			r.average = r.avgTotal / float64(len(r.lats))
-
 			r.print()
 			return
 		}

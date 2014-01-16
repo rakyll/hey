@@ -38,15 +38,12 @@ type Boom struct {
 	Timeout int
 	// Rate limit.
 	Qps int
-	// HTTP client to make the requests.
-	Client *http.Client
 	// Option to allow insecure TLS/SSL certificates.
 	AllowInsecure bool
 
-	results chan *result
-	jobs    chan bool
 	bar     *pb.ProgressBar
 	rpt     *report
+	results chan *result
 }
 
 func newPb(size int) (bar *pb.ProgressBar) {
