@@ -18,7 +18,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cheggaaa/pb"
+	"github.com/rakyll/pb"
 )
 
 type result struct {
