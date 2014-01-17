@@ -83,11 +83,10 @@ func (r *report) print() {
 // Prints percentile latencies.
 func (r *report) printLatencies() {
 	pctls := []int{10, 25, 50, 75, 90, 95, 99}
-	// Sort the array
 	data := make([]float64, len(pctls))
 	j := 0
 	for i := 0; i < len(r.lats) && j < len(pctls); i++ {
-		current := (i + 1) * 100 / len(r.lats)
+		current := i * 100 / len(r.lats)
 		if current >= pctls[j] {
 			data[j] = r.lats[i]
 			j++
