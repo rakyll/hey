@@ -24,7 +24,7 @@ import (
 func (b *Boom) Run() {
 	b.results = make(chan *result, b.N)
 	b.bar = newPb(b.N)
-	b.rpt = newReport(b.N, b.results)
+	b.rpt = newReport(b.N, b.results, b.Output)
 	b.run()
 }
 

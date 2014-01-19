@@ -32,6 +32,7 @@ var (
 	flagType     = flag.String("T", "text/html", "")
 	flagAuth     = flag.String("a", "", "")
 	flagInsecure = flag.Bool("allow-insecure", false, "")
+	flagOutput   = flag.String("o", "txt", "")
 
 	flagC = flag.Int("c", 50, "")
 	flagN = flag.Int("n", 200, "")
@@ -55,6 +56,7 @@ Options:
 
   -allow-insecure	Allow bad/expired TLS/SSL certificates.
 
+  -o    Output type, one of txt, csv
 `
 
 func main() {
@@ -112,7 +114,11 @@ func main() {
 		req.SetBasicAuth(matches[0][1], matches[0][2])
 	}
 
-	(&commands.Boom{N: n, C: c, Qps: q, Timeout: t, Req: req, AllowInsecure: *flagInsecure}).Run()
+	if *flagOutput != "csv" && *flagOutput != "txt" {
+		usageAndExit()
+	}
+
+	(&commands.Boom{N: n, C: c, Qps: q, Timeout: t, Req: req, AllowInsecure: *flagInsecure, Output: *flagOutput}).Run()
 }
 
 func usageAndExit() {

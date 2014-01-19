@@ -37,12 +37,15 @@ type report struct {
 
 	statusCodeDist map[int]int
 	lats           []float64
+
+	output string
 }
 
-func newReport(size int, results chan *result) *report {
+func newReport(size int, results chan *result, output string) *report {
 	return &report{
 		statusCodeDist: make(map[int]int),
 		results:        results,
+		output:         output,
 	}
 }
 
@@ -66,17 +69,28 @@ func (r *report) finalize(total time.Duration) {
 func (r *report) print() {
 	if len(r.lats) > 0 {
 		sort.Float64s(r.lats)
-		r.fastest = r.lats[0]
-		r.slowest = r.lats[len(r.lats)-1]
-		fmt.Printf("\nSummary:\n")
-		fmt.Printf("  Total:\t%4.4f secs.\n", r.total.Seconds())
-		fmt.Printf("  Slowest:\t%4.4f secs.\n", r.slowest)
-		fmt.Printf("  Fastest:\t%4.4f secs.\n", r.fastest)
-		fmt.Printf("  Average:\t%4.4f secs.\n", r.average)
-		fmt.Printf("  Requests/sec:\t%4.4f\n", r.rps)
-		r.printStatusCodes()
-		r.printHistogram()
-		r.printLatencies()
+
+		if r.output == "txt" {
+			r.fastest = r.lats[0]
+			r.slowest = r.lats[len(r.lats)-1]
+			fmt.Printf("\nSummary:\n")
+			fmt.Printf("  Total:\t%4.4f secs.\n", r.total.Seconds())
+			fmt.Printf("  Slowest:\t%4.4f secs.\n", r.slowest)
+			fmt.Printf("  Fastest:\t%4.4f secs.\n", r.fastest)
+			fmt.Printf("  Average:\t%4.4f secs.\n", r.average)
+			fmt.Printf("  Requests/sec:\t%4.4f\n", r.rps)
+			r.printStatusCodes()
+			r.printHistogram()
+			r.printLatencies()
+		} else if r.output == "csv" {
+			r.printCSV()
+		}
+	}
+}
+
+func (r *report) printCSV() {
+	for i := 0; i < 100; i++ {
+		fmt.Printf("%v,%4.4f\n", i+1, r.lats[i*len(r.lats)/100])
 	}
 }
 
