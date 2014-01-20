@@ -70,7 +70,7 @@ func (r *report) print() {
 	if len(r.lats) > 0 {
 		sort.Float64s(r.lats)
 
-		if r.output == "txt" {
+		if r.output == "" {
 			r.fastest = r.lats[0]
 			r.slowest = r.lats[len(r.lats)-1]
 			fmt.Printf("\nSummary:\n")
