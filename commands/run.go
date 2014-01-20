@@ -44,7 +44,7 @@ func (b *Boom) worker(ch chan bool) {
 			// cleanup body, so the socket can be reusable
 			resp.Body.Close()
 		}
-		if b.Output == "" {
+		if b.bar != nil {
 			b.bar.Increment()
 		}
 		b.results <- &result{
@@ -84,7 +84,7 @@ func (b *Boom) run() {
 	close(jobs)
 
 	wg.Wait()
-	if b.Output == "" {
+	if b.bar != nil {
 		b.bar.Finish()
 	}
 	b.rpt.finalize(time.Now().Sub(start))

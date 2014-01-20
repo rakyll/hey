@@ -70,27 +70,27 @@ func (r *report) print() {
 	if len(r.lats) > 0 {
 		sort.Float64s(r.lats)
 
-		if r.output == "" {
-			r.fastest = r.lats[0]
-			r.slowest = r.lats[len(r.lats)-1]
-			fmt.Printf("\nSummary:\n")
-			fmt.Printf("  Total:\t%4.4f secs.\n", r.total.Seconds())
-			fmt.Printf("  Slowest:\t%4.4f secs.\n", r.slowest)
-			fmt.Printf("  Fastest:\t%4.4f secs.\n", r.fastest)
-			fmt.Printf("  Average:\t%4.4f secs.\n", r.average)
-			fmt.Printf("  Requests/sec:\t%4.4f\n", r.rps)
-			r.printStatusCodes()
-			r.printHistogram()
-			r.printLatencies()
-		} else if r.output == "csv" {
+		if r.output == "csv" {
 			r.printCSV()
+			return
 		}
+		r.fastest = r.lats[0]
+		r.slowest = r.lats[len(r.lats)-1]
+		fmt.Printf("\nSummary:\n")
+		fmt.Printf("  Total:\t%4.4f secs.\n", r.total.Seconds())
+		fmt.Printf("  Slowest:\t%4.4f secs.\n", r.slowest)
+		fmt.Printf("  Fastest:\t%4.4f secs.\n", r.fastest)
+		fmt.Printf("  Average:\t%4.4f secs.\n", r.average)
+		fmt.Printf("  Requests/sec:\t%4.4f\n", r.rps)
+		r.printStatusCodes()
+		r.printHistogram()
+		r.printLatencies()
 	}
 }
 
 func (r *report) printCSV() {
-	for i := 0; i < 100; i++ {
-		fmt.Printf("%v,%4.4f\n", i+1, r.lats[i*len(r.lats)/100])
+	for i, val := range r.lats {
+		fmt.Printf("%v,%4.4f\n", i+1, val)
 	}
 }
 
