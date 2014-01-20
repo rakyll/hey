@@ -23,7 +23,9 @@ import (
 
 func (b *Boom) Run() {
 	b.results = make(chan *result, b.N)
-	b.bar = newPb(b.N)
+	if b.Output == "" {
+		b.bar = newPb(b.N)
+	}
 	b.rpt = newReport(b.N, b.results, b.Output)
 	b.run()
 }
@@ -42,7 +44,9 @@ func (b *Boom) worker(ch chan bool) {
 			// cleanup body, so the socket can be reusable
 			resp.Body.Close()
 		}
-		b.bar.Increment()
+		if b.Output == "" {
+			b.bar.Increment()
+		}
 		b.results <- &result{
 			statusCode: code,
 			duration:   time.Now().Sub(s),
@@ -80,6 +84,8 @@ func (b *Boom) run() {
 	close(jobs)
 
 	wg.Wait()
-	b.bar.Finish()
+	if b.Output == "" {
+		b.bar.Finish()
+	}
 	b.rpt.finalize(time.Now().Sub(start))
 }
