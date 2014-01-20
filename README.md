@@ -15,23 +15,26 @@ Simple as it takes to type the following command:
 ## Usage
 
 boom supports custom headers, request body and basic authentication. It runs provided number of requests in the provided concurrency level, and prints stats.
-    
-    Usage: boom [options...] <url>
-	
-	Options:
-	  -n	Number of requests to run.
-	  -c	Number of requests to run concurrently. Total number of requests cannot
-	  		be smaller than the concurency level.
-	  -q    Rate limit, in seconds (QPS).
-	  -t    Time limit in seconds. boom will stop after s seconds if specified.
-	
-	  -m	HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.
-	  -h	Custom HTTP headers, name1:value1;name2:value2.
-	  -d	HTTP request body.
-	  -T	Content-type, defaults to "text/html".
-	  -a	Basic authentication, username:password.
-	  
-	  -allow-insecure	Allow bad/expired TLS/SSL certificates.  
+~~~    
+Usage: boom [options...] <url>
+
+Options:
+  -n  Number of requests to run.
+  -c  Number of requests to run concurrently. Total number of requests cannot
+      be smaller than the concurency level.
+  -q  Rate limit, in seconds (QPS).
+  -o  Output type. If none provided, a summary is printed.
+      "csv" is the only supported alternative. Dumps the response
+      metrics in comma-seperated values format.
+
+  -m  HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.
+  -h  Custom HTTP headers, name1:value1;name2:value2.
+  -d  HTTP request body.
+  -T  Content-type, defaults to "text/html".
+  -a  Basic authentication, username:password.
+
+  -allow-insecure Allow bad/expired TLS/SSL certificates. 
+~~~
 
 This is what happens when you run boom:
 
