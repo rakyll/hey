@@ -41,6 +41,9 @@ type Boom struct {
 	// Option to allow insecure TLS/SSL certificates.
 	AllowInsecure bool
 
+	// Output type
+	Output string
+
 	bar     *pb.ProgressBar
 	rpt     *report
 	results chan *result
