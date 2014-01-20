@@ -18,6 +18,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	gourl "net/url"
 	"os"
 	"regexp"
 	"strings"
@@ -58,7 +59,6 @@ Options:
   -a  Basic authentication, username:password.
 
   -allow-insecure Allow bad/expired TLS/SSL certificates.
-
 `
 
 func main() {
@@ -68,7 +68,7 @@ func main() {
 
 	flag.Parse()
 	if flag.NArg() < 1 {
-		usageAndExit()
+		usageAndExit("")
 	}
 
 	n := *flagN
@@ -77,7 +77,7 @@ func main() {
 	t := *flagT
 
 	if n <= 0 || c <= 0 {
-		usageAndExit()
+		usageAndExit("n and c cannot be smaller than 1.")
 	}
 
 	// If total number is smaller than concurrency level,
@@ -88,8 +88,12 @@ func main() {
 
 	url := flag.Args()[0]
 	method := strings.ToUpper(*flagMethod)
-	req, _ := http.NewRequest(method, url, strings.NewReader(*flagD))
 
+	if _, err := gourl.ParseRequestURI(url); err != nil {
+		usageAndExit(err.Error())
+	}
+
+	req, _ := http.NewRequest(method, url, strings.NewReader(*flagD))
 	// set content-type
 	req.Header.Set("Content-Type", *flagType)
 
@@ -100,7 +104,7 @@ func main() {
 			re := regexp.MustCompile("([\\w|-]+):(.+)")
 			matches := re.FindAllStringSubmatch(h, -1)
 			if len(matches) < 1 {
-				usageAndExit()
+				usageAndExit("")
 			}
 			req.Header.Set(matches[0][1], matches[0][2])
 		}
@@ -111,19 +115,31 @@ func main() {
 		re := regexp.MustCompile("(\\w+):(\\w+)")
 		matches := re.FindAllStringSubmatch(*flagAuth, -1)
 		if len(matches) < 1 {
-			usageAndExit()
+			usageAndExit("")
 		}
 		req.SetBasicAuth(matches[0][1], matches[0][2])
 	}
 
 	if *flagOutput != "csv" && *flagOutput != "" {
-		usageAndExit()
+		usageAndExit("Invalid output type.")
 	}
 
-	(&commands.Boom{N: n, C: c, Qps: q, Timeout: t, Req: req, AllowInsecure: *flagInsecure, Output: *flagOutput}).Run()
+	(&commands.Boom{
+		N:             n,
+		C:             c,
+		Qps:           q,
+		Timeout:       t,
+		Req:           req,
+		AllowInsecure: *flagInsecure,
+		Output:        *flagOutput}).Run()
 }
 
-func usageAndExit() {
+func usageAndExit(message string) {
+	if message != "" {
+		fmt.Fprintf(os.Stderr, message)
+		fmt.Fprintf(os.Stderr, "\n\n")
+	}
 	flag.Usage()
+	fmt.Fprintf(os.Stderr, "\n")
 	os.Exit(1)
 }
