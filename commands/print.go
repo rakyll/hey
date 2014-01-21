@@ -73,13 +73,14 @@ func (r *report) finalize(total time.Duration) {
 }
 
 func (r *report) print() {
-	if len(r.lats) > 0 {
-		sort.Float64s(r.lats)
+	sort.Float64s(r.lats)
 
-		if r.output == "csv" {
-			r.printCSV()
-			return
-		}
+	if r.output == "csv" {
+		r.printCSV()
+		return
+	}
+
+	if len(r.lats) > 0 {
 		r.fastest = r.lats[0]
 		r.slowest = r.lats[len(r.lats)-1]
 		fmt.Printf("\nSummary:\n")
@@ -89,9 +90,12 @@ func (r *report) print() {
 		fmt.Printf("  Average:\t%4.4f secs.\n", r.average)
 		fmt.Printf("  Requests/sec:\t%4.4f\n", r.rps)
 		r.printStatusCodes()
-		r.printErrors()
 		r.printHistogram()
 		r.printLatencies()
+	}
+
+	if len(r.errors) > 0 {
+		r.printErrors()
 	}
 }
 
@@ -163,10 +167,8 @@ func (r *report) printStatusCodes() {
 }
 
 func (r *report) printErrors() {
-	if len(r.errors) > 0 {
-		fmt.Printf("\nError distribution:\n")
-		for error, num := range r.errors {
-			fmt.Printf("  [%s]\t%d responses\n", error, num)
-		}
+	fmt.Printf("\nError distribution:\n")
+	for error, num := range r.errors {
+		fmt.Printf("  [%d]\t%s\n", num, error)
 	}
 }
