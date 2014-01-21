@@ -37,6 +37,7 @@ type report struct {
 
 	statusCodeDist map[int]int
 	lats           []float64
+	errors         map[string]int
 
 	output string
 }
@@ -46,6 +47,7 @@ func newReport(size int, results chan *result, output string) *report {
 		statusCodeDist: make(map[int]int),
 		results:        results,
 		output:         output,
+		errors:         make(map[string]int),
 	}
 }
 
@@ -53,9 +55,13 @@ func (r *report) finalize(total time.Duration) {
 	for {
 		select {
 		case res := <-r.results:
-			r.lats = append(r.lats, res.duration.Seconds())
-			r.avgTotal += res.duration.Seconds()
-			r.statusCodeDist[res.statusCode]++
+			if res.err != nil {
+				r.errors[res.err.Error()]++
+			} else {
+				r.lats = append(r.lats, res.duration.Seconds())
+				r.avgTotal += res.duration.Seconds()
+				r.statusCodeDist[res.statusCode]++
+			}
 		default:
 			r.total = total
 			r.rps = float64(len(r.lats)) / r.total.Seconds()
@@ -83,6 +89,7 @@ func (r *report) print() {
 		fmt.Printf("  Average:\t%4.4f secs.\n", r.average)
 		fmt.Printf("  Requests/sec:\t%4.4f\n", r.rps)
 		r.printStatusCodes()
+		r.printErrors()
 		r.printHistogram()
 		r.printLatencies()
 	}
@@ -152,5 +159,14 @@ func (r *report) printStatusCodes() {
 	fmt.Printf("\nStatus code distribution:\n")
 	for code, num := range r.statusCodeDist {
 		fmt.Printf("  [%d]\t%d responses\n", code, num)
+	}
+}
+
+func (r *report) printErrors() {
+	if len(r.errors) > 0 {
+		fmt.Printf("\nError distribution:\n")
+		for error, num := range r.errors {
+			fmt.Printf("  [%s]\t%d responses\n", error, num)
+		}
 	}
 }
