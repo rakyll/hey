@@ -47,6 +47,8 @@ type Boom struct {
 	bar     *pb.ProgressBar
 	rpt     *report
 	results chan *result
+
+	ServerName string
 }
 
 func newPb(size int) (bar *pb.ProgressBar) {

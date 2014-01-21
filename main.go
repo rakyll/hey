@@ -17,6 +17,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net"
 	"net/http"
 	gourl "net/url"
 	"os"
@@ -89,13 +90,27 @@ func main() {
 	url := flag.Args()[0]
 	method := strings.ToUpper(*flagMethod)
 
-	if _, err := gourl.ParseRequestURI(url); err != nil {
+	uri, err := gourl.ParseRequestURI(url)
+	if err != nil {
 		usageAndExit(err.Error())
 	}
 
-	req, _ := http.NewRequest(method, url, strings.NewReader(*flagD))
+	hostParts := strings.Split(uri.Host, ":")
+	servername := hostParts[0]
+
+	addrs, err := net.LookupHost(hostParts[0])
+	if err != nil {
+		usageAndExit("Hostname " + uri.Host + " is invalid")
+	}
+
+	hostParts[0] = addrs[0]
+	uri.Host = strings.Join(hostParts, ":")
+
+	req, _ := http.NewRequest(method, uri.String(), strings.NewReader(*flagD))
 	// set content-type
 	req.Header.Set("Content-Type", *flagType)
+
+	req.Host = servername
 
 	// set any other additional headers
 	if *flagHeaders != "" {
@@ -131,7 +146,9 @@ func main() {
 		Timeout:       t,
 		Req:           req,
 		AllowInsecure: *flagInsecure,
-		Output:        *flagOutput}).Run()
+		Output:        *flagOutput,
+		ServerName:    servername,
+	}).Run()
 }
 
 func usageAndExit(message string) {
