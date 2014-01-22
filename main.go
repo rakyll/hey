@@ -146,9 +146,7 @@ func main() {
 		Timeout:       t,
 		Req:           req,
 		AllowInsecure: *flagInsecure,
-		Output:        *flagOutput,
-		ServerName:    servername,
-	}).Run()
+		Output:        *flagOutput}).Run()
 }
 
 func usageAndExit(message string) {
