@@ -95,22 +95,10 @@ func main() {
 		usageAndExit(err.Error())
 	}
 
-	hostParts := strings.Split(uri.Host, ":")
-	servername := hostParts[0]
+	req := newReq(method, uri, flagD)
 
-	addrs, err := net.LookupHost(hostParts[0])
-	if err != nil {
-		usageAndExit("Hostname " + uri.Host + " is invalid")
-	}
-
-	hostParts[0] = addrs[0]
-	uri.Host = strings.Join(hostParts, ":")
-
-	req, _ := http.NewRequest(method, uri.String(), strings.NewReader(*flagD))
 	// set content-type
 	req.Header.Set("Content-Type", *flagType)
-
-	req.Host = servername
 
 	// set any other additional headers
 	if *flagHeaders != "" {
@@ -147,6 +135,25 @@ func main() {
 		Req:           req,
 		AllowInsecure: *flagInsecure,
 		Output:        *flagOutput}).Run()
+}
+
+func newReq(method string, uri *gourl.URL, flagD *string) *http.Request {
+	hostParts := strings.Split(uri.Host, ":")
+	servername := hostParts[0]
+
+	addrs, err := net.LookupHost(hostParts[0])
+	if err != nil {
+		usageAndExit("Hostname " + uri.Host + " is invalid")
+	}
+
+	hostParts[0] = addrs[0]
+	uri.Host = strings.Join(hostParts, ":")
+
+	req, _ := http.NewRequest(method, uri.String(), strings.NewReader(*flagD))
+
+	req.Host = servername
+
+	return req
 }
 
 func usageAndExit(message string) {
