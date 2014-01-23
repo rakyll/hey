@@ -62,6 +62,23 @@ Options:
   -allow-insecure Allow bad/expired TLS/SSL certificates.
 `
 
+// Default DNS resolver.
+var defaultDnsResolver dnsResolver = &netDnsResolver{}
+
+// DNS resolver interface.
+type dnsResolver interface {
+	Lookup(domain string) (addr []string, err error)
+}
+
+// A DNS resolver based on net.LookupHost.
+type netDnsResolver struct{}
+
+// Looks up for the resolved IP addresses of
+// the provided domain.
+func (*netDnsResolver) Lookup(domain string) (addr []string, err error) {
+	return net.LookupHost(domain)
+}
+
 func main() {
 	flag.Usage = func() {
 		fmt.Fprint(os.Stderr, usage)
@@ -157,7 +174,7 @@ func newURL(url string) (*gourl.URL, string) {
 		serverName = uri.Host
 	}
 
-	addrs, err := net.LookupHost(serverName)
+	addrs, err := defaultDnsResolver.Lookup(serverName)
 	if err != nil {
 		usageAndExit("Hostname " + serverName + " cannot be resolved")
 	}
