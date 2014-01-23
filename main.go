@@ -138,17 +138,22 @@ func main() {
 }
 
 func newReq(method string, uri *gourl.URL, flagD *string) *http.Request {
-	hostParts := strings.Split(uri.Host, ":")
-	servername := hostParts[0]
+	servername, port, err := net.SplitHostPort(uri.Host)
+	if err != nil {
+		servername = uri.Host
+		port = ""
+	}
 
-	addrs, err := net.LookupHost(hostParts[0])
+	addrs, err := net.LookupHost(servername)
 	if err != nil {
 		usageAndExit("Hostname " + uri.Host + " is invalid")
 	}
 
-	hostParts[0] = addrs[0]
-	uri.Host = strings.Join(hostParts, ":")
-
+	if port != "" {
+		uri.Host = net.JoinHostPort(addrs[0], port)
+	} else {
+		uri.Host = addrs[0]
+	}
 	req, _ := http.NewRequest(method, uri.String(), strings.NewReader(*flagD))
 
 	req.Host = servername
