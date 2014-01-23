@@ -176,7 +176,7 @@ func newURL(url string) (*gourl.URL, string) {
 
 	addrs, err := defaultDnsResolver.Lookup(serverName)
 	if err != nil {
-		usageAndExit("Hostname " + serverName + " cannot be resolved")
+		usageAndExit(err.Error())
 	}
 
 	if port != "" {
