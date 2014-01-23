@@ -32,7 +32,7 @@ func (b *Boom) Run() {
 
 func (b *Boom) worker(ch chan bool) {
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: b.AllowInsecure, ServerName: b.Req.Host},
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: b.AllowInsecure, ServerName: b.OrigServerName},
 	}
 	client := &http.Client{Transport: tr}
 	for _ = range ch {

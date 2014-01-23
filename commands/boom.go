@@ -31,6 +31,9 @@ type result struct {
 type Boom struct {
 	// Request to make.
 	Req *http.Request
+	// Req.Host is an resolved IP. TLS/SSL handshakes may require
+	// the original server name, keep it to initate the TLS client.
+	OrigServerName string
 	// Total number of requests to make.
 	N int
 	// Concurrency level, the number of concurrent workers to run.
