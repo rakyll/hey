@@ -26,10 +26,17 @@ func (r *mockDnsResolver) Lookup(host string) ([]string, error) {
 	return []string{r.Addr}, nil
 }
 
+func TestParseUrl(t *testing.T) {
+	defaultDnsResolver = &mockDnsResolver{Addr: "2a00:1450:400a:806::1007"}
+	u, _ := newURL("http://google.com:80/path/to/resource?q=rawquery")
+	if u.String() != "http://[2a00:1450:400a:806::1007]:80/path/to/resource?q=rawquery" {
+		t.Errorf("Problem during url parsing, %v is found.", u)
+	}
+}
+
 func TestParseUrl_IPv4(t *testing.T) {
 	defaultDnsResolver = &mockDnsResolver{Addr: "127.0.0.1"}
 	u, s := newURL("http://google.com")
-	t.Log(u.String())
 	if s != "google.com" {
 		t.Errorf("Original server name doesn't match with google.com, %v is found.", s)
 	}
