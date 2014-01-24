@@ -55,9 +55,7 @@ type Boom struct {
 
 func newPb(size int) (bar *pb.ProgressBar) {
 	bar = pb.New(size)
-	bar.Current = barChar
-	bar.BarStart = ""
-	bar.BarEnd = ""
+	bar.Format("Bom !")
 	bar.Start()
 	return
 }
