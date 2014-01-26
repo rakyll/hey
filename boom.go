@@ -178,15 +178,18 @@ func newURL(url string) (*gourl.URL, string) {
 	if err != nil {
 		usageAndExit(err.Error())
 	}
-
+	ip := addrs[0]
 	if port != "" {
 		// join automatically puts square brackets around the
 		// ipv6 IPs.
-		uri.Host = net.JoinHostPort(addrs[0], port)
+		uri.Host = net.JoinHostPort(ip, port)
 	} else {
+		uri.Host = ip
 		// square brackets are required for ipv6 IPs.
 		// otherwise, net.Dial fails with a parsing error.
-		uri.Host = fmt.Sprintf("[%s]", addrs[0])
+		if strings.Contains(ip, ":") {
+			uri.Host = fmt.Sprintf("[%s]", ip)
+		}
 	}
 	return uri, serverName
 }

@@ -40,7 +40,7 @@ func TestParseUrl_IPv4(t *testing.T) {
 	if s != "google.com" {
 		t.Errorf("Original server name doesn't match with google.com, %v is found.", s)
 	}
-	if u.String() != "http://[127.0.0.1]" {
+	if u.String() != "http://127.0.0.1" {
 		t.Errorf("URL is expected to be http://127.0.0.1, %v is found.", u)
 	}
 }
