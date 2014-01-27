@@ -17,6 +17,7 @@ package commands
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/rakyll/pb"
@@ -28,12 +29,31 @@ type result struct {
 	duration   time.Duration
 }
 
+type ReqOpts struct {
+	Method   string
+	Url      string
+	Header   http.Header
+	Body     string
+	Username string
+	Password string
+	// Request host is an resolved IP. TLS/SSL handshakes may require
+	// the original server name, keep it to initate the TLS client.
+	ServerName string
+}
+
+// Creates a req object from req options
+func (r *ReqOpts) Request() *http.Request {
+	req, _ := http.NewRequest(r.Method, r.Url, strings.NewReader(r.Body))
+	req.Header = r.Header
+	if r.Username != "" && r.Password != "" {
+		req.SetBasicAuth(r.Username, r.Password)
+	}
+	return req
+}
+
 type Boom struct {
 	// Request to make.
-	Req *http.Request
-	// Req.Host is an resolved IP. TLS/SSL handshakes may require
-	// the original server name, keep it to initate the TLS client.
-	OrigServerName string
+	Req *ReqOpts
 	// Total number of requests to make.
 	N int
 	// Concurrency level, the number of concurrent workers to run.

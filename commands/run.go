@@ -30,14 +30,14 @@ func (b *Boom) Run() {
 	b.run()
 }
 
-func (b *Boom) worker(ch chan bool) {
+func (b *Boom) worker(ch chan *http.Request) {
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: b.AllowInsecure, ServerName: b.OrigServerName},
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: b.AllowInsecure, ServerName: b.Req.ServerName},
 	}
 	client := &http.Client{Transport: tr}
-	for _ = range ch {
+	for req := range ch {
 		s := time.Now()
-		resp, err := client.Do(b.Req)
+		resp, err := client.Do(req)
 		code := 0
 		if resp != nil {
 			code = resp.StatusCode
@@ -65,7 +65,7 @@ func (b *Boom) run() {
 	}
 
 	start := time.Now()
-	jobs := make(chan bool, b.N)
+	jobs := make(chan *http.Request, b.N)
 	// Start workers.
 	for i := 0; i < b.C; i++ {
 		go func() {
@@ -79,7 +79,7 @@ func (b *Boom) run() {
 		if b.Qps > 0 {
 			<-throttle
 		}
-		jobs <- true
+		jobs <- b.Req.Request()
 	}
 	close(jobs)
 

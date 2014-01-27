@@ -15,6 +15,7 @@
 package commands
 
 import (
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -31,11 +32,13 @@ func TestN(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(handler))
 	defer server.Close()
 
-	req, _ := http.NewRequest("GET", server.URL, nil)
 	boom := &Boom{
-		Req: req,
-		N:   20,
-		C:   2,
+		Req: &ReqOpts{
+			Method: "GET",
+			Url:    server.URL,
+		},
+		N: 20,
+		C: 2,
 	}
 	boom.Run()
 	if count != 20 {
@@ -52,9 +55,11 @@ func TestQps(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(handler))
 	defer server.Close()
 
-	req, _ := http.NewRequest("GET", server.URL, nil)
 	boom := &Boom{
-		Req: req,
+		Req: &ReqOpts{
+			Method: "GET",
+			Url:    server.URL,
+		},
 		N:   20,
 		C:   2,
 		Qps: 1,
@@ -63,6 +68,38 @@ func TestQps(t *testing.T) {
 	time.AfterFunc(time.Second, func() {
 		if count > 1 {
 			t.Errorf("Expected to boom 1 times, found %v", count)
+		}
+		wg.Done()
+	})
+	go boom.Run()
+	wg.Wait()
+}
+
+func TestBody(t *testing.T) {
+	var wg sync.WaitGroup
+	var count int64
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		body, _ := ioutil.ReadAll(r.Body)
+		if string(body) == "Body" {
+			atomic.AddInt64(&count, int64(1))
+		}
+	}
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+
+	boom := &Boom{
+		Req: &ReqOpts{
+			Method: "POST",
+			Url:    server.URL,
+			Body:   "Body",
+		},
+		N: 10,
+		C: 1,
+	}
+	wg.Add(1)
+	time.AfterFunc(time.Second, func() {
+		if count != 10 {
+			t.Errorf("Expected to boom 10 times, found %v", count)
 		}
 		wg.Done()
 	})

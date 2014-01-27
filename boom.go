@@ -104,15 +104,19 @@ func main() {
 		n = c
 	}
 
-	url := flag.Args()[0]
-	method := strings.ToUpper(*flagMethod)
+	var (
+		url, method, serverName string
+		// Username and password for basic auth
+		username, password string
+		// request headers
+		header http.Header = make(http.Header)
+	)
 
-	ipResolvedUrl, serverName := newURL(url)
-	req, _ := http.NewRequest(
-		method, ipResolvedUrl.String(), strings.NewReader(*flagD))
+	method = strings.ToUpper(*flagMethod)
+	url, serverName = resolveUrl(flag.Args()[0])
+
 	// set content-type
-	req.Header.Set("Content-Type", *flagType)
-
+	header.Set("Content-Type", *flagType)
 	// set any other additional headers
 	if *flagHeaders != "" {
 		headers := strings.Split(*flagHeaders, ";")
@@ -122,7 +126,7 @@ func main() {
 			if len(matches) < 1 {
 				usageAndExit("")
 			}
-			req.Header.Set(matches[0][1], matches[0][2])
+			header.Set(matches[0][1], matches[0][2])
 		}
 	}
 
@@ -133,7 +137,8 @@ func main() {
 		if len(matches) < 1 {
 			usageAndExit("")
 		}
-		req.SetBasicAuth(matches[0][1], matches[0][2])
+		username = matches[0][1]
+		password = matches[0][2]
 	}
 
 	if *flagOutput != "csv" && *flagOutput != "" {
@@ -141,14 +146,21 @@ func main() {
 	}
 
 	(&commands.Boom{
-		N:              n,
-		C:              c,
-		Qps:            q,
-		Timeout:        t,
-		Req:            req,
-		OrigServerName: serverName,
-		AllowInsecure:  *flagInsecure,
-		Output:         *flagOutput}).Run()
+		Req: &commands.ReqOpts{
+			Method:     method,
+			Url:        url,
+			Body:       *flagD,
+			Header:     header,
+			Username:   username,
+			Password:   password,
+			ServerName: serverName,
+		},
+		N:             n,
+		C:             c,
+		Qps:           q,
+		Timeout:       t,
+		AllowInsecure: *flagInsecure,
+		Output:        *flagOutput}).Run()
 }
 
 // Replaces host with an IP and returns the provided
@@ -163,7 +175,7 @@ func main() {
 // <schema>://google.com[:port]
 // <schema>://173.194.116.73[:port]
 // <schema>://\[2a00:1450:400a:806::1007\][:port]
-func newURL(url string) (*gourl.URL, string) {
+func resolveUrl(url string) (string, string) {
 	uri, err := gourl.ParseRequestURI(url)
 	if err != nil {
 		usageAndExit(err.Error())
@@ -191,7 +203,7 @@ func newURL(url string) (*gourl.URL, string) {
 			uri.Host = fmt.Sprintf("[%s]", ip)
 		}
 	}
-	return uri, serverName
+	return uri.String(), serverName
 }
 
 func usageAndExit(message string) {

@@ -28,52 +28,52 @@ func (r *mockDnsResolver) Lookup(host string) ([]string, error) {
 
 func TestParseUrl(t *testing.T) {
 	defaultDnsResolver = &mockDnsResolver{Addr: "2a00:1450:400a:806::1007"}
-	u, _ := newURL("http://google.com:80/path/to/resource?q=rawquery")
-	if u.String() != "http://[2a00:1450:400a:806::1007]:80/path/to/resource?q=rawquery" {
+	u, _ := resolveUrl("http://google.com:80/path/to/resource?q=rawquery")
+	if u != "http://[2a00:1450:400a:806::1007]:80/path/to/resource?q=rawquery" {
 		t.Errorf("Problem during url parsing, %v is found.", u)
 	}
 }
 
 func TestParseUrl_IPv4(t *testing.T) {
 	defaultDnsResolver = &mockDnsResolver{Addr: "127.0.0.1"}
-	u, s := newURL("http://google.com")
+	u, s := resolveUrl("http://google.com")
 	if s != "google.com" {
 		t.Errorf("Original server name doesn't match with google.com, %v is found.", s)
 	}
-	if u.String() != "http://127.0.0.1" {
+	if u != "http://127.0.0.1" {
 		t.Errorf("URL is expected to be http://127.0.0.1, %v is found.", u)
 	}
 }
 
 func TestParseUrl_IPv4AndPort(t *testing.T) {
 	defaultDnsResolver = &mockDnsResolver{Addr: "127.0.0.1"}
-	u, s := newURL("http://google.com:80")
+	u, s := resolveUrl("http://google.com:80")
 	if s != "google.com" {
 		t.Errorf("Original server name doesn't match with google.com, %v is found.", s)
 	}
-	if u.String() != "http://127.0.0.1:80" {
+	if u != "http://127.0.0.1:80" {
 		t.Errorf("URL is expected to be http://127.0.0.1, %v is found.", u)
 	}
 }
 
 func TestParseUrl_IPv6(t *testing.T) {
 	defaultDnsResolver = &mockDnsResolver{Addr: "2a00:1450:400a:806::1007"}
-	u, s := newURL("http://google.com")
+	u, s := resolveUrl("http://google.com")
 	if s != "google.com" {
 		t.Errorf("Original server name doesn't match with google.com, %v is found.", s)
 	}
-	if u.String() != "http://[2a00:1450:400a:806::1007]" {
+	if u != "http://[2a00:1450:400a:806::1007]" {
 		t.Errorf("URL is expected to be http://[2a00:1450:400a:806::1007], %v is found.", u)
 	}
 }
 
 func TestParseUrl_IPv6AndPort(t *testing.T) {
 	defaultDnsResolver = &mockDnsResolver{Addr: "2a00:1450:400a:806::1007"}
-	u, s := newURL("http://google.com:80")
+	u, s := resolveUrl("http://google.com:80")
 	if s != "google.com" {
 		t.Errorf("Original server name doesn't match with google.com, %v is found.", s)
 	}
-	if u.String() != "http://[2a00:1450:400a:806::1007]:80" {
+	if u != "http://[2a00:1450:400a:806::1007]:80" {
 		t.Errorf("URL is expected to be http://[2a00:1450:400a:806::1007]:80, %v is found.", u)
 	}
 }
