@@ -75,8 +75,48 @@ func TestQps(t *testing.T) {
 	wg.Wait()
 }
 
+func TestRequest(t *testing.T) {
+	var uri, contentType, some, method, auth string
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		uri = r.RequestURI
+		method = r.Method
+		contentType = r.Header.Get("Content-type")
+		some = r.Header.Get("X-some")
+		auth = r.Header.Get("Authorization")
+	}
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+
+	header := make(http.Header)
+	header.Add("Content-type", "text/html")
+	header.Add("X-some", "value")
+	boom := &Boom{
+		Req: &ReqOpts{
+			Method:   "PUT",
+			Url:      server.URL,
+			Header:   header,
+			Username: "username",
+			Password: "password",
+		},
+		N: 1,
+		C: 1,
+	}
+	boom.Run()
+	if uri != "/" {
+		t.Errorf("Uri is expected to be /, %v is found", uri)
+	}
+	if contentType != "text/html" {
+		t.Errorf("Content type is expected to be text/html, %v is found", contentType)
+	}
+	if some != "value" {
+		t.Errorf("X-some header is expected to be value, %v is found", some)
+	}
+	if auth != "Basic dXNlcm5hbWU6cGFzc3dvcmQ=" {
+		t.Errorf("Basic authorization is not properly set")
+	}
+}
+
 func TestBody(t *testing.T) {
-	var wg sync.WaitGroup
 	var count int64
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		body, _ := ioutil.ReadAll(r.Body)
@@ -96,13 +136,8 @@ func TestBody(t *testing.T) {
 		N: 10,
 		C: 1,
 	}
-	wg.Add(1)
-	time.AfterFunc(time.Second, func() {
-		if count != 10 {
-			t.Errorf("Expected to boom 10 times, found %v", count)
-		}
-		wg.Done()
-	})
-	go boom.Run()
-	wg.Wait()
+	boom.Run()
+	if count != 10 {
+		t.Errorf("Expected to boom 10 times, found %v", count)
+	}
 }
