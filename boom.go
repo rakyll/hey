@@ -151,6 +151,7 @@ func main() {
 			Url:        url,
 			Body:       *flagD,
 			Header:     header,
+			Host:       serverName,
 			Username:   username,
 			Password:   password,
 			ServerName: serverName,
