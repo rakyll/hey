@@ -33,7 +33,6 @@ type ReqOpts struct {
 	Method   string
 	Url      string
 	Header   http.Header
-	Host     string
 	Body     string
 	Username string
 	Password string
@@ -48,7 +47,7 @@ func (r *ReqOpts) Request() *http.Request {
 	req.Header = r.Header
 
 	// update the Host value in the Request - this is used as the host header in any subsequent request
-	req.Host = r.Host
+	req.Host = r.ServerName
 
 	if r.Username != "" && r.Password != "" {
 		req.SetBasicAuth(r.Username, r.Password)
