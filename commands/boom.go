@@ -24,9 +24,9 @@ import (
 )
 
 type result struct {
-	err        error
-	statusCode int
-	duration   time.Duration
+	err           error
+	statusCode    int
+	duration      time.Duration
 	ContentLength int64
 }
 

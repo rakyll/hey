@@ -38,7 +38,7 @@ type report struct {
 	statusCodeDist map[int]int
 	lats           []float64
 	errors         map[string]int
-	sizeTotal 	   int64
+	sizeTotal      int64
 
 	output string
 }
@@ -168,7 +168,6 @@ func (r *report) printStatusCodes() {
 		fmt.Printf("  [%d]\t%d responses\n", code, num)
 	}
 }
-
 
 func (r *report) printErrors() {
 	fmt.Printf("\nError distribution:\n")

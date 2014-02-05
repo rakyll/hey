@@ -52,9 +52,9 @@ func (b *Boom) worker(ch chan *http.Request) {
 			b.bar.Increment()
 		}
 		b.results <- &result{
-			statusCode: code,
-			duration:   time.Now().Sub(s),
-			err:        err,
+			statusCode:    code,
+			duration:      time.Now().Sub(s),
+			err:           err,
 			ContentLength: size,
 		}
 	}
