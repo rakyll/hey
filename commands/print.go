@@ -38,6 +38,7 @@ type report struct {
 	statusCodeDist map[int]int
 	lats           []float64
 	errors         map[string]int
+	sizeTotal 	   int64
 
 	output string
 }
@@ -61,6 +62,7 @@ func (r *report) finalize(total time.Duration) {
 				r.lats = append(r.lats, res.duration.Seconds())
 				r.avgTotal += res.duration.Seconds()
 				r.statusCodeDist[res.statusCode]++
+				r.sizeTotal += res.ContentLength
 			}
 		default:
 			r.total = total
@@ -89,6 +91,7 @@ func (r *report) print() {
 		fmt.Printf("  Fastest:\t%4.4f secs.\n", r.fastest)
 		fmt.Printf("  Average:\t%4.4f secs.\n", r.average)
 		fmt.Printf("  Requests/sec:\t%4.4f\n", r.rps)
+		fmt.Printf("  Total Data Transferred:\t%d bytes.\n", r.sizeTotal)
 		r.printStatusCodes()
 		r.printHistogram()
 		r.printLatencies()
@@ -165,6 +168,7 @@ func (r *report) printStatusCodes() {
 		fmt.Printf("  [%d]\t%d responses\n", code, num)
 	}
 }
+
 
 func (r *report) printErrors() {
 	fmt.Printf("\nError distribution:\n")
