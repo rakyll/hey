@@ -105,7 +105,7 @@ func main() {
 	}
 
 	var (
-		url, method, serverName string
+		url, method, originalHost string
 		// Username and password for basic auth
 		username, password string
 		// request headers
@@ -113,7 +113,7 @@ func main() {
 	)
 
 	method = strings.ToUpper(*flagMethod)
-	url, serverName = resolveUrl(flag.Args()[0])
+	url, originalHost = resolveUrl(flag.Args()[0])
 
 	// set content-type
 	header.Set("Content-Type", *flagType)
@@ -147,13 +147,13 @@ func main() {
 
 	(&commands.Boom{
 		Req: &commands.ReqOpts{
-			Method:     method,
-			Url:        url,
-			Body:       *flagD,
-			Header:     header,
-			Username:   username,
-			Password:   password,
-			ServerName: serverName,
+			Method:       method,
+			Url:          url,
+			Body:         *flagD,
+			Header:       header,
+			Username:     username,
+			Password:     password,
+			OriginalHost: originalHost,
 		},
 		N:             n,
 		C:             c,
@@ -180,6 +180,7 @@ func resolveUrl(url string) (string, string) {
 	if err != nil {
 		usageAndExit(err.Error())
 	}
+	originalHost := uri.Host
 
 	serverName, port, err := net.SplitHostPort(uri.Host)
 	if err != nil {
@@ -203,7 +204,7 @@ func resolveUrl(url string) (string, string) {
 			uri.Host = fmt.Sprintf("[%s]", ip)
 		}
 	}
-	return uri.String(), serverName
+	return uri.String(), originalHost
 }
 
 func usageAndExit(message string) {

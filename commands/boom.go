@@ -38,7 +38,7 @@ type ReqOpts struct {
 	Password string
 	// Request host is an resolved IP. TLS/SSL handshakes may require
 	// the original server name, keep it to initate the TLS client.
-	ServerName string
+	OriginalHost string
 }
 
 // Creates a req object from req options
@@ -47,7 +47,7 @@ func (r *ReqOpts) Request() *http.Request {
 	req.Header = r.Header
 
 	// update the Host value in the Request - this is used as the host header in any subsequent request
-	req.Host = r.ServerName
+	req.Host = r.OriginalHost
 
 	if r.Username != "" && r.Password != "" {
 		req.SetBasicAuth(r.Username, r.Password)

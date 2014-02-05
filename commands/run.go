@@ -16,6 +16,7 @@ package commands
 
 import (
 	"crypto/tls"
+	"net"
 	"net/http"
 	"sync"
 	"time"
@@ -31,8 +32,9 @@ func (b *Boom) Run() {
 }
 
 func (b *Boom) worker(ch chan *http.Request) {
+	host, _, _ := net.SplitHostPort(b.Req.OriginalHost)
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: b.AllowInsecure, ServerName: b.Req.ServerName},
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: b.AllowInsecure, ServerName: host},
 	}
 	client := &http.Client{Transport: tr}
 	for req := range ch {

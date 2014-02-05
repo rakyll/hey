@@ -48,7 +48,7 @@ func TestParseUrl_IPv4(t *testing.T) {
 func TestParseUrl_IPv4AndPort(t *testing.T) {
 	defaultDnsResolver = &mockDnsResolver{Addr: "127.0.0.1"}
 	u, s := resolveUrl("http://google.com:80")
-	if s != "google.com" {
+	if s != "google.com:80" {
 		t.Errorf("Original server name doesn't match with google.com, %v is found.", s)
 	}
 	if u != "http://127.0.0.1:80" {
@@ -70,7 +70,7 @@ func TestParseUrl_IPv6(t *testing.T) {
 func TestParseUrl_IPv6AndPort(t *testing.T) {
 	defaultDnsResolver = &mockDnsResolver{Addr: "2a00:1450:400a:806::1007"}
 	u, s := resolveUrl("http://google.com:80")
-	if s != "google.com" {
+	if s != "google.com:80" {
 		t.Errorf("Original server name doesn't match with google.com, %v is found.", s)
 	}
 	if u != "http://[2a00:1450:400a:806::1007]:80" {
