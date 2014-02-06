@@ -57,7 +57,7 @@ func (b *Boom) worker(ch chan *http.Request) {
 			statusCode:    code,
 			duration:      time.Now().Sub(s),
 			err:           err,
-			ContentLength: size,
+			contentLength: size,
 		}
 	}
 }
