@@ -62,7 +62,9 @@ func (r *report) finalize(total time.Duration) {
 				r.lats = append(r.lats, res.duration.Seconds())
 				r.avgTotal += res.duration.Seconds()
 				r.statusCodeDist[res.statusCode]++
-				r.sizeTotal += res.ContentLength
+				if res.ContentLength > 0 {
+					r.sizeTotal += res.ContentLength
+				}
 			}
 		default:
 			r.total = total
@@ -91,7 +93,10 @@ func (r *report) print() {
 		fmt.Printf("  Fastest:\t%4.4f secs.\n", r.fastest)
 		fmt.Printf("  Average:\t%4.4f secs.\n", r.average)
 		fmt.Printf("  Requests/sec:\t%4.4f\n", r.rps)
-		fmt.Printf("  Total Data Transferred:\t%d bytes.\n", r.sizeTotal)
+		if r.sizeTotal > 0 {
+			fmt.Printf("  Total Data Recieved:\t%d bytes\n", r.sizeTotal)
+			fmt.Printf("  Response Size per request:\t%d bytes\n", r.sizeTotal/int64(len(r.lats)))
+		}
 		r.printStatusCodes()
 		r.printHistogram()
 		r.printLatencies()

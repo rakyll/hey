@@ -41,10 +41,12 @@ func (b *Boom) worker(ch chan *http.Request) {
 		s := time.Now()
 		resp, err := client.Do(req)
 		code := 0
-		var size int64 = 0
+		var size int64 = -1
 		if resp != nil {
 			code = resp.StatusCode
-			size = resp.ContentLength
+			if resp.ContentLength > 0 {
+				size = resp.ContentLength
+			}
 			// cleanup body, so the socket can be reusable
 			resp.Body.Close()
 		}
