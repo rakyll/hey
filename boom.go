@@ -98,12 +98,6 @@ func main() {
 		usageAndExit("n and c cannot be smaller than 1.")
 	}
 
-	// If total number is smaller than concurrency level,
-	// make the total number c.
-	if c > n {
-		n = c
-	}
-
 	var (
 		url, method, originalHost string
 		// Username and password for basic auth
