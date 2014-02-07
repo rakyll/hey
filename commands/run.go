@@ -41,8 +41,12 @@ func (b *Boom) worker(ch chan *http.Request) {
 		s := time.Now()
 		resp, err := client.Do(req)
 		code := 0
+		var size int64 = -1
 		if resp != nil {
 			code = resp.StatusCode
+			if resp.ContentLength > 0 {
+				size = resp.ContentLength
+			}
 			// cleanup body, so the socket can be reusable
 			resp.Body.Close()
 		}
@@ -50,9 +54,10 @@ func (b *Boom) worker(ch chan *http.Request) {
 			b.bar.Increment()
 		}
 		b.results <- &result{
-			statusCode: code,
-			duration:   time.Now().Sub(s),
-			err:        err,
+			statusCode:    code,
+			duration:      time.Now().Sub(s),
+			err:           err,
+			contentLength: size,
 		}
 	}
 }

@@ -24,9 +24,10 @@ import (
 )
 
 type result struct {
-	err        error
-	statusCode int
-	duration   time.Duration
+	err           error
+	statusCode    int
+	duration      time.Duration
+	contentLength int64
 }
 
 type ReqOpts struct {
