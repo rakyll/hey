@@ -73,6 +73,9 @@ type Boom struct {
 	// Output type
 	Output string
 
+	// Optional address of HTTP proxy server as host:port
+	ProxyAddr string
+
 	bar     *pb.ProgressBar
 	rpt     *report
 	results chan *result

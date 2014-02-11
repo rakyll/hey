@@ -16,6 +16,8 @@ package commands
 
 import (
 	"crypto/tls"
+	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"sync"
@@ -36,6 +38,11 @@ func (b *Boom) worker(ch chan *http.Request) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: b.AllowInsecure, ServerName: host},
 	}
+	if b.ProxyAddr != "" {
+		tr.Dial = func(network string, addr string) (conn net.Conn, err error) {
+			return net.Dial(network, b.ProxyAddr)
+		}
+	}
 	client := &http.Client{Transport: tr}
 	for req := range ch {
 		s := time.Now()
@@ -47,6 +54,8 @@ func (b *Boom) worker(ch chan *http.Request) {
 			if resp.ContentLength > 0 {
 				size = resp.ContentLength
 			}
+			// consume the whole body
+			io.Copy(ioutil.Discard, resp.Body)
 			// cleanup body, so the socket can be reusable
 			resp.Body.Close()
 		}

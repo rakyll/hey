@@ -28,13 +28,14 @@ import (
 )
 
 var (
-	flagMethod   = flag.String("m", "GET", "")
-	flagHeaders  = flag.String("h", "", "")
-	flagD        = flag.String("d", "", "")
-	flagType     = flag.String("T", "text/html", "")
-	flagAuth     = flag.String("a", "", "")
-	flagInsecure = flag.Bool("allow-insecure", false, "")
-	flagOutput   = flag.String("o", "", "")
+	flagMethod    = flag.String("m", "GET", "")
+	flagHeaders   = flag.String("h", "", "")
+	flagD         = flag.String("d", "", "")
+	flagType      = flag.String("T", "text/html", "")
+	flagAuth      = flag.String("a", "", "")
+	flagInsecure  = flag.Bool("allow-insecure", false, "")
+	flagOutput    = flag.String("o", "", "")
+	flagProxyAddr = flag.String("x", "", "")
 
 	flagC = flag.Int("c", 50, "")
 	flagN = flag.Int("n", 200, "")
@@ -58,6 +59,7 @@ Options:
   -d  HTTP request body.
   -T  Content-type, defaults to "text/html".
   -a  Basic authentication, username:password.
+  -x  HTTP Proxy address as host:port
 
   -allow-insecure Allow bad/expired TLS/SSL certificates.
 `
@@ -154,7 +156,8 @@ func main() {
 		Qps:           q,
 		Timeout:       t,
 		AllowInsecure: *flagInsecure,
-		Output:        *flagOutput}).Run()
+		Output:        *flagOutput,
+		ProxyAddr:     *flagProxyAddr}).Run()
 }
 
 // Replaces host with an IP and returns the provided
