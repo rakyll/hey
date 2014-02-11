@@ -59,7 +59,7 @@ Options:
   -d  HTTP request body.
   -T  Content-type, defaults to "text/html".
   -a  Basic authentication, username:password.
-  -x  TCP/HTTP Proxy address as host:port
+  -x  HTTP Proxy address as host:port
 
   -allow-insecure Allow bad/expired TLS/SSL certificates.
 `
