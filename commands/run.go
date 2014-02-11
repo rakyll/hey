@@ -16,6 +16,7 @@ package commands
 
 import (
 	"crypto/tls"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
