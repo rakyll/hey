@@ -54,7 +54,7 @@ func (b *Boom) worker(ch chan *http.Request) {
 				size = resp.ContentLength
 			}
 			// consume the whole body
-			ioutil.ReadAll(resp.Body)
+			io.Copy(ioutil.Discard, resp.Body)
 			// cleanup body, so the socket can be reusable
 			resp.Body.Close()
 		}

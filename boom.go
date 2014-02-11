@@ -24,7 +24,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/oxtoacart/boom/commands"
+	"github.com/rakyll/boom/commands"
 )
 
 var (
