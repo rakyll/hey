@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package provides commands to run load tests and display results.
-package commands
+// Package boomer provides commands to run load tests and display results.
+package boomer
 
 import (
 	"net/http"
@@ -56,7 +56,7 @@ func (r *ReqOpts) Request() *http.Request {
 	return req
 }
 
-type Boom struct {
+type Boomer struct {
 	// Request to make.
 	Req *ReqOpts
 	// Total number of requests to make.

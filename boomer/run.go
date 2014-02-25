@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package commands
+package boomer
 
 import (
 	"crypto/tls"
@@ -24,7 +24,7 @@ import (
 	"time"
 )
 
-func (b *Boom) Run() {
+func (b *Boomer) Run() {
 	b.results = make(chan *result, b.N)
 	if b.Output == "" {
 		b.bar = newPb(b.N)
@@ -33,7 +33,7 @@ func (b *Boom) Run() {
 	b.run()
 }
 
-func (b *Boom) worker(ch chan *http.Request) {
+func (b *Boomer) worker(ch chan *http.Request) {
 	host, _, _ := net.SplitHostPort(b.Req.OriginalHost)
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: b.AllowInsecure, ServerName: host},
@@ -71,7 +71,7 @@ func (b *Boom) worker(ch chan *http.Request) {
 	}
 }
 
-func (b *Boom) run() {
+func (b *Boomer) run() {
 	var wg sync.WaitGroup
 	wg.Add(b.C)
 

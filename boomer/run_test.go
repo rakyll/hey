@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package commands
+package boomer
 
 import (
 	"io/ioutil"
@@ -32,7 +32,7 @@ func TestN(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(handler))
 	defer server.Close()
 
-	boom := &Boom{
+	boomer := &Boomer{
 		Req: &ReqOpts{
 			Method: "GET",
 			Url:    server.URL,
@@ -40,7 +40,7 @@ func TestN(t *testing.T) {
 		N: 20,
 		C: 2,
 	}
-	boom.Run()
+	boomer.Run()
 	if count != 20 {
 		t.Errorf("Expected to boom 20 times, found %v", count)
 	}
@@ -55,7 +55,7 @@ func TestQps(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(handler))
 	defer server.Close()
 
-	boom := &Boom{
+	boomer := &Boomer{
 		Req: &ReqOpts{
 			Method: "GET",
 			Url:    server.URL,
@@ -71,7 +71,7 @@ func TestQps(t *testing.T) {
 		}
 		wg.Done()
 	})
-	go boom.Run()
+	go boomer.Run()
 	wg.Wait()
 }
 
@@ -90,7 +90,7 @@ func TestRequest(t *testing.T) {
 	header := make(http.Header)
 	header.Add("Content-type", "text/html")
 	header.Add("X-some", "value")
-	boom := &Boom{
+	boomer := &Boomer{
 		Req: &ReqOpts{
 			Method:   "PUT",
 			Url:      server.URL,
@@ -101,7 +101,7 @@ func TestRequest(t *testing.T) {
 		N: 1,
 		C: 1,
 	}
-	boom.Run()
+	boomer.Run()
 	if uri != "/" {
 		t.Errorf("Uri is expected to be /, %v is found", uri)
 	}
@@ -127,7 +127,7 @@ func TestBody(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(handler))
 	defer server.Close()
 
-	boom := &Boom{
+	boomer := &Boomer{
 		Req: &ReqOpts{
 			Method: "POST",
 			Url:    server.URL,
@@ -136,7 +136,7 @@ func TestBody(t *testing.T) {
 		N: 10,
 		C: 1,
 	}
-	boom.Run()
+	boomer.Run()
 	if count != 10 {
 		t.Errorf("Expected to boom 10 times, found %v", count)
 	}
@@ -149,7 +149,7 @@ func TestContentLengthIfExists(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(handler))
 	defer server.Close()
 
-	boom := &Boom{
+	boomer := &Boomer{
 		Req: &ReqOpts{
 			Method: "GET",
 			Url:    server.URL,
@@ -157,10 +157,10 @@ func TestContentLengthIfExists(t *testing.T) {
 		N: 10,
 		C: 1,
 	}
-	boom.Run()
+	boomer.Run()
 
-	if boom.rpt.sizeTotal != 200 {
-		t.Errorf("Expected Total Data Recieved 200 bytes, found %v", boom.rpt.sizeTotal)
+	if boomer.rpt.sizeTotal != 200 {
+		t.Errorf("Expected Total Data Recieved 200 bytes, found %v", boomer.rpt.sizeTotal)
 	}
 }
 
@@ -170,7 +170,7 @@ func TestContentLengthIfDontExists(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(handler))
 	defer server.Close()
 
-	boom := &Boom{
+	boomer := &Boomer{
 		Req: &ReqOpts{
 			Method: "GET",
 			Url:    server.URL,
@@ -178,9 +178,9 @@ func TestContentLengthIfDontExists(t *testing.T) {
 		N: 10,
 		C: 1,
 	}
-	boom.Run()
+	boomer.Run()
 
-	if boom.rpt.sizeTotal != 0 {
-		t.Errorf("Expected Total Data Recieved 200 bytes, found %v", boom.rpt.sizeTotal)
+	if boomer.rpt.sizeTotal != 0 {
+		t.Errorf("Expected Total Data Recieved 200 bytes, found %v", boomer.rpt.sizeTotal)
 	}
 }

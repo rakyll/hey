@@ -24,7 +24,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/rakyll/boom/commands"
+	"github.com/rakyll/boom/boomer"
 )
 
 var (
@@ -141,8 +141,8 @@ func main() {
 		usageAndExit("Invalid output type.")
 	}
 
-	(&commands.Boom{
-		Req: &commands.ReqOpts{
+	(&boomer.Boomer{
+		Req: &boomer.ReqOpts{
 			Method:       method,
 			Url:          url,
 			Body:         *flagD,
