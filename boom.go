@@ -128,7 +128,7 @@ func main() {
 
 	// set basic auth if set
 	if *flagAuth != "" {
-		re := regexp.MustCompile("(\\w+):(\\w+)")
+		re := regexp.MustCompile("([\\w|\\-|_|\\.]+):(\\w+)")
 		matches := re.FindAllStringSubmatch(*flagAuth, -1)
 		if len(matches) < 1 {
 			usageAndExit("")
