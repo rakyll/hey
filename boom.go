@@ -31,6 +31,7 @@ var (
 	flagMethod    = flag.String("m", "GET", "")
 	flagHeaders   = flag.String("h", "", "")
 	flagD         = flag.String("d", "", "")
+	flagAccept    = flag.String("A", "", "")
 	flagType      = flag.String("T", "text/html", "")
 	flagAuth      = flag.String("a", "", "")
 	flagInsecure  = flag.Bool("allow-insecure", false, "")
@@ -56,6 +57,7 @@ Options:
 
   -m  HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.
   -h  Custom HTTP headers, name1:value1;name2:value2.
+  -A  HTTP Accept header.
   -d  HTTP request body.
   -T  Content-type, defaults to "text/html".
   -a  Basic authentication, username:password.
@@ -124,6 +126,10 @@ func main() {
 			}
 			header.Set(matches[0][1], matches[0][2])
 		}
+	}
+
+	if *flagAccept != "" {
+		header.Set("Accept", *flagAccept)
 	}
 
 	// set basic auth if set
