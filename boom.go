@@ -44,6 +44,7 @@ var (
 
 	flagInsecure           = flag.Bool("allow-insecure", false, "")
 	flagDisableCompression = flag.Bool("disable-compression", false, "")
+	flagDisableKeepAlives  = flag.Bool("disable-keepalive", false, "")
 )
 
 var usage = `Usage: boom [options...] <url>
@@ -65,8 +66,9 @@ Options:
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port
 
-  -allow-insecure Allow bad/expired TLS/SSL certificates.
-  -disable-compression Disable compression
+  -allow-insecure       Allow bad/expired TLS/SSL certificates.
+  -disable-compression  Disable compression
+  -disable-keepalive    Disable keep-alive, prevents re-use of TCP connections between different HTTP requests
 `
 
 // Default DNS resolver.
@@ -166,6 +168,7 @@ func main() {
 		Timeout:            t,
 		AllowInsecure:      *flagInsecure,
 		DisableCompression: *flagDisableCompression,
+		DisableKeepAlives:  *flagDisableKeepAlives,
 		Output:             *flagOutput,
 		ProxyAddr:          *flagProxyAddr}).Run()
 }

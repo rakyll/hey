@@ -73,6 +73,9 @@ type Boomer struct {
 	// Option to disable decompress response
 	DisableCompression bool
 
+	// Option to prevents re-use of TCP connections between different HTTP requests
+	DisableKeepAlives bool
+
 	// Output type
 	Output string
 
