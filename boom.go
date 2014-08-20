@@ -23,6 +23,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"runtime"
 
 	"github.com/miolini/boom/boomer"
 )
@@ -41,6 +42,7 @@ var (
 	flagN = flag.Int("n", 200, "")
 	flagQ = flag.Int("q", 0, "")
 	flagT = flag.Int("t", 0, "")
+	flagCpus = flag.Int("cpus", runtime.NumCPU(), "")
 
 	flagInsecure           = flag.Bool("allow-insecure", false, "")
 	flagDisableCompression = flag.Bool("disable-compression", false, "")
@@ -69,6 +71,7 @@ Options:
   -allow-insecure       Allow bad/expired TLS/SSL certificates.
   -disable-compression  Disable compression
   -disable-keepalive    Disable keep-alive, prevents re-use of TCP connections between different HTTP requests
+  -cpus                 Number of used cpu cores (default for current machine is %d cores)
 `
 
 // Default DNS resolver.
@@ -90,7 +93,7 @@ func (*netDnsResolver) Lookup(domain string) (addr []string, err error) {
 
 func main() {
 	flag.Usage = func() {
-		fmt.Fprint(os.Stderr, usage)
+		fmt.Fprintf(os.Stderr, usage, runtime.NumCPU())
 	}
 
 	flag.Parse()
@@ -106,6 +109,8 @@ func main() {
 	if n <= 0 || c <= 0 {
 		usageAndExit("n and c cannot be smaller than 1.")
 	}
+
+	runtime.GOMAXPROCS(*flagCpus)
 
 	var (
 		url, method, originalHost string
