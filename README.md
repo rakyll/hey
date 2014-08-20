@@ -33,9 +33,10 @@ Options:
   -T  Content-type, defaults to "text/html".
   -a  Basic authentication, username:password.
 
-  -allow-insecure Allow bad/expired TLS/SSL certificates.
+  -allow-insecure       Allow bad/expired TLS/SSL certificates.
   -disable-compression  Disable compression
   -disable-keepalive    Disable keep-alive, prevents re-use of TCP connections between different HTTP requests
+
   -cpus                 Number of used cpu cores (default for current machine is %d cores)
 ~~~
 

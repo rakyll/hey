@@ -70,7 +70,7 @@ type Boomer struct {
 	// Option to allow insecure TLS/SSL certificates.
 	AllowInsecure bool
 
-	// Option to disable decompress response
+	// Option to disable compression in response
 	DisableCompression bool
 
 	// Option to prevents re-use of TCP connections between different HTTP requests

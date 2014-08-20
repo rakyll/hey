@@ -22,8 +22,8 @@ import (
 	gourl "net/url"
 	"os"
 	"regexp"
-	"strings"
 	"runtime"
+	"strings"
 
 	"github.com/miolini/boom/boomer"
 )
@@ -38,11 +38,11 @@ var (
 	flagOutput    = flag.String("o", "", "")
 	flagProxyAddr = flag.String("x", "", "")
 
-	flagC = flag.Int("c", 50, "")
-	flagN = flag.Int("n", 200, "")
-	flagQ = flag.Int("q", 0, "")
-	flagT = flag.Int("t", 0, "")
-	flagCpus = flag.Int("cpus", runtime.NumCPU(), "")
+	flagC    = flag.Int("c", 50, "")
+	flagN    = flag.Int("n", 200, "")
+	flagQ    = flag.Int("q", 0, "")
+	flagT    = flag.Int("t", 0, "")
+	flagCpus = flag.Int("cpus", runtime.GOMAXPROCS(-1), "")
 
 	flagInsecure           = flag.Bool("allow-insecure", false, "")
 	flagDisableCompression = flag.Bool("disable-compression", false, "")
@@ -93,7 +93,7 @@ func (*netDnsResolver) Lookup(domain string) (addr []string, err error) {
 
 func main() {
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, usage, runtime.NumCPU())
+		fmt.Fprintf(os.Stderr, usage, runtime.GOMAXPROCS(-1))
 	}
 
 	flag.Parse()
