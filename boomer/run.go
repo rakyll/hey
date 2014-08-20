@@ -36,7 +36,8 @@ func (b *Boomer) Run() {
 func (b *Boomer) worker(ch chan *http.Request) {
 	host, _, _ := net.SplitHostPort(b.Req.OriginalHost)
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: b.AllowInsecure, ServerName: host},
+		TLSClientConfig:    &tls.Config{InsecureSkipVerify: b.AllowInsecure, ServerName: host},
+		DisableCompression: b.DisableCompression,
 	}
 	if b.ProxyAddr != "" {
 		tr.Dial = func(network string, addr string) (conn net.Conn, err error) {

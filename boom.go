@@ -24,7 +24,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/rakyll/boom/boomer"
+	"github.com/miolini/boom/boomer"
 )
 
 var (
@@ -34,7 +34,6 @@ var (
 	flagAccept    = flag.String("A", "", "")
 	flagType      = flag.String("T", "text/html", "")
 	flagAuth      = flag.String("a", "", "")
-	flagInsecure  = flag.Bool("allow-insecure", false, "")
 	flagOutput    = flag.String("o", "", "")
 	flagProxyAddr = flag.String("x", "", "")
 
@@ -42,6 +41,9 @@ var (
 	flagN = flag.Int("n", 200, "")
 	flagQ = flag.Int("q", 0, "")
 	flagT = flag.Int("t", 0, "")
+
+	flagInsecure           = flag.Bool("allow-insecure", false, "")
+	flagDisableCompression = flag.Bool("disable-compression", false, "")
 )
 
 var usage = `Usage: boom [options...] <url>
@@ -64,6 +66,7 @@ Options:
   -x  HTTP Proxy address as host:port
 
   -allow-insecure Allow bad/expired TLS/SSL certificates.
+  -disable-compression Disable compression
 `
 
 // Default DNS resolver.
@@ -157,13 +160,14 @@ func main() {
 			Password:     password,
 			OriginalHost: originalHost,
 		},
-		N:             n,
-		C:             c,
-		Qps:           q,
-		Timeout:       t,
-		AllowInsecure: *flagInsecure,
-		Output:        *flagOutput,
-		ProxyAddr:     *flagProxyAddr}).Run()
+		N:                  n,
+		C:                  c,
+		Qps:                q,
+		Timeout:            t,
+		AllowInsecure:      *flagInsecure,
+		DisableCompression: *flagDisableCompression,
+		Output:             *flagOutput,
+		ProxyAddr:          *flagProxyAddr}).Run()
 }
 
 // Replaces host with an IP and returns the provided
