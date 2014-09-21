@@ -77,3 +77,37 @@ func TestParseUrl_IPv6AndPort(t *testing.T) {
 		t.Errorf("URL is expected to be http://[2a00:1450:400a:806::1007]:80, %v is found.", u)
 	}
 }
+
+func TestParseValidHeaderFlag(t *testing.T) {
+	match, err := parseInputWithRegexp("X-Something: !Y10K:;(He@poverflow?)", headerRegexp)
+	if err != nil {
+		t.Errorf("A valid header was not parsed correctly: %v", err.Error())
+	}
+	if match[1] != "X-Something" || match[2] != "!Y10K:;(He@poverflow?)" {
+		t.Errorf("A valid header was not parsed correctly, parsed values: %v %v", match[1], match[2])
+	}
+}
+
+func TestParseInvalidHeaderFlag(t *testing.T) {
+	_, err := parseInputWithRegexp("X|oh|bad-input: badbadbad", headerRegexp)
+	if err == nil {
+		t.Errorf("An invalid header passed parsing")
+	}
+}
+
+func TestParseValidAuthFlag(t *testing.T) {
+	match, err := parseInputWithRegexp("_coo-kie_:!!bigmonster@1969sid", authRegexp)
+	if err != nil {
+		t.Errorf("A valid auth flag was not parsed correctly: %v", err.Error())
+	}
+	if match[1] != "_coo-kie_" || match[2] != "!!bigmonster@1969sid" {
+		t.Errorf("A valid auth flag was not parsed correctly, parsed values: %v %v", match[1], match[2])
+	}
+}
+
+func TestParseInvalidAuthFlag(t *testing.T) {
+	_, err := parseInputWithRegexp("X|oh|bad-input: badbadbad", authRegexp)
+	if err == nil {
+		t.Errorf("An invalid header passed parsing")
+	}
+}
