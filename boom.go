@@ -15,6 +15,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"net"
@@ -25,6 +26,11 @@ import (
 	"strings"
 
 	"github.com/rakyll/boom/boomer"
+)
+
+const (
+	headerRegexp = "^([\\w-]+):\\s*(.+)"
+	authRegexp   = "^([\\w-\\.]+):(.+)"
 )
 
 var (
@@ -119,12 +125,11 @@ func main() {
 	if *flagHeaders != "" {
 		headers := strings.Split(*flagHeaders, ";")
 		for _, h := range headers {
-			re := regexp.MustCompile("([\\w|-]+):(.+)")
-			matches := re.FindAllStringSubmatch(h, -1)
-			if len(matches) < 1 {
-				usageAndExit("")
+			match, err := parseInputWithRegexp(h, headerRegexp)
+			if err != nil {
+				usageAndExit(err.Error())
 			}
-			header.Set(matches[0][1], matches[0][2])
+			header.Set(match[1], match[2])
 		}
 	}
 
@@ -134,13 +139,11 @@ func main() {
 
 	// set basic auth if set
 	if *flagAuth != "" {
-		re := regexp.MustCompile("([\\w|\\-|_|\\.]+):(\\w+)")
-		matches := re.FindAllStringSubmatch(*flagAuth, -1)
-		if len(matches) < 1 {
-			usageAndExit("")
+		match, err := parseInputWithRegexp(*flagAuth, authRegexp)
+		if err != nil {
+			usageAndExit(err.Error())
 		}
-		username = matches[0][1]
-		password = matches[0][2]
+		username, password = match[1], match[2]
 	}
 
 	if *flagOutput != "csv" && *flagOutput != "" {
@@ -218,4 +221,14 @@ func usageAndExit(message string) {
 	flag.Usage()
 	fmt.Fprintf(os.Stderr, "\n")
 	os.Exit(1)
+}
+
+func parseInputWithRegexp(input, regx string) (matches []string, err error) {
+	re := regexp.MustCompile(regx)
+	matches = re.FindStringSubmatch(input)
+	if len(matches) < 1 {
+		err = errors.New("Could not parse provided input")
+	}
+
+	return
 }
