@@ -39,6 +39,9 @@ func (b *Boomer) worker(ch chan *http.Request) {
 		TLSClientConfig:    &tls.Config{InsecureSkipVerify: b.AllowInsecure, ServerName: host},
 		DisableCompression: b.DisableCompression,
 		DisableKeepAlives:  b.DisableKeepAlives,
+		Dial: (&net.Dialer{
+			Timeout: time.Duration(b.Timeout) * time.Millisecond,
+		}).Dial,
 	}
 	if b.ProxyAddr != "" {
 		tr.Dial = func(network string, addr string) (conn net.Conn, err error) {
@@ -51,12 +54,11 @@ func (b *Boomer) worker(ch chan *http.Request) {
 		resp, err := client.Do(req)
 		code := 0
 		var size int64 = -1
-		if resp != nil {
+		if err == nil {
 			code = resp.StatusCode
 			if resp.ContentLength > 0 {
 				size = resp.ContentLength
 			}
-			// consume the whole body
 			io.Copy(ioutil.Discard, resp.Body)
 			// cleanup body, so the socket can be reusable
 			resp.Body.Close()
