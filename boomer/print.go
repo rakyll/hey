@@ -34,8 +34,8 @@ type report struct {
 
 	results chan *result
 	total   time.Duration
-	errors  map[string]int
 
+	errorDist      map[string]int
 	statusCodeDist map[int]int
 	lats           []float64
 	sizeTotal      int64
@@ -49,7 +49,7 @@ func printReport(size int, results chan *result, output string, total time.Durat
 		results:        results,
 		total:          total,
 		statusCodeDist: make(map[int]int),
-		errors:         make(map[string]int),
+		errorDist:      make(map[string]int),
 	}
 	r.finalize()
 }
@@ -59,7 +59,7 @@ func (r *report) finalize() {
 		select {
 		case res := <-r.results:
 			if res.err != nil {
-				r.errors[res.err.Error()]++
+				r.errorDist[res.err.Error()]++
 			} else {
 				r.lats = append(r.lats, res.duration.Seconds())
 				r.avgTotal += res.duration.Seconds()
@@ -103,7 +103,7 @@ func (r *report) print() {
 		r.printLatencies()
 	}
 
-	if len(r.errors) > 0 {
+	if len(r.errorDist) > 0 {
 		r.printErrors()
 	}
 }
@@ -177,7 +177,7 @@ func (r *report) printStatusCodes() {
 
 func (r *report) printErrors() {
 	fmt.Printf("\nError distribution:\n")
-	for error, num := range r.errors {
-		fmt.Printf("  [%d]\t%s\n", num, error)
+	for err, num := range r.errorDist {
+		fmt.Printf("  [%d]\t%s\n", num, err)
 	}
 }
