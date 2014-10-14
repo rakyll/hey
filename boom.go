@@ -15,6 +15,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"net"
@@ -28,8 +29,13 @@ import (
 	"github.com/rakyll/boom/boomer"
 )
 
+const (
+	headerRegexp = "^([\\w-]+):\\s*(.+)"
+	authRegexp   = "^([\\w-\\.]+):(.+)"
+)
+
 var (
-	method      = flag.String("m", "GET", "")
+	m           = flag.String("m", "GET", "")
 	headers     = flag.String("h", "", "")
 	body        = flag.String("d", "", "")
 	accept      = flag.String("A", "", "")
@@ -95,7 +101,7 @@ func (*netDNSResolver) Lookup(domain string) (addr []string, err error) {
 
 func main() {
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, usage, runtime.GOMAXPROCS(-1))
+		fmt.Fprint(os.Stderr, usage)
 	}
 
 	flag.Parse()
@@ -103,28 +109,24 @@ func main() {
 		usageAndExit("")
 	}
 
+	runtime.GOMAXPROCS(*cpus)
 	num := *n
 	conc := *c
-	qps := *q
-	timout := *t
+	q := *q
 
 	if num <= 0 || conc <= 0 {
 		usageAndExit("n and c cannot be smaller than 1.")
 	}
 
-	if cpus != nil {
-		runtime.GOMAXPROCS(*cpus)
-	}
-
 	var (
-		url, m, originalHost string
+		url, method, originalHost string
 		// Username and password for basic auth
 		username, password string
 		// request headers
 		header http.Header = make(http.Header)
 	)
 
-	m = strings.ToUpper(*method)
+	method = strings.ToUpper(*m)
 	url, originalHost = resolveUrl(flag.Args()[0])
 
 	// set content-type
@@ -133,12 +135,11 @@ func main() {
 	if *headers != "" {
 		headers := strings.Split(*headers, ";")
 		for _, h := range headers {
-			re := regexp.MustCompile("([\\w|-]+):(.+)")
-			matches := re.FindAllStringSubmatch(h, -1)
-			if len(matches) < 1 {
-				usageAndExit("")
+			match, err := parseInputWithRegexp(h, headerRegexp)
+			if err != nil {
+				usageAndExit(err.Error())
 			}
-			header.Set(matches[0][1], matches[0][2])
+			header.Set(match[1], match[2])
 		}
 	}
 
@@ -148,13 +149,11 @@ func main() {
 
 	// set basic auth if set
 	if *authHeader != "" {
-		re := regexp.MustCompile("([\\w|\\-|_|\\.]+):(\\w+)")
-		matches := re.FindAllStringSubmatch(*authHeader, -1)
-		if len(matches) < 1 {
-			usageAndExit("")
+		match, err := parseInputWithRegexp(*authHeader, authRegexp)
+		if err != nil {
+			usageAndExit(err.Error())
 		}
-		username = matches[0][1]
-		password = matches[0][2]
+		username, password = match[1], match[2]
 	}
 
 	if *output != "csv" && *output != "" {
@@ -163,7 +162,7 @@ func main() {
 
 	(&boomer.Boomer{
 		Req: &boomer.ReqOpts{
-			Method:       m,
+			Method:       method,
 			Url:          url,
 			Body:         *body,
 			Header:       header,
@@ -173,13 +172,14 @@ func main() {
 		},
 		N:                  num,
 		C:                  conc,
-		Qps:                qps,
-		Timeout:            timout,
+		Qps:                q,
+		Timeout:            *t,
 		AllowInsecure:      *insecure,
 		DisableCompression: *disableCompression,
 		DisableKeepAlives:  *disableKeepAlives,
+		ProxyAddr:          *proxyAddr,
 		Output:             *output,
-		ProxyAddr:          *proxyAddr}).Run()
+	}).Run()
 }
 
 // Replaces host with an IP and returns the provided
@@ -234,4 +234,13 @@ func usageAndExit(message string) {
 	flag.Usage()
 	fmt.Fprintf(os.Stderr, "\n")
 	os.Exit(1)
+}
+
+func parseInputWithRegexp(input, regx string) (matches []string, err error) {
+	re := regexp.MustCompile(regx)
+	matches = re.FindStringSubmatch(input)
+	if len(matches) < 1 {
+		err = errors.New("Could not parse provided input")
+	}
+	return
 }
