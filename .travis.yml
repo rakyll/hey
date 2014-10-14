@@ -1,2 +1,2 @@
 language: go
-go: 1.2
+go: 1.3
