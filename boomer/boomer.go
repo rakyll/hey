@@ -92,7 +92,6 @@ type Boomer struct {
 	ProxyAddr string
 
 	bar     *pb.ProgressBar
-	rpt     *report
 	results chan *result
 }
 

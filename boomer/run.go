@@ -16,8 +16,7 @@ package boomer
 
 import (
 	"crypto/tls"
-	"io"
-	"io/ioutil"
+
 	"sync"
 
 	"net"
@@ -25,19 +24,31 @@ import (
 	"time"
 )
 
+// Run makes all the requests, prints the summary. It blocks until
+// all work is done.
 func (b *Boomer) Run() {
 	b.results = make(chan *result, b.N)
 	if b.Output == "" {
 		b.bar = newPb(b.N)
 	}
-	b.rpt = newReport(b.N, b.results, b.Output)
+
+	start := time.Now()
 	b.run()
+	if b.Output == "" {
+		b.bar.Finish()
+	}
+
+	printReport(b.N, b.results, b.Output, time.Now().Sub(start))
+	close(b.results)
 }
 
-func (b *Boomer) worker(ch chan *http.Request) {
+func (b *Boomer) worker(wg *sync.WaitGroup, ch chan *http.Request) {
 	host, _, _ := net.SplitHostPort(b.Req.OriginalHost)
 	tr := &http.Transport{
-		TLSClientConfig:    &tls.Config{InsecureSkipVerify: b.AllowInsecure, ServerName: host},
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: b.AllowInsecure,
+			ServerName:         host,
+		},
 		DisableCompression: b.DisableCompression,
 		DisableKeepAlives:  b.DisableKeepAlives,
 		// TODO(jbd): Add dial timeout.
@@ -49,23 +60,22 @@ func (b *Boomer) worker(ch chan *http.Request) {
 		}
 	}
 	client := &http.Client{Transport: tr}
+	_ = client
 	for req := range ch {
 		s := time.Now()
-		resp, err := client.Do(req)
 		code := 0
-		var size int64 = 0
+		size := int64(0)
+		resp, err := client.Do(req)
 		if err == nil {
+			size = resp.ContentLength
 			code = resp.StatusCode
-			if resp.ContentLength > 0 {
-				size = resp.ContentLength
-			}
-			io.Copy(ioutil.Discard, resp.Body)
-			// cleanup body, so the socket can be reusable
 			resp.Body.Close()
 		}
 		if b.bar != nil {
 			b.bar.Increment()
 		}
+		wg.Done()
+
 		b.results <- &result{
 			statusCode:    code,
 			duration:      time.Now().Sub(s),
@@ -77,24 +87,18 @@ func (b *Boomer) worker(ch chan *http.Request) {
 
 func (b *Boomer) run() {
 	var wg sync.WaitGroup
-	wg.Add(b.C)
+	wg.Add(b.N)
 
 	var throttle <-chan time.Time
 	if b.Qps > 0 {
 		throttle = time.Tick(time.Duration(1e6/(b.Qps)) * time.Microsecond)
 	}
-
-	start := time.Now()
 	jobs := make(chan *http.Request, b.N)
-	// Start workers.
 	for i := 0; i < b.C; i++ {
 		go func() {
-			b.worker(jobs)
-			wg.Done()
+			b.worker(&wg, jobs)
 		}()
 	}
-
-	// Start sending jobs to the workers.
 	for i := 0; i < b.N; i++ {
 		if b.Qps > 0 {
 			<-throttle
@@ -104,8 +108,4 @@ func (b *Boomer) run() {
 	close(jobs)
 
 	wg.Wait()
-	if b.bar != nil {
-		b.bar.Finish()
-	}
-	b.rpt.finalize(time.Now().Sub(start))
 }

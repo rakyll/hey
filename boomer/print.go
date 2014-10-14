@@ -34,25 +34,27 @@ type report struct {
 
 	results chan *result
 	total   time.Duration
+	errors  map[string]int
 
 	statusCodeDist map[int]int
 	lats           []float64
-	errors         map[string]int
 	sizeTotal      int64
 
 	output string
 }
 
-func newReport(size int, results chan *result, output string) *report {
-	return &report{
-		statusCodeDist: make(map[int]int),
-		results:        results,
+func printReport(size int, results chan *result, output string, total time.Duration) {
+	r := &report{
 		output:         output,
+		results:        results,
+		total:          total,
+		statusCodeDist: make(map[int]int),
 		errors:         make(map[string]int),
 	}
+	r.finalize()
 }
 
-func (r *report) finalize(total time.Duration) {
+func (r *report) finalize() {
 	for {
 		select {
 		case res := <-r.results:
@@ -67,7 +69,6 @@ func (r *report) finalize(total time.Duration) {
 				}
 			}
 		default:
-			r.total = total
 			r.rps = float64(len(r.lats)) / r.total.Seconds()
 			r.average = r.avgTotal / float64(len(r.lats))
 			r.print()
