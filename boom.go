@@ -25,28 +25,29 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/miolini/boom/boomer"
+	"github.com/rakyll/boom/boomer"
 )
 
 var (
-	flagMethod    = flag.String("m", "GET", "")
-	flagHeaders   = flag.String("h", "", "")
-	flagD         = flag.String("d", "", "")
-	flagAccept    = flag.String("A", "", "")
-	flagType      = flag.String("T", "text/html", "")
-	flagAuth      = flag.String("a", "", "")
-	flagOutput    = flag.String("o", "", "")
-	flagProxyAddr = flag.String("x", "", "")
+	method      = flag.String("m", "GET", "")
+	headers     = flag.String("h", "", "")
+	body        = flag.String("d", "", "")
+	accept      = flag.String("A", "", "")
+	contentType = flag.String("T", "text/html", "")
+	authHeader  = flag.String("a", "", "")
 
-	flagC    = flag.Int("c", 50, "")
-	flagN    = flag.Int("n", 200, "")
-	flagQ    = flag.Int("q", 0, "")
-	flagT    = flag.Int("t", 0, "")
-	flagCpus = flag.Int("cpus", runtime.GOMAXPROCS(-1), "")
+	output = flag.String("o", "", "")
 
-	flagInsecure           = flag.Bool("allow-insecure", false, "")
-	flagDisableCompression = flag.Bool("disable-compression", false, "")
-	flagDisableKeepAlives  = flag.Bool("disable-keepalive", false, "")
+	c    = flag.Int("c", 50, "")
+	n    = flag.Int("n", 200, "")
+	q    = flag.Int("q", 0, "")
+	t    = flag.Int("t", 0, "")
+	cpus = flag.Int("cpus", runtime.GOMAXPROCS(-1), "")
+
+	insecure           = flag.Bool("allow-insecure", false, "")
+	disableCompression = flag.Bool("disable-compression", false, "")
+	disableKeepAlives  = flag.Bool("disable-keepalive", false, "")
+	proxyAddr          = flag.String("x", "", "")
 )
 
 var usage = `Usage: boom [options...] <url>
@@ -66,16 +67,17 @@ Options:
   -d  HTTP request body.
   -T  Content-type, defaults to "text/html".
   -a  Basic authentication, username:password.
-  -x  HTTP Proxy address as host:port
+  -x  HTTP Proxy address as host:port.
 
   -allow-insecure       Allow bad/expired TLS/SSL certificates.
-  -disable-compression  Disable compression
-  -disable-keepalive    Disable keep-alive, prevents re-use of TCP connections between different HTTP requests
-  -cpus                 Number of used cpu cores (default for current machine is %d cores)
+  -disable-compression  Disable compression.
+  -disable-keepalive    Disable keep-alive, prevents re-use of TCP
+                        connections between different HTTP requests.
+  -cpus                 Number of used cpu cores.
+                        (default for current machine is %d cores)
 `
 
-// Default DNS resolver.
-var defaultDnsResolver dnsResolver = &netDnsResolver{}
+var defaultDNSResolver dnsResolver = &netDNSResolver{}
 
 // DNS resolver interface.
 type dnsResolver interface {
@@ -83,11 +85,11 @@ type dnsResolver interface {
 }
 
 // A DNS resolver based on net.LookupHost.
-type netDnsResolver struct{}
+type netDNSResolver struct{}
 
 // Looks up for the resolved IP addresses of
 // the provided domain.
-func (*netDnsResolver) Lookup(domain string) (addr []string, err error) {
+func (*netDNSResolver) Lookup(domain string) (addr []string, err error) {
 	return net.LookupHost(domain)
 }
 
@@ -101,33 +103,35 @@ func main() {
 		usageAndExit("")
 	}
 
-	n := *flagN
-	c := *flagC
-	q := *flagQ
-	t := *flagT
+	num := *n
+	conc := *c
+	qps := *q
+	timout := *t
 
-	if n <= 0 || c <= 0 {
+	if num <= 0 || conc <= 0 {
 		usageAndExit("n and c cannot be smaller than 1.")
 	}
 
-	runtime.GOMAXPROCS(*flagCpus)
+	if cpus != nil {
+		runtime.GOMAXPROCS(*cpus)
+	}
 
 	var (
-		url, method, originalHost string
+		url, m, originalHost string
 		// Username and password for basic auth
 		username, password string
 		// request headers
 		header http.Header = make(http.Header)
 	)
 
-	method = strings.ToUpper(*flagMethod)
+	m = strings.ToUpper(*method)
 	url, originalHost = resolveUrl(flag.Args()[0])
 
 	// set content-type
-	header.Set("Content-Type", *flagType)
+	header.Set("Content-Type", *contentType)
 	// set any other additional headers
-	if *flagHeaders != "" {
-		headers := strings.Split(*flagHeaders, ";")
+	if *headers != "" {
+		headers := strings.Split(*headers, ";")
 		for _, h := range headers {
 			re := regexp.MustCompile("([\\w|-]+):(.+)")
 			matches := re.FindAllStringSubmatch(h, -1)
@@ -138,14 +142,14 @@ func main() {
 		}
 	}
 
-	if *flagAccept != "" {
-		header.Set("Accept", *flagAccept)
+	if *accept != "" {
+		header.Set("Accept", *accept)
 	}
 
 	// set basic auth if set
-	if *flagAuth != "" {
+	if *authHeader != "" {
 		re := regexp.MustCompile("([\\w|\\-|_|\\.]+):(\\w+)")
-		matches := re.FindAllStringSubmatch(*flagAuth, -1)
+		matches := re.FindAllStringSubmatch(*authHeader, -1)
 		if len(matches) < 1 {
 			usageAndExit("")
 		}
@@ -153,29 +157,29 @@ func main() {
 		password = matches[0][2]
 	}
 
-	if *flagOutput != "csv" && *flagOutput != "" {
+	if *output != "csv" && *output != "" {
 		usageAndExit("Invalid output type.")
 	}
 
 	(&boomer.Boomer{
 		Req: &boomer.ReqOpts{
-			Method:       method,
+			Method:       m,
 			Url:          url,
-			Body:         *flagD,
+			Body:         *body,
 			Header:       header,
 			Username:     username,
 			Password:     password,
 			OriginalHost: originalHost,
 		},
-		N:                  n,
-		C:                  c,
-		Qps:                q,
-		Timeout:            t,
-		AllowInsecure:      *flagInsecure,
-		DisableCompression: *flagDisableCompression,
-		DisableKeepAlives:  *flagDisableKeepAlives,
-		Output:             *flagOutput,
-		ProxyAddr:          *flagProxyAddr}).Run()
+		N:                  num,
+		C:                  conc,
+		Qps:                qps,
+		Timeout:            timout,
+		AllowInsecure:      *insecure,
+		DisableCompression: *disableCompression,
+		DisableKeepAlives:  *disableKeepAlives,
+		Output:             *output,
+		ProxyAddr:          *proxyAddr}).Run()
 }
 
 // Replaces host with an IP and returns the provided
@@ -202,7 +206,7 @@ func resolveUrl(url string) (string, string) {
 		serverName = uri.Host
 	}
 
-	addrs, err := defaultDnsResolver.Lookup(serverName)
+	addrs, err := defaultDNSResolver.Lookup(serverName)
 	if err != nil {
 		usageAndExit(err.Error())
 	}

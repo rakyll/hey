@@ -15,7 +15,7 @@ Simple as it takes to type the following command:
 ## Usage
 
 Boom supports custom headers, request body and basic authentication. It runs provided number of requests in the provided concurrency level, and prints stats.
-~~~    
+~~~
 Usage: boom [options...] <url>
 
 Options:
@@ -29,15 +29,18 @@ Options:
 
   -m  HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.
   -h  Custom HTTP headers, name1:value1;name2:value2.
+  -A  HTTP Accept header.
   -d  HTTP request body.
   -T  Content-type, defaults to "text/html".
   -a  Basic authentication, username:password.
+  -x  HTTP Proxy address as host:port.
 
   -allow-insecure       Allow bad/expired TLS/SSL certificates.
-  -disable-compression  Disable compression
-  -disable-keepalive    Disable keep-alive, prevents re-use of TCP connections between different HTTP requests
-
-  -cpus                 Number of used cpu cores (default for current machine is %d cores)
+  -disable-compression  Disable compression.
+  -disable-keepalive    Disable keep-alive, prevents re-use of TCP
+                        connections between different HTTP requests.
+  -cpus                 Number of used cpu cores.
+                        (default for current machine is 1 cores)
 ~~~
 
 This is what happens when you run Boom:
