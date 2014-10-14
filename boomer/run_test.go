@@ -35,7 +35,7 @@ func TestN(t *testing.T) {
 	boomer := &Boomer{
 		Req: &ReqOpts{
 			Method: "GET",
-			Url:    server.URL,
+			URL:    server.URL,
 		},
 		N: 20,
 		C: 2,
@@ -58,7 +58,7 @@ func TestQps(t *testing.T) {
 	boomer := &Boomer{
 		Req: &ReqOpts{
 			Method: "GET",
-			Url:    server.URL,
+			URL:    server.URL,
 		},
 		N:   20,
 		C:   2,
@@ -93,7 +93,7 @@ func TestRequest(t *testing.T) {
 	boomer := &Boomer{
 		Req: &ReqOpts{
 			Method:   "PUT",
-			Url:      server.URL,
+			URL:      server.URL,
 			Header:   header,
 			Username: "username",
 			Password: "password",
@@ -130,7 +130,7 @@ func TestBody(t *testing.T) {
 	boomer := &Boomer{
 		Req: &ReqOpts{
 			Method: "POST",
-			Url:    server.URL,
+			URL:    server.URL,
 			Body:   "Body",
 		},
 		N: 10,

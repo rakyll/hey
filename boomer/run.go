@@ -53,11 +53,7 @@ func (b *Boomer) worker(wg *sync.WaitGroup, ch chan *http.Request) {
 		DisableKeepAlives:  b.DisableKeepAlives,
 		// TODO(jbd): Add dial timeout.
 		TLSHandshakeTimeout: time.Duration(b.Timeout) * time.Millisecond,
-	}
-	if b.ProxyAddr != "" {
-		tr.Dial = func(network string, addr string) (conn net.Conn, err error) {
-			return net.Dial(network, b.ProxyAddr)
-		}
+		Proxy:               http.ProxyURL(b.ProxyAddr),
 	}
 	client := &http.Client{Transport: tr}
 	_ = client

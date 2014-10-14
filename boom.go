@@ -161,10 +161,19 @@ func main() {
 		usageAndExit("Invalid output type.")
 	}
 
+	var proxyURL *gourl.URL
+	if *proxyAddr != "" {
+		var err error
+		proxyURL, err = gourl.Parse(*proxyAddr)
+		if err != nil {
+			usageAndExit(err.Error())
+		}
+	}
+
 	(&boomer.Boomer{
 		Req: &boomer.ReqOpts{
 			Method:       method,
-			Url:          url,
+			URL:          url,
 			Body:         *body,
 			Header:       header,
 			Username:     username,
@@ -178,7 +187,7 @@ func main() {
 		AllowInsecure:      *insecure,
 		DisableCompression: *disableCompression,
 		DisableKeepAlives:  *disableKeepAlives,
-		ProxyAddr:          *proxyAddr,
+		ProxyAddr:          proxyURL,
 		Output:             *output,
 	}).Run()
 }

@@ -26,7 +26,7 @@ func (r *mockDnsResolver) Lookup(host string) ([]string, error) {
 	return []string{r.Addr}, nil
 }
 
-func TestParseUrl(t *testing.T) {
+func TestParseURL(t *testing.T) {
 	defaultDNSResolver = &mockDnsResolver{Addr: "2a00:1450:400a:806::1007"}
 	u, _ := resolveUrl("http://google.com:80/path/to/resource?q=rawquery")
 	if u != "http://[2a00:1450:400a:806::1007]:80/path/to/resource?q=rawquery" {

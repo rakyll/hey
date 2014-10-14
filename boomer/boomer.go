@@ -17,6 +17,7 @@ package boomer
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -32,7 +33,7 @@ type result struct {
 
 type ReqOpts struct {
 	Method   string
-	Url      string
+	URL      string
 	Header   http.Header
 	Body     string
 	Username string
@@ -45,7 +46,7 @@ type ReqOpts struct {
 
 // Creates a req object from req options
 func (r *ReqOpts) Request() *http.Request {
-	req, _ := http.NewRequest(r.Method, r.Url, strings.NewReader(r.Body))
+	req, _ := http.NewRequest(r.Method, r.URL, strings.NewReader(r.Body))
 	req.Header = r.Header
 
 	// update the Host value in the Request - this is used as the host header in any subsequent request
@@ -89,7 +90,7 @@ type Boomer struct {
 
 	// ProxyAddr is the address of HTTP proxy server in the format on "host:port".
 	// Optional.
-	ProxyAddr string
+	ProxyAddr *url.URL
 
 	bar     *pb.ProgressBar
 	results chan *result
