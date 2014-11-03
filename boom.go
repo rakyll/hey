@@ -102,7 +102,7 @@ func (*netDNSResolver) Lookup(domain string) (addr []string, err error) {
 
 func main() {
 	flag.Usage = func() {
-		fmt.Fprint(os.Stderr, usage)
+		fmt.Fprint(os.Stderr, fmt.Sprintf(usage, runtime.NumCPU()))
 	}
 
 	flag.Parse()
