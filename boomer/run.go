@@ -56,7 +56,6 @@ func (b *Boomer) worker(wg *sync.WaitGroup, ch chan *http.Request) {
 		Proxy:               http.ProxyURL(b.ProxyAddr),
 	}
 	client := &http.Client{Transport: tr}
-	_ = client
 	for req := range ch {
 		s := time.Now()
 		code := 0
