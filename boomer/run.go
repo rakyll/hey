@@ -19,7 +19,6 @@ import (
 
 	"sync"
 
-	"net"
 	"net/http"
 	"time"
 )
@@ -43,11 +42,9 @@ func (b *Boomer) Run() {
 }
 
 func (b *Boomer) worker(wg *sync.WaitGroup, ch chan *http.Request) {
-	host, _, _ := net.SplitHostPort(b.Req.OriginalHost)
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: b.AllowInsecure,
-			ServerName:         host,
 		},
 		DisableCompression: b.DisableCompression,
 		DisableKeepAlives:  b.DisableKeepAlives,

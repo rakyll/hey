@@ -120,15 +120,15 @@ func main() {
 	}
 
 	var (
-		url, method, originalHost string
+		url, method string
 		// Username and password for basic auth
 		username, password string
 		// request headers
 		header http.Header = make(http.Header)
 	)
 
+	url = flag.Args()[0]
 	method = strings.ToUpper(*m)
-	url, originalHost = resolveUrl(flag.Args()[0])
 
 	// set content-type
 	header.Set("Content-Type", *contentType)
@@ -172,13 +172,12 @@ func main() {
 
 	(&boomer.Boomer{
 		Req: &boomer.ReqOpts{
-			Method:       method,
-			URL:          url,
-			Body:         *body,
-			Header:       header,
-			Username:     username,
-			Password:     password,
-			OriginalHost: originalHost,
+			Method:   method,
+			URL:      url,
+			Body:     *body,
+			Header:   header,
+			Username: username,
+			Password: password,
 		},
 		N:                  num,
 		C:                  conc,
@@ -190,50 +189,6 @@ func main() {
 		ProxyAddr:          proxyURL,
 		Output:             *output,
 	}).Run()
-}
-
-// Replaces host with an IP and returns the provided
-// string URL as a *url.URL.
-//
-// DNS lookups are not cached in the package level in Go,
-// and it's a huge overhead to resolve a host
-// before each request in our case. Instead we resolve
-// the domain and replace it with the resolved IP to avoid
-// lookups during request time. Supported url strings:
-//
-// <schema>://google.com[:port]
-// <schema>://173.194.116.73[:port]
-// <schema>://\[2a00:1450:400a:806::1007\][:port]
-func resolveUrl(url string) (string, string) {
-	uri, err := gourl.ParseRequestURI(url)
-	if err != nil {
-		usageAndExit(err.Error())
-	}
-	originalHost := uri.Host
-
-	serverName, port, err := net.SplitHostPort(uri.Host)
-	if err != nil {
-		serverName = uri.Host
-	}
-
-	addrs, err := defaultDNSResolver.Lookup(serverName)
-	if err != nil {
-		usageAndExit(err.Error())
-	}
-	ip := addrs[0]
-	if port != "" {
-		// join automatically puts square brackets around the
-		// ipv6 IPs.
-		uri.Host = net.JoinHostPort(ip, port)
-	} else {
-		uri.Host = ip
-		// square brackets are required for ipv6 IPs.
-		// otherwise, net.Dial fails with a parsing error.
-		if strings.Contains(ip, ":") {
-			uri.Host = fmt.Sprintf("[%s]", ip)
-		}
-	}
-	return uri.String(), originalHost
 }
 
 func usageAndExit(message string) {
