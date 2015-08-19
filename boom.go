@@ -201,11 +201,11 @@ func usageAndExit(message string) {
 	os.Exit(1)
 }
 
-func parseInputWithRegexp(input, regx string) (matches []string, err error) {
+func parseInputWithRegexp(input, regx string) ([]string, error) {
 	re := regexp.MustCompile(regx)
-	matches = re.FindStringSubmatch(input)
+	matches := re.FindStringSubmatch(input)
 	if len(matches) < 1 {
-		err = errors.New("Could not parse provided input")
+		return nil, errors.New("Could not parse provided input")
 	}
-	return
+	return matches, nil
 }
