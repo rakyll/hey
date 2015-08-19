@@ -18,7 +18,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"net"
 	"net/http"
 	gourl "net/url"
 	"os"
@@ -83,22 +82,6 @@ Options:
   -cpus                 Number of used cpu cores.
                         (default for current machine is %d cores)
 `
-
-var defaultDNSResolver dnsResolver = &netDNSResolver{}
-
-// DNS resolver interface.
-type dnsResolver interface {
-	Lookup(domain string) (addr []string, err error)
-}
-
-// A DNS resolver based on net.LookupHost.
-type netDNSResolver struct{}
-
-// Looks up for the resolved IP addresses of
-// the provided domain.
-func (*netDNSResolver) Lookup(domain string) (addr []string, err error) {
-	return net.LookupHost(domain)
-}
 
 func main() {
 	flag.Usage = func() {
