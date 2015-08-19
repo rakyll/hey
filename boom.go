@@ -158,7 +158,7 @@ func main() {
 	}
 
 	if *output != "csv" && *output != "" {
-		usageAndExit("Invalid output type.")
+		usageAndExit("Invalid output type; only csv is supported.")
 	}
 
 	var proxyURL *gourl.URL
