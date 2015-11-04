@@ -23,6 +23,10 @@ import (
 	"time"
 )
 
+// client is the http.Client that will be used to make all requests
+// to the destination.
+var client *http.Client
+
 // Run makes all the requests, prints the summary. It blocks until
 // all work is done.
 func (b *Boomer) Run() {
@@ -42,18 +46,6 @@ func (b *Boomer) Run() {
 }
 
 func (b *Boomer) worker(wg *sync.WaitGroup, ch chan *http.Request, readAll bool) {
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: b.AllowInsecure,
-		},
-		DisableCompression: b.DisableCompression,
-		DisableKeepAlives:  b.DisableKeepAlives,
-		// TODO(jbd): Add dial timeout.
-		TLSHandshakeTimeout: time.Duration(b.Timeout) * time.Millisecond,
-		Proxy:               http.ProxyURL(b.ProxyAddr),
-	}
-
-	client := &http.Client{Transport: tr}
 	for req := range ch {
 		s := time.Now()
 
@@ -86,6 +78,18 @@ func (b *Boomer) worker(wg *sync.WaitGroup, ch chan *http.Request, readAll bool)
 }
 
 func (b *Boomer) run() {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: b.AllowInsecure,
+		},
+		DisableCompression: b.DisableCompression,
+		DisableKeepAlives:  b.DisableKeepAlives,
+		// TODO(jbd): Add dial timeout.
+		TLSHandshakeTimeout: time.Duration(b.Timeout) * time.Millisecond,
+		Proxy:               http.ProxyURL(b.ProxyAddr),
+	}
+	client = &http.Client{Transport: tr}
+
 	var wg sync.WaitGroup
 	wg.Add(b.N)
 
