@@ -38,6 +38,7 @@ type ReqOpts struct {
 	Body     string
 	Username string
 	Password string
+	ReadAll  bool
 }
 
 // Creates a req object from req options

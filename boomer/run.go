@@ -16,10 +16,10 @@ package boomer
 
 import (
 	"crypto/tls"
-
-	"sync"
-
+	"io"
+	"io/ioutil"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -41,7 +41,7 @@ func (b *Boomer) Run() {
 	close(b.results)
 }
 
-func (b *Boomer) worker(wg *sync.WaitGroup, ch chan *http.Request) {
+func (b *Boomer) worker(wg *sync.WaitGroup, ch chan *http.Request, readAll bool) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: b.AllowInsecure,
@@ -52,22 +52,30 @@ func (b *Boomer) worker(wg *sync.WaitGroup, ch chan *http.Request) {
 		TLSHandshakeTimeout: time.Duration(b.Timeout) * time.Millisecond,
 		Proxy:               http.ProxyURL(b.ProxyAddr),
 	}
+
 	client := &http.Client{Transport: tr}
 	for req := range ch {
 		s := time.Now()
-		code := 0
-		size := int64(0)
+
+		var code int
+		var size int64
+
 		resp, err := client.Do(req)
+
 		if err == nil {
 			size = resp.ContentLength
 			code = resp.StatusCode
+			if readAll {
+				_, err = io.Copy(ioutil.Discard, resp.Body)
+			}
 			resp.Body.Close()
 		}
+
 		if b.bar != nil {
 			b.bar.Increment()
 		}
-		wg.Done()
 
+		wg.Done()
 		b.results <- &result{
 			statusCode:    code,
 			duration:      time.Now().Sub(s),
@@ -88,7 +96,7 @@ func (b *Boomer) run() {
 	jobs := make(chan *http.Request, b.N)
 	for i := 0; i < b.C; i++ {
 		go func() {
-			b.worker(&wg, jobs)
+			b.worker(&wg, jobs, b.Req.ReadAll)
 		}()
 	}
 	for i := 0; i < b.N; i++ {
