@@ -28,7 +28,8 @@ Options:
       metrics in comma-seperated values format.
 
   -m  HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.
-  -h  Custom HTTP headers, name1:value1;name2:value2.
+  -h  Semicolon-separated list of Custom HTTP headers, name1:value1;name2:value2.
+  -H  Custom HTTP header. You can specify as many as needed by repeating the flag.
   -t  Timeout in ms.
   -A  HTTP Accept header.
   -d  HTTP request body.

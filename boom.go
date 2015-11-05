@@ -33,7 +33,19 @@ const (
 	authRegexp   = "^([\\w-\\.]+):(.+)"
 )
 
+type headerSlice []string
+
+func (h *headerSlice) String() string {
+	return fmt.Sprintf("%s", *h)
+}
+
+func (h *headerSlice) Set(value string) error {
+	*h = append(*h, value)
+	return nil
+}
+
 var (
+	headerslice headerSlice
 	m           = flag.String("m", "GET", "")
 	headers     = flag.String("h", "", "")
 	body        = flag.String("d", "", "")
@@ -68,7 +80,8 @@ Options:
       metrics in comma-seperated values format.
 
   -m  HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.
-  -h  Custom HTTP headers, name1:value1;name2:value2.
+  -h  Semicolon-separated list of Custom HTTP headers, name1:value1;name2:value2.
+  -H  Custom HTTP header. You can specify as many as needed by repeating the flag.
   -t  Timeout in ms.
   -A  HTTP Accept header.
   -d  HTTP request body.
@@ -89,6 +102,8 @@ func main() {
 	flag.Usage = func() {
 		fmt.Fprint(os.Stderr, fmt.Sprintf(usage, runtime.NumCPU()))
 	}
+
+	flag.Var(&headerslice, "H", "")
 
 	flag.Parse()
 	if flag.NArg() < 1 {
@@ -127,6 +142,14 @@ func main() {
 			}
 			header.Set(match[1], match[2])
 		}
+	}
+	// set any other additional repeatable headers
+	for i := 0; i < len(headerslice); i++ {
+		match, err := parseInputWithRegexp(headerslice[i], headerRegexp)
+		if err != nil {
+			usageAndExit(err.Error())
+		}
+		header.Set(match[1], match[2])
 	}
 
 	if *accept != "" {
