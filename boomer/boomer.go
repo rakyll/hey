@@ -21,7 +21,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strings"
 	"sync"
 	"time"
 
@@ -39,30 +38,9 @@ type result struct {
 	contentLength int64
 }
 
-type ReqOpts struct {
-	Method   string
-	URL      string
-	Header   http.Header
-	Body     string
-	Username string
-	Password string
-	ReadAll  bool
-}
-
-// Creates a req object from req options
-func (r *ReqOpts) Request() *http.Request {
-	req, _ := http.NewRequest(r.Method, r.URL, strings.NewReader(r.Body))
-	req.Header = r.Header
-	if r.Username != "" && r.Password != "" {
-		req.SetBasicAuth(r.Username, r.Password)
-	}
-	return req
-}
-
 type Boomer struct {
-	// Req represents the options of the request to be made.
-	// TODO(jbd): Make it work with an http.Request instead.
-	Req *ReqOpts
+	// Request is the request to be made.
+	Request *http.Request
 
 	// N is the total number of requests to make.
 	N int
@@ -92,6 +70,10 @@ type Boomer struct {
 	// ProxyAddr is the address of HTTP proxy server in the format on "host:port".
 	// Optional.
 	ProxyAddr *url.URL
+
+	// ReadAll determines whether the body of the response needs
+	// to be fully consumed.
+	ReadAll bool
 
 	bar     *pb.ProgressBar
 	results chan *result
@@ -134,7 +116,7 @@ func (b *Boomer) Run() {
 	close(b.results)
 }
 
-func (b *Boomer) runWorker(wg *sync.WaitGroup, ch chan *http.Request, readAll bool) {
+func (b *Boomer) runWorker(wg *sync.WaitGroup, ch chan *http.Request) {
 	for req := range ch {
 		s := time.Now()
 
@@ -145,7 +127,7 @@ func (b *Boomer) runWorker(wg *sync.WaitGroup, ch chan *http.Request, readAll bo
 		if err == nil {
 			size = resp.ContentLength
 			code = resp.StatusCode
-			if readAll {
+			if b.ReadAll {
 				_, err = io.Copy(ioutil.Discard, resp.Body)
 			}
 			resp.Body.Close()
@@ -185,16 +167,30 @@ func (b *Boomer) runWorkers() {
 
 	jobsch := make(chan *http.Request, b.N)
 	for i := 0; i < b.C; i++ {
-		go b.runWorker(&wg, jobsch, b.Req.ReadAll)
+		go b.runWorker(&wg, jobsch)
 	}
 
 	for i := 0; i < b.N; i++ {
 		if b.Qps > 0 {
 			<-throttle
 		}
-		jobsch <- b.Req.Request()
+		jobsch <- cloneRequest(b.Request)
 	}
 	close(jobsch)
 
 	wg.Wait()
+}
+
+// cloneRequest returns a clone of the provided *http.Request.
+// The clone is a shallow copy of the struct and its Header map.
+func cloneRequest(r *http.Request) *http.Request {
+	// shallow copy of the struct
+	r2 := new(http.Request)
+	*r2 = *r
+	// deep copy of the Header
+	r2.Header = make(http.Header, len(r.Header))
+	for k, s := range r.Header {
+		r2.Header[k] = append([]string(nil), s...)
+	}
+	return r2
 }

@@ -154,16 +154,17 @@ func main() {
 		}
 	}
 
+	req, err := http.NewRequest(method, url, strings.NewReader(*body))
+	if err != nil {
+		usageAndExit(err.Error())
+	}
+	req.Header = header
+	if username != "" && password != "" {
+		req.SetBasicAuth(username, password)
+	}
+
 	(&boomer.Boomer{
-		Req: &boomer.ReqOpts{
-			Method:   method,
-			URL:      url,
-			Body:     *body,
-			Header:   header,
-			Username: username,
-			Password: password,
-			ReadAll:  *readAll,
-		},
+		Request:            req,
 		N:                  num,
 		C:                  conc,
 		Qps:                q,
@@ -173,6 +174,7 @@ func main() {
 		DisableKeepAlives:  *disableKeepAlives,
 		ProxyAddr:          proxyURL,
 		Output:             *output,
+		ReadAll:            *readAll,
 	}).Run()
 }
 

@@ -15,6 +15,7 @@
 package boomer
 
 import (
+	"bytes"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -32,13 +33,11 @@ func TestN(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(handler))
 	defer server.Close()
 
+	req, _ := http.NewRequest("GET", server.URL, nil)
 	boomer := &Boomer{
-		Req: &ReqOpts{
-			Method: "GET",
-			URL:    server.URL,
-		},
-		N: 20,
-		C: 2,
+		Request: req,
+		N:       20,
+		C:       2,
 	}
 	boomer.Run()
 	if count != 20 {
@@ -55,14 +54,12 @@ func TestQps(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(handler))
 	defer server.Close()
 
+	req, _ := http.NewRequest("GET", server.URL, nil)
 	boomer := &Boomer{
-		Req: &ReqOpts{
-			Method: "GET",
-			URL:    server.URL,
-		},
-		N:   20,
-		C:   2,
-		Qps: 1,
+		Request: req,
+		N:       20,
+		C:       2,
+		Qps:     1,
 	}
 	wg.Add(1)
 	time.AfterFunc(time.Second, func() {
@@ -90,16 +87,13 @@ func TestRequest(t *testing.T) {
 	header := make(http.Header)
 	header.Add("Content-type", "text/html")
 	header.Add("X-some", "value")
+	req, _ := http.NewRequest("GET", server.URL, nil)
+	req.SetBasicAuth("username", "password")
+	req.Header = header
 	boomer := &Boomer{
-		Req: &ReqOpts{
-			Method:   "PUT",
-			URL:      server.URL,
-			Header:   header,
-			Username: "username",
-			Password: "password",
-		},
-		N: 1,
-		C: 1,
+		Request: req,
+		N:       1,
+		C:       1,
 	}
 	boomer.Run()
 	if uri != "/" {
@@ -127,14 +121,11 @@ func TestBody(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(handler))
 	defer server.Close()
 
+	req, _ := http.NewRequest("POST", server.URL, bytes.NewBuffer("Body"))
 	boomer := &Boomer{
-		Req: &ReqOpts{
-			Method: "POST",
-			URL:    server.URL,
-			Body:   "Body",
-		},
-		N: 10,
-		C: 1,
+		Request: req,
+		N:       10,
+		C:       1,
 	}
 	boomer.Run()
 	if count != 10 {
