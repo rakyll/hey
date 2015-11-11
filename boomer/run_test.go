@@ -88,8 +88,8 @@ func TestRequest(t *testing.T) {
 	header.Add("Content-type", "text/html")
 	header.Add("X-some", "value")
 	req, _ := http.NewRequest("GET", server.URL, nil)
-	req.SetBasicAuth("username", "password")
 	req.Header = header
+	req.SetBasicAuth("username", "password")
 	boomer := &Boomer{
 		Request: req,
 		N:       1,
@@ -115,17 +115,18 @@ func TestBody(t *testing.T) {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		body, _ := ioutil.ReadAll(r.Body)
 		if string(body) == "Body" {
-			atomic.AddInt64(&count, int64(1))
+			atomic.AddInt64(&count, 1)
 		}
 	}
 	server := httptest.NewServer(http.HandlerFunc(handler))
 	defer server.Close()
 
-	req, _ := http.NewRequest("POST", server.URL, bytes.NewBuffer("Body"))
+	req, _ := http.NewRequest("POST", server.URL, bytes.NewBuffer([]byte("Body")))
 	boomer := &Boomer{
-		Request: req,
-		N:       10,
-		C:       1,
+		Request:     req,
+		RequestBody: "Body",
+		N:           10,
+		C:           1,
 	}
 	boomer.Run()
 	if count != 10 {
