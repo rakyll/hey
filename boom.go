@@ -176,9 +176,9 @@ func main() {
 	}).Run()
 }
 
-func usageAndExit(message string) {
-	if message != "" {
-		fmt.Fprintf(os.Stderr, message)
+func usageAndExit(msg string) {
+	if msg != "" {
+		fmt.Fprintf(os.Stderr, msg)
 		fmt.Fprintf(os.Stderr, "\n\n")
 	}
 	flag.Usage()
