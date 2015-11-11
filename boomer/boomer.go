@@ -98,7 +98,7 @@ type Boomer struct {
 }
 
 func (b *Boomer) startProgress() {
-	if b.Output == "" {
+	if b.Output != "" {
 		return
 	}
 	b.bar = pb.New(b.N)
@@ -107,14 +107,14 @@ func (b *Boomer) startProgress() {
 }
 
 func (b *Boomer) finalizeProgress() {
-	if b.Output == "" {
+	if b.Output != "" {
 		return
 	}
 	b.bar.Finish()
 }
 
 func (b *Boomer) incProgress() {
-	if b.Output == "" {
+	if b.Output != "" {
 		return
 	}
 	b.bar.Increment()
