@@ -15,7 +15,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -191,7 +190,7 @@ func parseInputWithRegexp(input, regx string) ([]string, error) {
 	re := regexp.MustCompile(regx)
 	matches := re.FindStringSubmatch(input)
 	if len(matches) < 1 {
-		return nil, errors.New("Could not parse provided input")
+		return nil, fmt.Errorf("could not parse the provided input; input = %v", input)
 	}
 	return matches, nil
 }
