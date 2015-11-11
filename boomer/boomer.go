@@ -182,18 +182,19 @@ func (b *Boomer) runWorkers() {
 	if b.Qps > 0 {
 		throttle = time.Tick(time.Duration(1e6/(b.Qps)) * time.Microsecond)
 	}
-	jobs := make(chan *http.Request, b.N)
+
+	jobsch := make(chan *http.Request, b.N)
 	for i := 0; i < b.C; i++ {
-		go func() {
-			b.runWorker(&wg, jobs, b.Req.ReadAll)
-		}()
+		go b.runWorker(&wg, jobsch, b.Req.ReadAll)
 	}
+
 	for i := 0; i < b.N; i++ {
 		if b.Qps > 0 {
 			<-throttle
 		}
-		jobs <- b.Req.Request()
+		jobsch <- b.Req.Request()
 	}
-	close(jobs)
+	close(jobsch)
+
 	wg.Wait()
 }
