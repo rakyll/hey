@@ -28,6 +28,10 @@ import (
 	"github.com/rakyll/pb"
 )
 
+// client is the http.Client that will be used to make all requests
+// to the destination.
+var client *http.Client
+
 type result struct {
 	err           error
 	statusCode    int
@@ -93,36 +97,44 @@ type Boomer struct {
 	results chan *result
 }
 
-func newPb(size int) (bar *pb.ProgressBar) {
-	bar = pb.New(size)
-	bar.Format("Bom !")
-	bar.Start()
-	return
+func (b *Boomer) startProgress() {
+	if b.Output == "" {
+		return
+	}
+	b.bar = pb.New(b.N)
+	b.bar.Format("Bom !")
+	b.bar.Start()
 }
 
-// client is the http.Client that will be used to make all requests
-// to the destination.
-var client *http.Client
+func (b *Boomer) finalizeProgress() {
+	if b.Output == "" {
+		return
+	}
+	b.bar.Finish()
+}
+
+func (b *Boomer) incProgress() {
+	if b.Output == "" {
+		return
+	}
+	b.bar.Increment()
+}
 
 // Run makes all the requests, prints the summary. It blocks until
 // all work is done.
 func (b *Boomer) Run() {
 	b.results = make(chan *result, b.N)
-	if b.Output == "" {
-		b.bar = newPb(b.N)
-	}
+	b.startProgress()
 
 	start := time.Now()
-	b.run()
-	if b.Output == "" {
-		b.bar.Finish()
-	}
+	b.runWorkers()
+	b.finalizeProgress()
 
 	newReport(b.N, b.results, b.Output, time.Now().Sub(start)).finalize()
 	close(b.results)
 }
 
-func (b *Boomer) worker(wg *sync.WaitGroup, ch chan *http.Request, readAll bool) {
+func (b *Boomer) runWorker(wg *sync.WaitGroup, ch chan *http.Request, readAll bool) {
 	for req := range ch {
 		s := time.Now()
 
@@ -130,7 +142,6 @@ func (b *Boomer) worker(wg *sync.WaitGroup, ch chan *http.Request, readAll bool)
 		var size int64
 
 		resp, err := client.Do(req)
-
 		if err == nil {
 			size = resp.ContentLength
 			code = resp.StatusCode
@@ -140,11 +151,8 @@ func (b *Boomer) worker(wg *sync.WaitGroup, ch chan *http.Request, readAll bool)
 			resp.Body.Close()
 		}
 
-		if b.bar != nil {
-			b.bar.Increment()
-		}
-
 		wg.Done()
+		b.incProgress()
 		b.results <- &result{
 			statusCode:    code,
 			duration:      time.Now().Sub(s),
@@ -154,7 +162,7 @@ func (b *Boomer) worker(wg *sync.WaitGroup, ch chan *http.Request, readAll bool)
 	}
 }
 
-func (b *Boomer) run() {
+func (b *Boomer) runWorkers() {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: b.AllowInsecure,
@@ -177,7 +185,7 @@ func (b *Boomer) run() {
 	jobs := make(chan *http.Request, b.N)
 	for i := 0; i < b.C; i++ {
 		go func() {
-			b.worker(&wg, jobs, b.Req.ReadAll)
+			b.runWorker(&wg, jobs, b.Req.ReadAll)
 		}()
 	}
 	for i := 0; i < b.N; i++ {
@@ -187,6 +195,5 @@ func (b *Boomer) run() {
 		jobs <- b.Req.Request()
 	}
 	close(jobs)
-
 	wg.Wait()
 }
