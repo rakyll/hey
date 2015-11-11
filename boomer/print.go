@@ -43,15 +43,14 @@ type report struct {
 	output string
 }
 
-func printReport(size int, results chan *result, output string, total time.Duration) {
-	r := &report{
+func newReport(size int, results chan *result, output string, total time.Duration) *report {
+	return &report{
 		output:         output,
 		results:        results,
 		total:          total,
 		statusCodeDist: make(map[int]int),
 		errorDist:      make(map[string]int),
 	}
-	r.finalize()
 }
 
 func (r *report) finalize() {

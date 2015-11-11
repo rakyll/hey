@@ -118,7 +118,7 @@ func (b *Boomer) Run() {
 		b.bar.Finish()
 	}
 
-	printReport(b.N, b.results, b.Output, time.Now().Sub(start))
+	newReport(b.N, b.results, b.Output, time.Now().Sub(start)).finalize()
 	close(b.results)
 }
 
