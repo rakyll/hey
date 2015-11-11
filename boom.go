@@ -154,17 +154,18 @@ func main() {
 		}
 	}
 
-	req, err := http.NewRequest(method, url, strings.NewReader(*body))
+	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		usageAndExit(err.Error())
 	}
 	req.Header = header
-	if username != "" && password != "" {
+	if username != "" || password != "" {
 		req.SetBasicAuth(username, password)
 	}
 
 	(&boomer.Boomer{
 		Request:            req,
+		RequestBody:        *body,
 		N:                  num,
 		C:                  conc,
 		Qps:                q,

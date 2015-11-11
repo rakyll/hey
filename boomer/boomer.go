@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -41,6 +42,8 @@ type result struct {
 type Boomer struct {
 	// Request is the request to be made.
 	Request *http.Request
+
+	RequestBody string
 
 	// N is the total number of requests to make.
 	N int
@@ -174,7 +177,7 @@ func (b *Boomer) runWorkers() {
 		if b.Qps > 0 {
 			<-throttle
 		}
-		jobsch <- cloneRequest(b.Request)
+		jobsch <- cloneRequest(b.Request, b.RequestBody)
 	}
 	close(jobsch)
 
@@ -183,7 +186,7 @@ func (b *Boomer) runWorkers() {
 
 // cloneRequest returns a clone of the provided *http.Request.
 // The clone is a shallow copy of the struct and its Header map.
-func cloneRequest(r *http.Request) *http.Request {
+func cloneRequest(r *http.Request, body string) *http.Request {
 	// shallow copy of the struct
 	r2 := new(http.Request)
 	*r2 = *r
@@ -192,5 +195,6 @@ func cloneRequest(r *http.Request) *http.Request {
 	for k, s := range r.Header {
 		r2.Header[k] = append([]string(nil), s...)
 	}
+	r2.Body = ioutil.NopCloser(strings.NewReader(body))
 	return r2
 }
