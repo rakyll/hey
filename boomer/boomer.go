@@ -21,6 +21,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
+	"os/signal"
 	"strings"
 	"sync"
 	"time"
@@ -112,9 +114,17 @@ func (b *Boomer) Run() {
 	b.startProgress()
 
 	start := time.Now()
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+
+	go func() {
+		<-c
+		// TODO(jbd): Progress bar should not be finalized.
+		newReport(b.N, b.results, b.Output, time.Now().Sub(start)).finalize()
+	}()
+
 	b.runWorkers()
 	b.finalizeProgress()
-
 	newReport(b.N, b.results, b.Output, time.Now().Sub(start)).finalize()
 	close(b.results)
 }
@@ -180,7 +190,6 @@ func (b *Boomer) runWorkers() {
 		jobsch <- cloneRequest(b.Request, b.RequestBody)
 	}
 	close(jobsch)
-
 	wg.Wait()
 }
 
