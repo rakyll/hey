@@ -30,10 +30,6 @@ import (
 	"github.com/rakyll/pb"
 )
 
-// client is the http.Client that will be used to make all requests
-// to the destination.
-var client *http.Client
-
 type result struct {
 	err           error
 	statusCode    int
@@ -130,6 +126,17 @@ func (b *Boomer) Run() {
 }
 
 func (b *Boomer) runWorker(wg *sync.WaitGroup, ch chan *http.Request) {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: b.AllowInsecure,
+		},
+		DisableCompression: b.DisableCompression,
+		DisableKeepAlives:  b.DisableKeepAlives,
+		// TODO(jbd): Add dial timeout.
+		TLSHandshakeTimeout: time.Duration(b.Timeout) * time.Millisecond,
+		Proxy:               http.ProxyURL(b.ProxyAddr),
+	}
+	client := &http.Client{Transport: tr}
 	for req := range ch {
 		s := time.Now()
 
@@ -158,18 +165,6 @@ func (b *Boomer) runWorker(wg *sync.WaitGroup, ch chan *http.Request) {
 }
 
 func (b *Boomer) runWorkers() {
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: b.AllowInsecure,
-		},
-		DisableCompression: b.DisableCompression,
-		DisableKeepAlives:  b.DisableKeepAlives,
-		// TODO(jbd): Add dial timeout.
-		TLSHandshakeTimeout: time.Duration(b.Timeout) * time.Millisecond,
-		Proxy:               http.ProxyURL(b.ProxyAddr),
-	}
-	client = &http.Client{Transport: tr}
-
 	var wg sync.WaitGroup
 	wg.Add(b.N)
 
