@@ -51,3 +51,10 @@ func TestParseInvalidAuthFlag(t *testing.T) {
 		t.Errorf("An invalid header passed parsing")
 	}
 }
+
+func TestParseAuthMetaCharacters(t *testing.T) {
+	_, err := parseInputWithRegexp("plus+$*{:boom", authRegexp)
+	if err != nil {
+		t.Errorf("Could not parse an auth header with a plus sign in the user name")
+	}
+}
