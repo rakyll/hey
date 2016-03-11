@@ -154,7 +154,6 @@ func (b *Boomer) runWorker(wg *sync.WaitGroup, ch chan *http.Request) {
 			resp.Body.Close()
 		}
 
-		wg.Done()
 		b.incProgress()
 		b.results <- &result{
 			statusCode:    code,
@@ -163,11 +162,12 @@ func (b *Boomer) runWorker(wg *sync.WaitGroup, ch chan *http.Request) {
 			contentLength: size,
 		}
 	}
+	wg.Done()
 }
 
 func (b *Boomer) runWorkers() {
 	var wg sync.WaitGroup
-	wg.Add(b.N)
+	wg.Add(b.C)
 
 	var throttle <-chan time.Time
 	if b.Qps > 0 {
