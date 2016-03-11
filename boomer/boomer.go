@@ -117,6 +117,7 @@ func (b *Boomer) Run() {
 		<-c
 		// TODO(jbd): Progress bar should not be finalized.
 		newReport(b.N, b.results, b.Output, time.Now().Sub(start)).finalize()
+		os.Exit(1)
 	}()
 
 	b.runWorkers()
