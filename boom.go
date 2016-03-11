@@ -28,8 +28,8 @@ import (
 )
 
 const (
-	headerRegexp = "^([\\w-]+):\\s*(.+)"
-	authRegexp   = "^([\\w-\\.]+):(.+)"
+	headerRegexp = `^([\w-]+):\s*(.+)`
+	authRegexp   = `^(.+):([^\s].+)`
 )
 
 var (
