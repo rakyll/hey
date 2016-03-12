@@ -53,9 +53,6 @@ type Boomer struct {
 	// Qps is the rate limit.
 	Qps int
 
-	// AllowInsecure is an option to allow insecure TLS/SSL certificates.
-	AllowInsecure bool
-
 	// DisableCompression is an option to disable compression in response
 	DisableCompression bool
 
@@ -122,7 +119,7 @@ func (b *Boomer) runWorker(n int) {
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: b.AllowInsecure,
+			InsecureSkipVerify: true,
 		},
 		DisableCompression: b.DisableCompression,
 		DisableKeepAlives:  b.DisableKeepAlives,

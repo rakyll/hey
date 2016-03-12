@@ -48,7 +48,6 @@ var (
 	t    = flag.Int("t", 0, "")
 	cpus = flag.Int("cpus", runtime.GOMAXPROCS(-1), "")
 
-	insecure           = flag.Bool("allow-insecure", false, "")
 	disableCompression = flag.Bool("disable-compression", false, "")
 	disableKeepAlives  = flag.Bool("disable-keepalive", false, "")
 	proxyAddr          = flag.String("x", "", "")
@@ -74,7 +73,6 @@ Options:
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
 
-  -allow-insecure       Allow bad/expired TLS/SSL certificates.
   -disable-compression  Disable compression.
   -disable-keepalive    Disable keep-alive, prevents re-use of TCP
                         connections between different HTTP requests.
@@ -162,7 +160,6 @@ func main() {
 		C:                  conc,
 		Qps:                q,
 		Timeout:            *t,
-		AllowInsecure:      *insecure,
 		DisableCompression: *disableCompression,
 		DisableKeepAlives:  *disableKeepAlives,
 		ProxyAddr:          proxyURL,
