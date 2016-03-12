@@ -87,15 +87,15 @@ func (r *report) print() {
 	if len(r.lats) > 0 {
 		r.fastest = r.lats[0]
 		r.slowest = r.lats[len(r.lats)-1]
-		fmt.Printf("\nSummary:\n")
-		fmt.Printf("  Total:\t%4.4f secs.\n", r.total.Seconds())
-		fmt.Printf("  Slowest:\t%4.4f secs.\n", r.slowest)
-		fmt.Printf("  Fastest:\t%4.4f secs.\n", r.fastest)
-		fmt.Printf("  Average:\t%4.4f secs.\n", r.average)
+		fmt.Printf("Summary:\n")
+		fmt.Printf("  Total:\t%4.4f secs\n", r.total.Seconds())
+		fmt.Printf("  Slowest:\t%4.4f secs\n", r.slowest)
+		fmt.Printf("  Fastest:\t%4.4f secs\n", r.fastest)
+		fmt.Printf("  Average:\t%4.4f secs\n", r.average)
 		fmt.Printf("  Requests/sec:\t%4.4f\n", r.rps)
 		if r.sizeTotal > 0 {
-			fmt.Printf("  Total Data Received:\t%d bytes.\n", r.sizeTotal)
-			fmt.Printf("  Response Size per Request:\t%d bytes.\n", r.sizeTotal/int64(len(r.lats)))
+			fmt.Printf("  Total data:\t%d bytes\n", r.sizeTotal)
+			fmt.Printf("  Size/request:\t%d bytes\n", r.sizeTotal/int64(len(r.lats)))
 		}
 		r.printStatusCodes()
 		r.printHistogram()
@@ -128,7 +128,7 @@ func (r *report) printLatencies() {
 	fmt.Printf("\nLatency distribution:\n")
 	for i := 0; i < len(pctls); i++ {
 		if data[i] > 0 {
-			fmt.Printf("  %v%% in %4.4f secs.\n", pctls[i], data[i])
+			fmt.Printf("  %v%% in %4.4f secs\n", pctls[i], data[i])
 		}
 	}
 }
