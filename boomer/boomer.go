@@ -26,8 +26,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/rakyll/pb"
 )
 
 type result struct {
@@ -76,38 +74,13 @@ type Boomer struct {
 	// to be fully consumed.
 	ReadAll bool
 
-	bar     *pb.ProgressBar
 	results chan *result
-}
-
-func (b *Boomer) startProgress() {
-	if b.Output != "" {
-		return
-	}
-	b.bar = pb.New(b.N)
-	b.bar.Format("Bom !")
-	b.bar.Start()
-}
-
-func (b *Boomer) finalizeProgress() {
-	if b.Output != "" {
-		return
-	}
-	b.bar.Finish()
-}
-
-func (b *Boomer) incProgress() {
-	if b.Output != "" {
-		return
-	}
-	b.bar.Increment()
 }
 
 // Run makes all the requests, prints the summary. It blocks until
 // all work is done.
 func (b *Boomer) Run() {
 	b.results = make(chan *result, b.N)
-	b.startProgress()
 
 	start := time.Now()
 	c := make(chan os.Signal, 1)
@@ -121,12 +94,36 @@ func (b *Boomer) Run() {
 	}()
 
 	b.runWorkers()
-	b.finalizeProgress()
 	newReport(b.N, b.results, b.Output, time.Now().Sub(start)).finalize()
 	close(b.results)
 }
 
-func (b *Boomer) runWorker(wg *sync.WaitGroup, ch chan *http.Request) {
+func (b *Boomer) makeRequest(c *http.Client) {
+	s := time.Now()
+	var size int64
+	var code int
+
+	resp, err := c.Do(cloneRequest(b.Request, b.RequestBody))
+	if err == nil {
+		size = resp.ContentLength
+		code = resp.StatusCode
+		io.Copy(ioutil.Discard, resp.Body)
+		resp.Body.Close()
+	}
+	b.results <- &result{
+		statusCode:    code,
+		duration:      time.Now().Sub(s),
+		err:           err,
+		contentLength: size,
+	}
+}
+
+func (b *Boomer) runWorker(n int) {
+	var throttle <-chan time.Time
+	if b.Qps > 0 {
+		throttle = time.Tick(time.Duration(1e6/(b.Qps)) * time.Microsecond)
+	}
+
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: b.AllowInsecure,
@@ -138,54 +135,25 @@ func (b *Boomer) runWorker(wg *sync.WaitGroup, ch chan *http.Request) {
 		Proxy:               http.ProxyURL(b.ProxyAddr),
 	}
 	client := &http.Client{Transport: tr}
-	for req := range ch {
-		s := time.Now()
-
-		var code int
-		var size int64
-
-		resp, err := client.Do(req)
-		if err == nil {
-			size = resp.ContentLength
-			code = resp.StatusCode
-			if b.ReadAll {
-				_, err = io.Copy(ioutil.Discard, resp.Body)
-			}
-			resp.Body.Close()
+	for i := 0; i < n; i++ {
+		if b.Qps > 0 {
+			<-throttle
 		}
-
-		b.incProgress()
-		b.results <- &result{
-			statusCode:    code,
-			duration:      time.Now().Sub(s),
-			err:           err,
-			contentLength: size,
-		}
+		b.makeRequest(client)
 	}
-	wg.Done()
 }
 
 func (b *Boomer) runWorkers() {
 	var wg sync.WaitGroup
 	wg.Add(b.C)
 
-	var throttle <-chan time.Time
-	if b.Qps > 0 {
-		throttle = time.Tick(time.Duration(1e6/(b.Qps)) * time.Microsecond)
-	}
-
-	jobsch := make(chan *http.Request, b.N)
+	// Ignore the case where b.N % b.C != 0.
 	for i := 0; i < b.C; i++ {
-		go b.runWorker(&wg, jobsch)
+		go func() {
+			b.runWorker(b.N / b.C)
+			wg.Done()
+		}()
 	}
-
-	for i := 0; i < b.N; i++ {
-		if b.Qps > 0 {
-			<-throttle
-		}
-		jobsch <- cloneRequest(b.Request, b.RequestBody)
-	}
-	close(jobsch)
 	wg.Wait()
 }
 
