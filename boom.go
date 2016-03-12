@@ -101,18 +101,11 @@ func main() {
 		usageAndExit("n and c cannot be smaller than 1.")
 	}
 
-	var (
-		url, method string
-		// Username and password for basic auth
-		username, password string
-		// request headers
-		header http.Header = make(http.Header)
-	)
-
-	url = flag.Args()[0]
-	method = strings.ToUpper(*m)
+	url := flag.Args()[0]
+	method := strings.ToUpper(*m)
 
 	// set content-type
+	header := make(http.Header)
 	header.Set("Content-Type", *contentType)
 	// set any other additional headers
 	if *headers != "" {
@@ -131,6 +124,7 @@ func main() {
 	}
 
 	// set basic auth if set
+	var username, password string
 	if *authHeader != "" {
 		match, err := parseInputWithRegexp(*authHeader, authRegexp)
 		if err != nil {
