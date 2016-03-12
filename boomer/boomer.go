@@ -70,10 +70,6 @@ type Boomer struct {
 	// Optional.
 	ProxyAddr *url.URL
 
-	// ReadAll determines whether the body of the response needs
-	// to be fully consumed.
-	ReadAll bool
-
 	results chan *result
 }
 
