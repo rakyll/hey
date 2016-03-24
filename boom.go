@@ -80,8 +80,8 @@ Options:
       metrics in comma-seperated values format.
 
   -m  HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.
-  -h  Semicolon-separated list of Custom HTTP headers, name1:value1;name2:value2.
   -H  Custom HTTP header. You can specify as many as needed by repeating the flag.
+      for example, -H "Accept: text/html" -H "Content-Type: application/xml" .
   -t  Timeout in ms.
   -A  HTTP Accept header.
   -d  HTTP request body.
@@ -134,18 +134,11 @@ func main() {
 	header.Set("Content-Type", *contentType)
 	// set any other additional headers
 	if *headers != "" {
-		headers := strings.Split(*headers, ";")
-		for _, h := range headers {
-			match, err := parseInputWithRegexp(h, headerRegexp)
-			if err != nil {
-				usageAndExit(err.Error())
-			}
-			header.Set(match[1], match[2])
-		}
+		usageAndExit("flag '-h' is deprecated, please use '-H' instead.")
 	}
 	// set any other additional repeatable headers
-	for i := 0; i < len(headerslice); i++ {
-		match, err := parseInputWithRegexp(headerslice[i], headerRegexp)
+	for _, h := range headerslice {
+		match, err := parseInputWithRegexp(h, headerRegexp)
 		if err != nil {
 			usageAndExit(err.Error())
 		}
