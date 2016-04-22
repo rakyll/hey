@@ -114,6 +114,10 @@ func main() {
 		usageAndExit("n and c cannot be smaller than 1.")
 	}
 
+	if num < conc {
+		usageAndExit("n cannot be less than c")
+	}
+
 	url := flag.Args()[0]
 	method := strings.ToUpper(*m)
 
