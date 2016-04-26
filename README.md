@@ -37,8 +37,6 @@ Options:
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
 
-  -readall              Consumes the entire request body.
-  -allow-insecure       Allow bad/expired TLS/SSL certificates.
   -disable-compression  Disable compression.
   -disable-keepalive    Disable keep-alive, prevents re-use of TCP
                         connections between different HTTP requests.
