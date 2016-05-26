@@ -17,6 +17,7 @@ package boomer
 
 import (
 	"crypto/tls"
+	"golang.org/x/net/http2"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -46,6 +47,9 @@ type Boomer struct {
 
 	// C is the concurrency level, the number of concurrent workers to run.
 	C int
+
+	// H2 is an option to make HTTP2 requests
+	H2 bool
 
 	// Timeout in seconds.
 	Timeout int
@@ -126,6 +130,9 @@ func (b *Boomer) runWorker(n int) {
 		// TODO(jbd): Add dial timeout.
 		TLSHandshakeTimeout: time.Duration(b.Timeout) * time.Millisecond,
 		Proxy:               http.ProxyURL(b.ProxyAddr),
+	}
+	if b.H2 {
+		http2.ConfigureTransport(tr)
 	}
 	client := &http.Client{Transport: tr}
 	for i := 0; i < n; i++ {

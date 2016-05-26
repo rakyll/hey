@@ -54,10 +54,13 @@ var (
 
 	output = flag.String("o", "", "")
 
-	c    = flag.Int("c", 50, "")
-	n    = flag.Int("n", 200, "")
-	q    = flag.Int("q", 0, "")
-	t    = flag.Int("t", 0, "")
+	c = flag.Int("c", 50, "")
+	n = flag.Int("n", 200, "")
+	q = flag.Int("q", 0, "")
+	t = flag.Int("t", 0, "")
+
+	h2 = flag.Bool("h2", false, "")
+
 	cpus = flag.Int("cpus", runtime.GOMAXPROCS(-1), "")
 
 	disableCompression = flag.Bool("disable-compression", false, "")
@@ -85,6 +88,8 @@ Options:
   -T  Content-type, defaults to "text/html".
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
+
+  -h2  Make HTTP2 request.
 
   -disable-compression  Disable compression.
   -disable-keepalive    Disable keep-alive, prevents re-use of TCP
@@ -178,6 +183,7 @@ func main() {
 		Timeout:            *t,
 		DisableCompression: *disableCompression,
 		DisableKeepAlives:  *disableKeepAlives,
+		H2:                 *h2,
 		ProxyAddr:          proxyURL,
 		Output:             *output,
 	}).Run()
