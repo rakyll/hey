@@ -51,6 +51,7 @@ var (
 	accept      = flag.String("A", "", "")
 	contentType = flag.String("T", "text/html", "")
 	authHeader  = flag.String("a", "", "")
+	hostHeader  = flag.String("host", "", "")
 
 	output = flag.String("o", "", "")
 
@@ -96,6 +97,7 @@ Options:
                         connections between different HTTP requests.
   -cpus                 Number of used cpu cores.
                         (default for current machine is %d cores)
+  -host                 HTTP Host header.
 `
 
 func main() {
@@ -176,6 +178,11 @@ func main() {
 	req.Header = header
 	if username != "" || password != "" {
 		req.SetBasicAuth(username, password)
+	}
+
+	// set host header if set
+	if *hostHeader != "" {
+		req.Host = *hostHeader
 	}
 
 	(&boomer.Boomer{
