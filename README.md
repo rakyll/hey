@@ -1,6 +1,6 @@
 # hey
 
-[![Build Status](https://travis-ci.org/rakyll/boom.png?branch=master)](https://travis-ci.org/rakyll/boom)
+[![Build Status](https://travis-ci.org/rakyll/hey.png?branch=master)](https://travis-ci.org/rakyll/hey)
 
 hey is a tiny program that sends some load to a web application.
 It's similar to Apache Bench ([ab](http://httpd.apache.org/docs/2.2/programs/ab.html)),
