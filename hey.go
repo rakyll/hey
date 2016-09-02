@@ -25,7 +25,7 @@ import (
 	"runtime"
 	"strings"
 
-	"rakyll.org/pkg/hey/requester"
+	"github.com/rakyll/hey/requester"
 )
 
 const (
