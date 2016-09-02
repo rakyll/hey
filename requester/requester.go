@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package requester provides commands to run load tests and display results.
-package requester
+package requester // import "rakyll.org/pkg/hey/requester"
 
 import (
 	"crypto/tls"

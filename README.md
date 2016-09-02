@@ -16,7 +16,7 @@ To preserve the name for its original owner, we renamed this project to hey.
 
 ## Installation
 
-    go get github.com/rakyll/hey
+    go get rakyll.org/pkg/hey
 
 ## Usage
 
