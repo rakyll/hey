@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Command hey is an HTTP load generator.
 package main
 
 import (
@@ -24,7 +25,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/rakyll/boom/boomer"
+	"github.com/rakyll/hey/requester"
 )
 
 const (
@@ -69,7 +70,7 @@ var (
 	proxyAddr          = flag.String("x", "", "")
 )
 
-var usage = `Usage: boom [options...] <url>
+var usage = `Usage: hey [options...] <url>
 
 Options:
   -n  Number of requests to run.
@@ -90,7 +91,7 @@ Options:
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
 
-  -h2  Make HTTP/2 requests.
+  -h2  Enable HTTP/2.
 
   -disable-compression  Disable compression.
   -disable-keepalive    Disable keep-alive, prevents re-use of TCP
@@ -185,7 +186,7 @@ func main() {
 		req.Host = *hostHeader
 	}
 
-	(&boomer.Boomer{
+	(&requester.Work{
 		Request:            req,
 		RequestBody:        *body,
 		N:                  num,

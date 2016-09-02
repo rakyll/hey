@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package boomer
+package requester
 
 import (
 	"bytes"
@@ -34,12 +34,12 @@ func TestN(t *testing.T) {
 	defer server.Close()
 
 	req, _ := http.NewRequest("GET", server.URL, nil)
-	boomer := &Boomer{
+	w := &Work{
 		Request: req,
 		N:       20,
 		C:       2,
 	}
-	boomer.Run()
+	w.Run()
 	if count != 20 {
 		t.Errorf("Expected to boom 20 times, found %v", count)
 	}
@@ -55,7 +55,7 @@ func TestQps(t *testing.T) {
 	defer server.Close()
 
 	req, _ := http.NewRequest("GET", server.URL, nil)
-	boomer := &Boomer{
+	w := &Work{
 		Request: req,
 		N:       20,
 		C:       2,
@@ -64,11 +64,11 @@ func TestQps(t *testing.T) {
 	wg.Add(1)
 	time.AfterFunc(time.Second, func() {
 		if count > 1 {
-			t.Errorf("Expected to boom 1 times, found %v", count)
+			t.Errorf("Expected to work 1 times, found %v", count)
 		}
 		wg.Done()
 	})
-	go boomer.Run()
+	go w.Run()
 	wg.Wait()
 }
 
@@ -90,12 +90,12 @@ func TestRequest(t *testing.T) {
 	req, _ := http.NewRequest("GET", server.URL, nil)
 	req.Header = header
 	req.SetBasicAuth("username", "password")
-	boomer := &Boomer{
+	w := &Work{
 		Request: req,
 		N:       1,
 		C:       1,
 	}
-	boomer.Run()
+	w.Run()
 	if uri != "/" {
 		t.Errorf("Uri is expected to be /, %v is found", uri)
 	}
@@ -122,14 +122,14 @@ func TestBody(t *testing.T) {
 	defer server.Close()
 
 	req, _ := http.NewRequest("POST", server.URL, bytes.NewBuffer([]byte("Body")))
-	boomer := &Boomer{
+	w := &Work{
 		Request:     req,
 		RequestBody: "Body",
 		N:           10,
 		C:           1,
 	}
-	boomer.Run()
+	w.Run()
 	if count != 10 {
-		t.Errorf("Expected to boom 10 times, found %v", count)
+		t.Errorf("Expected to work 10 times, found %v", count)
 	}
 }

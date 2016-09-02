@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package boomer provides commands to run load tests and display results.
-package boomer
+// Package requester provides commands to run load tests and display results.
+package requester
 
 import (
 	"crypto/tls"
@@ -37,7 +37,7 @@ type result struct {
 	contentLength int64
 }
 
-type Boomer struct {
+type Work struct {
 	// Request is the request to be made.
 	Request *http.Request
 
@@ -77,7 +77,7 @@ type Boomer struct {
 
 // Run makes all the requests, prints the summary. It blocks until
 // all work is done.
-func (b *Boomer) Run() {
+func (b *Work) Run() {
 	b.results = make(chan *result, b.N)
 
 	start := time.Now()
@@ -96,7 +96,7 @@ func (b *Boomer) Run() {
 	close(b.results)
 }
 
-func (b *Boomer) makeRequest(c *http.Client) {
+func (b *Work) makeRequest(c *http.Client) {
 	s := time.Now()
 	var size int64
 	var code int
@@ -116,7 +116,7 @@ func (b *Boomer) makeRequest(c *http.Client) {
 	}
 }
 
-func (b *Boomer) runWorker(n int) {
+func (b *Work) runWorker(n int) {
 	var throttle <-chan time.Time
 	if b.Qps > 0 {
 		throttle = time.Tick(time.Duration(1e6/(b.Qps)) * time.Microsecond)
@@ -146,7 +146,7 @@ func (b *Boomer) runWorker(n int) {
 	}
 }
 
-func (b *Boomer) runWorkers() {
+func (b *Work) runWorkers() {
 	var wg sync.WaitGroup
 	wg.Add(b.C)
 
