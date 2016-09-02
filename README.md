@@ -2,15 +2,14 @@
 
 [![Build Status](https://travis-ci.org/rakyll/hey.png?branch=master)](https://travis-ci.org/rakyll/hey)
 
+Previously known as [github.com/rakyll/boom](https://github.com/rakyll/boom).
+
+----
+
 hey is a tiny program that sends some load to a web application.
-It's similar to Apache Bench ([ab](http://httpd.apache.org/docs/2.2/programs/ab.html)),
-but with better availability across different platforms and a less troubling
-installation experience if you have [Go](http://golang.org/) installed.
 
 hey was originally called boom and was influnced from Tarek Ziade's
-tool at [tarekziade/boom](https://github.com/tarekziade/boom).
-
-Using the same name was a mistake as it resulted in cases
+tool at [tarekziade/boom](https://github.com/tarekziade/boom). Using the same name was a mistake as it resulted in cases
 where binary name conflicts created confusion.
 To preserve the name for its original owner, we renamed this project to hey.
 
