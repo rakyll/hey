@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Command hey is an HTTP load generator.
-package main // import "rakyll.org/pkg/hey"
+package main
 
 import (
 	"flag"
