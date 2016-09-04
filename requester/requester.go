@@ -20,6 +20,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptrace"
 	"net/url"
 	"os"
 	"os/signal"
@@ -34,6 +35,11 @@ type result struct {
 	err           error
 	statusCode    int
 	duration      time.Duration
+	connDuration  time.Duration // connection setup(DNS lookup + Dial up) duration
+	dnsDuration   time.Duration // dns lookup duration
+	reqDuration   time.Duration // request "write" duration
+	resDuration   time.Duration // response "read" duration
+	delayDuration time.Duration // delay between response and request
 	contentLength int64
 }
 
@@ -51,6 +57,9 @@ type Work struct {
 
 	// H2 is an option to make HTTP/2 requests
 	H2 bool
+
+	// EnableTrace is an option to enable httpTrace
+	EnableTrace bool
 
 	// Timeout in seconds.
 	Timeout int
@@ -83,16 +92,15 @@ func (b *Work) Run() {
 	start := time.Now()
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
-
 	go func() {
 		<-c
 		// TODO(jbd): Progress bar should not be finalized.
-		newReport(b.N, b.results, b.Output, time.Now().Sub(start)).finalize()
+		newReport(b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
 		os.Exit(1)
 	}()
 
 	b.runWorkers()
-	newReport(b.N, b.results, b.Output, time.Now().Sub(start)).finalize()
+	newReport(b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
 	close(b.results)
 }
 
@@ -100,19 +108,56 @@ func (b *Work) makeRequest(c *http.Client) {
 	s := time.Now()
 	var size int64
 	var code int
-
-	resp, err := c.Do(cloneRequest(b.Request, b.RequestBody))
+	var dnsDuration, connDuration, resDuration, reqDuration, delayTime time.Duration
+	req := cloneRequest(b.Request, b.RequestBody)
+	if b.EnableTrace {
+		trace := &httptrace.ClientTrace{
+			DNSStart: func(info httptrace.DNSStartInfo) {
+				dnsDuration = time.Now().Sub(s)
+			},
+			DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
+				t := time.Now().Sub(s)
+				dnsDuration = time.Duration(t.Nanoseconds() - dnsDuration.Nanoseconds())
+			},
+			GetConn: func(h string) {
+				connDuration = time.Now().Sub(s)
+			},
+			GotConn: func(connInfo httptrace.GotConnInfo) {
+				t := time.Now().Sub(s)
+				reqDuration = t
+				connDuration = time.Duration(t.Nanoseconds() - connDuration.Nanoseconds())
+			},
+			WroteRequest: func(w httptrace.WroteRequestInfo) {
+				t := time.Now().Sub(s)
+				delayTime = t
+				reqDuration = time.Duration(t.Nanoseconds() - reqDuration.Nanoseconds())
+			},
+			GotFirstResponseByte: func() {
+				resDuration = time.Now().Sub(s)
+				delayTime = time.Duration(resDuration.Nanoseconds() - delayTime.Nanoseconds())
+			},
+		}
+		req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
+	}
+	resp, err := c.Do(req)
 	if err == nil {
 		size = resp.ContentLength
 		code = resp.StatusCode
 		io.Copy(ioutil.Discard, resp.Body)
 		resp.Body.Close()
 	}
+	finish := time.Now().Sub(s)
+	resDuration = time.Duration(finish.Nanoseconds() - resDuration.Nanoseconds())
 	b.results <- &result{
 		statusCode:    code,
-		duration:      time.Now().Sub(s),
+		duration:      finish,
 		err:           err,
 		contentLength: size,
+		connDuration:  connDuration,
+		dnsDuration:   dnsDuration,
+		reqDuration:   reqDuration,
+		resDuration:   resDuration,
+		delayDuration: delayTime,
 	}
 }
 
