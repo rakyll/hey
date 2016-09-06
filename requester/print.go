@@ -32,6 +32,7 @@ type report struct {
 	average  float64
 	rps      float64
 
+	trace    bool //if trace is set, the following fields will be filled
 	avgConn  float64
 	avgDns   float64
 	avgReq   float64
@@ -40,7 +41,6 @@ type report struct {
 
 	results chan *result
 	total   time.Duration
-	trace   bool
 
 	errorDist      map[string]int
 	statusCodeDist map[int]int

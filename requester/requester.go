@@ -108,33 +108,31 @@ func (b *Work) makeRequest(c *http.Client) {
 	s := time.Now()
 	var size int64
 	var code int
-	var dnsDuration, connDuration, resDuration, reqDuration, delayTime time.Duration
+	var dnsStart, connStart, resStart, reqStart, delayStart time.Time
+	var dnsDuration, connDuration, resDuration, reqDuration, delayDuration time.Duration
 	req := cloneRequest(b.Request, b.RequestBody)
 	if b.EnableTrace {
 		trace := &httptrace.ClientTrace{
 			DNSStart: func(info httptrace.DNSStartInfo) {
-				dnsDuration = time.Now().Sub(s)
+				dnsStart = time.Now()
 			},
 			DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
-				t := time.Now().Sub(s)
-				dnsDuration = time.Duration(t.Nanoseconds() - dnsDuration.Nanoseconds())
+				dnsDuration = time.Now().Sub(dnsStart)
 			},
 			GetConn: func(h string) {
-				connDuration = time.Now().Sub(s)
+				connStart = time.Now()
 			},
 			GotConn: func(connInfo httptrace.GotConnInfo) {
-				t := time.Now().Sub(s)
-				reqDuration = t
-				connDuration = time.Duration(t.Nanoseconds() - connDuration.Nanoseconds())
+				connDuration = time.Now().Sub(connStart)
+				reqStart = time.Now()
 			},
 			WroteRequest: func(w httptrace.WroteRequestInfo) {
-				t := time.Now().Sub(s)
-				delayTime = t
-				reqDuration = time.Duration(t.Nanoseconds() - reqDuration.Nanoseconds())
+				reqDuration = time.Now().Sub(reqStart)
+				delayStart = time.Now()
 			},
 			GotFirstResponseByte: func() {
-				resDuration = time.Now().Sub(s)
-				delayTime = time.Duration(resDuration.Nanoseconds() - delayTime.Nanoseconds())
+				delayDuration = time.Now().Sub(delayStart)
+				resStart = time.Now()
 			},
 		}
 		req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
@@ -146,8 +144,11 @@ func (b *Work) makeRequest(c *http.Client) {
 		io.Copy(ioutil.Discard, resp.Body)
 		resp.Body.Close()
 	}
-	finish := time.Now().Sub(s)
-	resDuration = time.Duration(finish.Nanoseconds() - resDuration.Nanoseconds())
+	t := time.Now()
+	if b.EnableTrace {
+		resDuration = t.Sub(resStart)
+	}
+	finish := t.Sub(s)
 	b.results <- &result{
 		statusCode:    code,
 		duration:      finish,
@@ -157,7 +158,7 @@ func (b *Work) makeRequest(c *http.Client) {
 		dnsDuration:   dnsDuration,
 		reqDuration:   reqDuration,
 		resDuration:   resDuration,
-		delayDuration: delayTime,
+		delayDuration: delayDuration,
 	}
 }
 
