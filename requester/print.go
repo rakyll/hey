@@ -32,6 +32,13 @@ type report struct {
 	average  float64
 	rps      float64
 
+	trace    bool //if trace is set, the following fields will be filled
+	avgConn  float64
+	avgDns   float64
+	avgReq   float64
+	avgRes   float64
+	avgDelay float64
+
 	results chan *result
 	total   time.Duration
 
@@ -43,11 +50,12 @@ type report struct {
 	output string
 }
 
-func newReport(size int, results chan *result, output string, total time.Duration) *report {
+func newReport(size int, results chan *result, output string, total time.Duration, trace bool) *report {
 	return &report{
 		output:         output,
 		results:        results,
 		total:          total,
+		trace:          trace,
 		statusCodeDist: make(map[int]int),
 		errorDist:      make(map[string]int),
 	}
@@ -62,6 +70,13 @@ func (r *report) finalize() {
 			} else {
 				r.lats = append(r.lats, res.duration.Seconds())
 				r.avgTotal += res.duration.Seconds()
+				if r.trace {
+					r.avgConn += res.connDuration.Seconds()
+					r.avgDelay += res.delayDuration.Seconds()
+					r.avgDns += res.dnsDuration.Seconds()
+					r.avgReq += res.reqDuration.Seconds()
+					r.avgRes += res.resDuration.Seconds()
+				}
 				r.statusCodeDist[res.statusCode]++
 				if res.contentLength > 0 {
 					r.sizeTotal += res.contentLength
@@ -70,6 +85,13 @@ func (r *report) finalize() {
 		default:
 			r.rps = float64(len(r.lats)) / r.total.Seconds()
 			r.average = r.avgTotal / float64(len(r.lats))
+			if r.trace {
+				r.avgConn = r.avgConn / float64(len(r.lats))
+				r.avgDelay = r.avgDelay / float64(len(r.lats))
+				r.avgDns = r.avgDns / float64(len(r.lats))
+				r.avgReq = r.avgReq / float64(len(r.lats))
+				r.avgRes = r.avgRes / float64(len(r.lats))
+			}
 			r.print()
 			return
 		}
@@ -97,6 +119,18 @@ func (r *report) print() {
 			fmt.Printf("  Total data:\t%d bytes\n", r.sizeTotal)
 			fmt.Printf("  Size/request:\t%d bytes\n", r.sizeTotal/int64(len(r.lats)))
 		}
+
+		if r.trace {
+			fmt.Printf("\nHttpTrace:\n")
+			fmt.Printf("  DNS+dialup:\t\t%4.4f secs\n", r.avgConn)
+			if r.avgDns > 0 {
+				fmt.Printf("  DNS lookup:\t\t%4.4f secs\n", r.avgDns)
+			}
+			fmt.Printf("  request Write:\t%4.4f secs\n", r.avgReq)
+			fmt.Printf("  response wait:\t%4.4f secs\n", r.avgDelay)
+			fmt.Printf("  response read:\t%4.4f secs\n", r.avgRes)
+		}
+
 		r.printStatusCodes()
 		r.printHistogram()
 		r.printLatencies()

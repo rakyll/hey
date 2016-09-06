@@ -53,4 +53,6 @@ Options:
   -cpus                 Number of used cpu cores.
                         (default for current machine is 8 cores)
   -host                 HTTP Host header.
+  -http-trace         	Enable http trace detailed info on various events during request (Experimental)
+
   ```

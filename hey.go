@@ -68,6 +68,8 @@ var (
 	disableCompression = flag.Bool("disable-compression", false, "")
 	disableKeepAlives  = flag.Bool("disable-keepalive", false, "")
 	proxyAddr          = flag.String("x", "", "")
+
+	enableTrace = flag.Bool("more", false, "")
 )
 
 var usage = `Usage: hey [options...] <url>
@@ -99,6 +101,7 @@ Options:
   -cpus                 Number of used cpu cores.
                         (default for current machine is %d cores)
   -host                 HTTP Host header.
+  -more                 Provides information on DNS lookup, dialup, request and response timings.  
 `
 
 func main() {
@@ -198,6 +201,7 @@ func main() {
 		H2:                 *h2,
 		ProxyAddr:          proxyURL,
 		Output:             *output,
+		EnableTrace:        *enableTrace,
 	}).Run()
 }
 
