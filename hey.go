@@ -59,7 +59,7 @@ var (
 	c = flag.Int("c", 50, "")
 	n = flag.Int("n", 200, "")
 	q = flag.Int("q", 0, "")
-	t = flag.Int("t", 0, "")
+	t = flag.Int("t", 20, "")
 
 	h2 = flag.Bool("h2", false, "")
 
@@ -86,7 +86,7 @@ Options:
   -m  HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.
   -H  Custom HTTP header. You can specify as many as needed by repeating the flag.
       for example, -H "Accept: text/html" -H "Content-Type: application/xml" .
-  -t  Timeout in ms.
+  -t  Timeout in seconds. Default is 20, use 0 to disable.
   -A  HTTP Accept header.
   -d  HTTP request body.
   -T  Content-type, defaults to "text/html".
@@ -101,7 +101,7 @@ Options:
   -cpus                 Number of used cpu cores.
                         (default for current machine is %d cores)
   -host                 HTTP Host header.
-  -more                 Provides information on DNS lookup, dialup, request and response timings.  
+  -more                 Provides information on DNS lookup, dialup, request and response timings.
 `
 
 func main() {
