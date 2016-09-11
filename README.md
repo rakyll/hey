@@ -4,6 +4,8 @@
 
 Previously known as [github.com/rakyll/boom](https://github.com/rakyll/boom).
 
+Requires go 1.7 or greater.
+
 ----
 
 hey is a tiny program that sends some load to a web application.
