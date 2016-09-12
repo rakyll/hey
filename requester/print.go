@@ -194,7 +194,7 @@ func (r *report) printHistogram() {
 		// Normalize bar lengths.
 		var barLen int
 		if max > 0 {
-			barLen = counts[i] * 40 / max
+			barLen = (counts[i]*40 + max/2) / max
 		}
 		fmt.Printf("  %4.3f [%v]\t|%v\n", buckets[i], counts[i], strings.Repeat(barChar, barLen))
 	}
