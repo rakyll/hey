@@ -174,16 +174,14 @@ func (b *Work) runWorker(n int) {
 		},
 		DisableCompression: b.DisableCompression,
 		DisableKeepAlives:  b.DisableKeepAlives,
-		// TODO(jbd): Add dial timeout.
-		TLSHandshakeTimeout: time.Duration(b.Timeout) * time.Millisecond,
-		Proxy:               http.ProxyURL(b.ProxyAddr),
+		Proxy:              http.ProxyURL(b.ProxyAddr),
 	}
 	if b.H2 {
 		http2.ConfigureTransport(tr)
 	} else {
 		tr.TLSNextProto = make(map[string]func(string, *tls.Conn) http.RoundTripper)
 	}
-	client := &http.Client{Transport: tr}
+	client := &http.Client{Transport: tr, Timeout: time.Duration(b.Timeout) * time.Second}
 	for i := 0; i < n; i++ {
 		if b.Qps > 0 {
 			<-throttle
