@@ -135,6 +135,10 @@ func main() {
 	// set content-type
 	header := make(http.Header)
 	header.Set("Content-Type", *contentType)
+
+	// set a default user-agent
+	header.Set("User-Agent", "hey (https://github.com/rakyll/hey)")
+
 	// set any other additional headers
 	if *headers != "" {
 		usageAndExit("flag '-h' is deprecated, please use '-H' instead.")
