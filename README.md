@@ -54,6 +54,6 @@ Options:
                         connections between different HTTP requests.
   -cpus                 Number of used cpu cores.
   -host                 HTTP Host header.
-  -http-trace         	Enable http trace detailed info on various events during request (Experimental)
+  -more                 Provides information on DNS lookup, dialup, request and response timings.
 
   ```
