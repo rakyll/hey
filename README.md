@@ -39,7 +39,7 @@ Options:
 
   -m  HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.
   -H  Custom HTTP header. You can specify as many as needed by repeating the flag.
-      for example, -H "Accept: text/html" -H "Content-Type: application/xml" .
+      for example, -H "Accept: text/html" -H "Content-Type: application/xml".
   -t  Timeout in seconds. Default is 20, use 0 to disable.
   -A  HTTP Accept header.
   -d  HTTP request body.
@@ -53,7 +53,6 @@ Options:
   -disable-keepalive    Disable keep-alive, prevents re-use of TCP
                         connections between different HTTP requests.
   -cpus                 Number of used cpu cores.
-                        (default for current machine is 8 cores)
   -host                 HTTP Host header.
   -http-trace         	Enable http trace detailed info on various events during request (Experimental)
 
