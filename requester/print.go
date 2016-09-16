@@ -34,7 +34,7 @@ type report struct {
 
 	trace    bool //if trace is set, the following fields will be filled
 	avgConn  float64
-	avgDns   float64
+	avgDNS   float64
 	avgReq   float64
 	avgRes   float64
 	avgDelay float64
@@ -73,7 +73,7 @@ func (r *report) finalize() {
 				if r.trace {
 					r.avgConn += res.connDuration.Seconds()
 					r.avgDelay += res.delayDuration.Seconds()
-					r.avgDns += res.dnsDuration.Seconds()
+					r.avgDNS += res.dnsDuration.Seconds()
 					r.avgReq += res.reqDuration.Seconds()
 					r.avgRes += res.resDuration.Seconds()
 				}
@@ -88,7 +88,7 @@ func (r *report) finalize() {
 			if r.trace {
 				r.avgConn = r.avgConn / float64(len(r.lats))
 				r.avgDelay = r.avgDelay / float64(len(r.lats))
-				r.avgDns = r.avgDns / float64(len(r.lats))
+				r.avgDNS = r.avgDNS / float64(len(r.lats))
 				r.avgReq = r.avgReq / float64(len(r.lats))
 				r.avgRes = r.avgRes / float64(len(r.lats))
 			}
@@ -123,8 +123,8 @@ func (r *report) print() {
 		if r.trace {
 			fmt.Printf("\nHttpTrace:\n")
 			fmt.Printf("  DNS+dialup:\t\t%4.4f secs\n", r.avgConn)
-			if r.avgDns > 0 {
-				fmt.Printf("  DNS lookup:\t\t%4.4f secs\n", r.avgDns)
+			if r.avgDNS > 0 {
+				fmt.Printf("  DNS lookup:\t\t%4.4f secs\n", r.avgDNS)
 			}
 			fmt.Printf("  request Write:\t%4.4f secs\n", r.avgReq)
 			fmt.Printf("  response wait:\t%4.4f secs\n", r.avgDelay)
