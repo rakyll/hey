@@ -194,7 +194,7 @@ func main() {
 		RequestBody:        *body,
 		N:                  num,
 		C:                  conc,
-		Qps:                q,
+		QPS:                q,
 		Timeout:            *t,
 		DisableCompression: *disableCompression,
 		DisableKeepAlives:  *disableKeepAlives,

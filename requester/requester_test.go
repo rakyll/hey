@@ -59,7 +59,7 @@ func TestQps(t *testing.T) {
 		Request: req,
 		N:       20,
 		C:       2,
-		Qps:     1,
+		QPS:     1,
 	}
 	wg.Add(1)
 	time.AfterFunc(time.Second, func() {
