@@ -31,11 +31,11 @@ Usage: hey [options...] <url>
 Options:
   -n  Number of requests to run.
   -c  Number of requests to run concurrently. Total number of requests cannot
-      be smaller than the concurency level.
+      be smaller than the concurrency level.
   -q  Rate limit, in seconds (QPS).
   -o  Output type. If none provided, a summary is printed.
       "csv" is the only supported alternative. Dumps the response
-      metrics in comma-seperated values format.
+      metrics in comma-separated values format.
 
   -m  HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.
   -H  Custom HTTP header. You can specify as many as needed by repeating the flag.
