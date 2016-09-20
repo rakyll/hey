@@ -17,6 +17,7 @@ package requester
 
 import (
 	"crypto/tls"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -81,12 +82,36 @@ type Work struct {
 	// Optional.
 	ProxyAddr *url.URL
 
+	//progressChan is used to update the progress counter
+	progressChan chan int
+
 	results chan *result
+}
+
+//Displays the progress bar and counter
+func (b *Work) displayProgress(stop <-chan int, stopped chan<- int) {
+	counter := 0
+	for {
+		select {
+		case <-stop:
+			fmt.Println()
+			stopped <- 1
+			return
+		case <-b.progressChan:
+			counter++
+			fmt.Printf("\rRequests: %d/%d \t[%-40s]", counter, b.N, strings.Repeat(barChar, (counter*40)/b.N))
+		}
+	}
 }
 
 // Run makes all the requests, prints the summary. It blocks until
 // all work is done.
 func (b *Work) Run() {
+	b.progressChan = make(chan int, b.C)
+	stopProgress := make(chan int)
+	stoppedProgress := make(chan int)
+	go b.displayProgress(stopProgress, stoppedProgress)
+
 	b.results = make(chan *result, b.N)
 
 	start := time.Now()
@@ -95,11 +120,15 @@ func (b *Work) Run() {
 	go func() {
 		<-c
 		// TODO(jbd): Progress bar should not be finalized.
+		stopProgress <- 1
+		<-stoppedProgress
 		newReport(b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
 		os.Exit(1)
 	}()
 
 	b.runWorkers()
+	stopProgress <- 1
+	<-stoppedProgress
 	newReport(b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
 	close(b.results)
 }
@@ -187,6 +216,7 @@ func (b *Work) runWorker(n int) {
 			<-throttle
 		}
 		b.makeRequest(client)
+		b.progressChan <- 1
 	}
 }
 
