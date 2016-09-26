@@ -27,6 +27,7 @@ import (
 	"os/signal"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"golang.org/x/net/http2"
@@ -82,24 +83,24 @@ type Work struct {
 	// Optional.
 	ProxyAddr *url.URL
 
-	//progressChan is used to update the progress counter
-	progressChan chan int
+	//progressCounter keeps count of completed requests for progress bar
+	progressCounter int32
 
 	results chan *result
 }
 
 //Displays the progress bar and counter
-func (b *Work) displayProgress(stop <-chan int, stopped chan<- int) {
-	counter := 0
+func (b *Work) displayProgress(stop chan int) {
 	for {
 		select {
 		case <-stop:
-			fmt.Println()
-			stopped <- 1
+			count := int(atomic.LoadInt32(&b.progressCounter))
+			fmt.Printf("\rRequests: %d/%d [%-40s]\n", count, b.N, strings.Repeat(barChar, (count*40)/b.N))
+			stop <- 1
 			return
-		case <-b.progressChan:
-			counter++
-			fmt.Printf("\rRequests: %d/%d \t[%-40s]", counter, b.N, strings.Repeat(barChar, (counter*40)/b.N))
+		case <-time.After(time.Second / 2):
+			count := int(atomic.LoadInt32(&b.progressCounter))
+			fmt.Printf("\rRequests: %d/%d [%-40s]", count, b.N, strings.Repeat(barChar, (count*40)/b.N))
 		}
 	}
 }
@@ -107,10 +108,12 @@ func (b *Work) displayProgress(stop <-chan int, stopped chan<- int) {
 // Run makes all the requests, prints the summary. It blocks until
 // all work is done.
 func (b *Work) Run() {
-	b.progressChan = make(chan int, b.C)
-	stopProgress := make(chan int)
-	stoppedProgress := make(chan int)
-	go b.displayProgress(stopProgress, stoppedProgress)
+	stopProgressChan := make(chan int)
+	stopProgress := func() {
+		stopProgressChan <- 1
+		<-stopProgressChan
+	}
+	go b.displayProgress(stopProgressChan)
 
 	b.results = make(chan *result, b.N)
 
@@ -120,15 +123,13 @@ func (b *Work) Run() {
 	go func() {
 		<-c
 		// TODO(jbd): Progress bar should not be finalized.
-		stopProgress <- 1
-		<-stoppedProgress
+		stopProgress()
 		newReport(b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
 		os.Exit(1)
 	}()
 
 	b.runWorkers()
-	stopProgress <- 1
-	<-stoppedProgress
+	stopProgress()
 	newReport(b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
 	close(b.results)
 }
@@ -216,7 +217,7 @@ func (b *Work) runWorker(n int) {
 			<-throttle
 		}
 		b.makeRequest(client)
-		b.progressChan <- 1
+		atomic.AddInt32(&b.progressCounter, 1)
 	}
 }
 
