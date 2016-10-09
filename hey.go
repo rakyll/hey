@@ -195,7 +195,8 @@ func main() {
 
 	// if request body is file
 	if *bodyPath != "" {
-		if all, err := ioutil.ReadFile(*bodyPath); err != nil {
+		all, err := ioutil.ReadFile(*bodyPath)
+		if err != nil {
 			 log.Fatal(err)
 		}
 		*body = string(all)
