@@ -25,7 +25,8 @@ import (
 	"runtime"
 	"strings"
 	"io/ioutil"
-
+	"log"
+	
 	"github.com/rakyll/hey/requester"
 )
 
@@ -194,11 +195,10 @@ func main() {
 
 	// if request body is file
 	if *bodyPath != "" {
-		if bytes, err := ioutil.ReadFile(*bodyPath); err != nil {
-			usageAndExit(err.Error())
-		} else {
-			*body = string(bytes)
+		if all, err := ioutil.ReadFile(*bodyPath); err != nil {
+			 log.Fatal(err)
 		}
+		*body = string(all)
 	}
 
 	(&requester.Work{
