@@ -10,7 +10,7 @@ Requires go 1.7 or greater.
 
 hey is a tiny program that sends some load to a web application.
 
-hey was originally called boom and was influnced from Tarek Ziade's
+hey was originally called boom and was influenced from Tarek Ziade's
 tool at [tarekziade/boom](https://github.com/tarekziade/boom). Using the same name was a mistake as it resulted in cases
 where binary name conflicts created confusion.
 To preserve the name for its original owner, we renamed this project to hey.
