@@ -86,7 +86,7 @@ Options:
   -m  HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.
   -H  Custom HTTP header. You can specify as many as needed by repeating the flag.
       for example, -H "Accept: text/html" -H "Content-Type: application/xml" .
-  -t  Timeout in seconds. Default is 20, use 0 to disable.
+  -t  Timeout for each request in seconds. Default is 20, use 0 for infinite.
   -A  HTTP Accept header.
   -d  HTTP request body.
   -T  Content-type, defaults to "text/html".
