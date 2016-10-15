@@ -65,7 +65,7 @@ type Work struct {
 	Timeout int
 
 	// Qps is the rate limit.
-	Qps int
+	QPS int
 
 	// DisableCompression is an option to disable compression in response
 	DisableCompression bool
@@ -164,8 +164,8 @@ func (b *Work) makeRequest(c *http.Client) {
 
 func (b *Work) runWorker(n int) {
 	var throttle <-chan time.Time
-	if b.Qps > 0 {
-		throttle = time.Tick(time.Duration(1e6/(b.Qps)) * time.Microsecond)
+	if b.QPS > 0 {
+		throttle = time.Tick(time.Duration(1e6/(b.QPS)) * time.Microsecond)
 	}
 
 	tr := &http.Transport{
@@ -183,7 +183,7 @@ func (b *Work) runWorker(n int) {
 	}
 	client := &http.Client{Transport: tr, Timeout: time.Duration(b.Timeout) * time.Second}
 	for i := 0; i < n; i++ {
-		if b.Qps > 0 {
+		if b.QPS > 0 {
 			<-throttle
 		}
 		b.makeRequest(client)
