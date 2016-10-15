@@ -84,10 +84,20 @@ type Work struct {
 	results chan *result
 }
 
+const heyUA = "hey/0.0.1"
+
 // Run makes all the requests, prints the summary. It blocks until
 // all work is done.
 func (b *Work) Run() {
 	b.results = make(chan *result, b.N)
+
+	// append hey's user agent
+	ua := b.Request.UserAgent()
+	if ua == "" {
+		ua = heyUA
+	} else {
+		ua += " " + heyUA
+	}
 
 	start := time.Now()
 	c := make(chan os.Signal, 1)
