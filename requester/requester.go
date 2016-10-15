@@ -94,7 +94,6 @@ func (b *Work) Run() {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		<-c
-		// TODO(jbd): Progress bar should not be finalized.
 		newReport(b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
 		os.Exit(1)
 	}()
