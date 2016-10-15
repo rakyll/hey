@@ -191,7 +191,7 @@ func main() {
 
 	(&requester.Work{
 		Request:            req,
-		RequestBody:        *body,
+		RequestBody:        []byte(*body),
 		N:                  num,
 		C:                  conc,
 		QPS:                q,
