@@ -121,7 +121,7 @@ func (r *report) print() {
 		}
 
 		if r.trace {
-			fmt.Printf("\nHttpTrace:\n")
+			fmt.Printf("\nHTTP Trace:\n")
 			fmt.Printf("  DNS+dialup:\t\t%4.4f secs\n", r.avgConn)
 			if r.avgDNS > 0 {
 				fmt.Printf("  DNS lookup:\t\t%4.4f secs\n", r.avgDNS)
