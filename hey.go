@@ -122,11 +122,11 @@ func main() {
 	q := *q
 
 	if num <= 0 || conc <= 0 {
-		usageAndExit("n and c cannot be smaller than 1.")
+		usageAndExit("-n and -c cannot be smaller than 1.")
 	}
 
 	if num < conc {
-		usageAndExit("n cannot be less than c")
+		usageAndExit("-n cannot be less than -c.")
 	}
 
 	url := flag.Args()[0]
@@ -137,7 +137,7 @@ func main() {
 	header.Set("Content-Type", *contentType)
 	// set any other additional headers
 	if *headers != "" {
-		usageAndExit("flag '-h' is deprecated, please use '-H' instead.")
+		usageAndExit("Flag '-h' is deprecated, please use '-H' instead.")
 	}
 	// set any other additional repeatable headers
 	for _, h := range headerslice {
