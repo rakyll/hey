@@ -26,8 +26,8 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"golang.org/x/net/http2"
@@ -83,24 +83,29 @@ type Work struct {
 	// Optional.
 	ProxyAddr *url.URL
 
-	//progressCounter keeps count of completed requests for progress bar
-	progressCounter int32
-
 	results chan *result
 }
 
 //Displays the progress bar and counter
-func (b *Work) displayProgress(stop chan int) {
+func (b *Work) displayProgress(stopChan chan int) {
+	ticker := time.Tick(time.Millisecond * 200)
+	prev := 0
+	exit := false
 	for {
 		select {
-		case <-stop:
-			count := int(atomic.LoadInt32(&b.progressCounter))
-			fmt.Printf("\rRequests: %d/%d [%-40s]\n", count, b.N, strings.Repeat(barChar, (count*40)/b.N))
-			stop <- 1
-			return
-		case <-time.After(time.Second / 2):
-			count := int(atomic.LoadInt32(&b.progressCounter))
-			fmt.Printf("\rRequests: %d/%d [%-40s]", count, b.N, strings.Repeat(barChar, (count*40)/b.N))
+		case <-stopChan:
+			exit = true
+		case <-ticker:
+		}
+		curr := len(b.results)
+		if prev < curr {
+			prev = curr
+			fmt.Printf("\rRequests: %d/%d [%-40s]", prev, b.N, strings.Repeat(barChar, (prev*40)/b.N))
+		}
+		if exit {
+			fmt.Println()
+			stopChan <- 1
+			break
 		}
 	}
 }
@@ -132,7 +137,6 @@ func (b *Work) Run() {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		<-c
-		// TODO(jbd): Progress bar should not be finalized.
 		stopProgress()
 		newReport(b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
 		os.Exit(1)
@@ -227,7 +231,6 @@ func (b *Work) runWorker(n int) {
 			<-throttle
 		}
 		b.makeRequest(client)
-		atomic.AddInt32(&b.progressCounter, 1)
 	}
 }
 
