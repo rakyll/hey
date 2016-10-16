@@ -16,6 +16,7 @@
 package requester
 
 import (
+	"bytes"
 	"crypto/tls"
 	"fmt"
 	"io"
@@ -25,7 +26,6 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -49,7 +49,7 @@ type Work struct {
 	// Request is the request to be made.
 	Request *http.Request
 
-	RequestBody string
+	RequestBody []byte
 
 	// N is the total number of requests to make.
 	N int
@@ -67,7 +67,7 @@ type Work struct {
 	Timeout int
 
 	// Qps is the rate limit.
-	Qps int
+	QPS int
 
 	// DisableCompression is an option to disable compression in response
 	DisableCompression bool
@@ -105,6 +105,8 @@ func (b *Work) displayProgress(stop chan int) {
 	}
 }
 
+const heyUA = "hey/0.0.1"
+
 // Run makes all the requests, prints the summary. It blocks until
 // all work is done.
 func (b *Work) Run() {
@@ -116,6 +118,14 @@ func (b *Work) Run() {
 	go b.displayProgress(stopProgressChan)
 
 	b.results = make(chan *result, b.N)
+
+	// append hey's user agent
+	ua := b.Request.UserAgent()
+	if ua == "" {
+		ua = heyUA
+	} else {
+		ua += " " + heyUA
+	}
 
 	start := time.Now()
 	c := make(chan os.Signal, 1)
@@ -194,8 +204,8 @@ func (b *Work) makeRequest(c *http.Client) {
 
 func (b *Work) runWorker(n int) {
 	var throttle <-chan time.Time
-	if b.Qps > 0 {
-		throttle = time.Tick(time.Duration(1e6/(b.Qps)) * time.Microsecond)
+	if b.QPS > 0 {
+		throttle = time.Tick(time.Duration(1e6/(b.QPS)) * time.Microsecond)
 	}
 
 	tr := &http.Transport{
@@ -213,7 +223,7 @@ func (b *Work) runWorker(n int) {
 	}
 	client := &http.Client{Transport: tr, Timeout: time.Duration(b.Timeout) * time.Second}
 	for i := 0; i < n; i++ {
-		if b.Qps > 0 {
+		if b.QPS > 0 {
 			<-throttle
 		}
 		b.makeRequest(client)
@@ -237,7 +247,7 @@ func (b *Work) runWorkers() {
 
 // cloneRequest returns a clone of the provided *http.Request.
 // The clone is a shallow copy of the struct and its Header map.
-func cloneRequest(r *http.Request, body string) *http.Request {
+func cloneRequest(r *http.Request, body []byte) *http.Request {
 	// shallow copy of the struct
 	r2 := new(http.Request)
 	*r2 = *r
@@ -246,6 +256,6 @@ func cloneRequest(r *http.Request, body string) *http.Request {
 	for k, s := range r.Header {
 		r2.Header[k] = append([]string(nil), s...)
 	}
-	r2.Body = ioutil.NopCloser(strings.NewReader(body))
+	r2.Body = ioutil.NopCloser(bytes.NewReader(body))
 	return r2
 }

@@ -75,18 +75,18 @@ var (
 var usage = `Usage: hey [options...] <url>
 
 Options:
-  -n  Number of requests to run.
+  -n  Number of requests to run. Default is 200.
   -c  Number of requests to run concurrently. Total number of requests cannot
-      be smaller than the concurency level.
+      be smaller than the concurrency level. Default is 50.
   -q  Rate limit, in seconds (QPS).
   -o  Output type. If none provided, a summary is printed.
       "csv" is the only supported alternative. Dumps the response
-      metrics in comma-seperated values format.
+      metrics in comma-separated values format.
 
   -m  HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.
   -H  Custom HTTP header. You can specify as many as needed by repeating the flag.
       for example, -H "Accept: text/html" -H "Content-Type: application/xml" .
-  -t  Timeout in seconds. Default is 20, use 0 to disable.
+  -t  Timeout for each request in seconds. Default is 20, use 0 for infinite.
   -A  HTTP Accept header.
   -d  HTTP request body.
   -T  Content-type, defaults to "text/html".
@@ -122,11 +122,11 @@ func main() {
 	q := *q
 
 	if num <= 0 || conc <= 0 {
-		usageAndExit("n and c cannot be smaller than 1.")
+		usageAndExit("-n and -c cannot be smaller than 1.")
 	}
 
 	if num < conc {
-		usageAndExit("n cannot be less than c")
+		usageAndExit("-n cannot be less than -c.")
 	}
 
 	url := flag.Args()[0]
@@ -137,7 +137,7 @@ func main() {
 	header.Set("Content-Type", *contentType)
 	// set any other additional headers
 	if *headers != "" {
-		usageAndExit("flag '-h' is deprecated, please use '-H' instead.")
+		usageAndExit("Flag '-h' is deprecated, please use '-H' instead.")
 	}
 	// set any other additional repeatable headers
 	for _, h := range headerslice {
@@ -191,10 +191,10 @@ func main() {
 
 	(&requester.Work{
 		Request:            req,
-		RequestBody:        *body,
+		RequestBody:        []byte(*body),
 		N:                  num,
 		C:                  conc,
-		Qps:                q,
+		QPS:                q,
 		Timeout:            *t,
 		DisableCompression: *disableCompression,
 		DisableKeepAlives:  *disableKeepAlives,

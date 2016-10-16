@@ -34,7 +34,7 @@ type report struct {
 
 	trace    bool //if trace is set, the following fields will be filled
 	avgConn  float64
-	avgDns   float64
+	avgDNS   float64
 	avgReq   float64
 	avgRes   float64
 	avgDelay float64
@@ -73,7 +73,7 @@ func (r *report) finalize() {
 				if r.trace {
 					r.avgConn += res.connDuration.Seconds()
 					r.avgDelay += res.delayDuration.Seconds()
-					r.avgDns += res.dnsDuration.Seconds()
+					r.avgDNS += res.dnsDuration.Seconds()
 					r.avgReq += res.reqDuration.Seconds()
 					r.avgRes += res.resDuration.Seconds()
 				}
@@ -88,7 +88,7 @@ func (r *report) finalize() {
 			if r.trace {
 				r.avgConn = r.avgConn / float64(len(r.lats))
 				r.avgDelay = r.avgDelay / float64(len(r.lats))
-				r.avgDns = r.avgDns / float64(len(r.lats))
+				r.avgDNS = r.avgDNS / float64(len(r.lats))
 				r.avgReq = r.avgReq / float64(len(r.lats))
 				r.avgRes = r.avgRes / float64(len(r.lats))
 			}
@@ -100,50 +100,46 @@ func (r *report) finalize() {
 
 func (r *report) print() {
 	sort.Float64s(r.lats)
-
+	if len(r.lats) < 0 {
+		return
+	}
 	if r.output == "csv" {
-		r.printCSV()
+		for i, val := range r.lats {
+			fmt.Printf("%v,%4.4f\n", i+1, val)
+		}
 		return
 	}
 
-	if len(r.lats) > 0 {
-		r.fastest = r.lats[0]
-		r.slowest = r.lats[len(r.lats)-1]
-		fmt.Printf("Summary:\n")
-		fmt.Printf("  Total:\t%4.4f secs\n", r.total.Seconds())
-		fmt.Printf("  Slowest:\t%4.4f secs\n", r.slowest)
-		fmt.Printf("  Fastest:\t%4.4f secs\n", r.fastest)
-		fmt.Printf("  Average:\t%4.4f secs\n", r.average)
-		fmt.Printf("  Requests/sec:\t%4.4f\n", r.rps)
-		if r.sizeTotal > 0 {
-			fmt.Printf("  Total data:\t%d bytes\n", r.sizeTotal)
-			fmt.Printf("  Size/request:\t%d bytes\n", r.sizeTotal/int64(len(r.lats)))
-		}
-
-		if r.trace {
-			fmt.Printf("\nHttpTrace:\n")
-			fmt.Printf("  DNS+dialup:\t\t%4.4f secs\n", r.avgConn)
-			if r.avgDns > 0 {
-				fmt.Printf("  DNS lookup:\t\t%4.4f secs\n", r.avgDns)
-			}
-			fmt.Printf("  request Write:\t%4.4f secs\n", r.avgReq)
-			fmt.Printf("  response wait:\t%4.4f secs\n", r.avgDelay)
-			fmt.Printf("  response read:\t%4.4f secs\n", r.avgRes)
-		}
-
-		r.printStatusCodes()
-		r.printHistogram()
-		r.printLatencies()
+	r.fastest = r.lats[0]
+	r.slowest = r.lats[len(r.lats)-1]
+	fmt.Printf("Summary:\n")
+	fmt.Printf("  Total:\t%4.4f secs\n", r.total.Seconds())
+	fmt.Printf("  Slowest:\t%4.4f secs\n", r.slowest)
+	fmt.Printf("  Fastest:\t%4.4f secs\n", r.fastest)
+	fmt.Printf("  Average:\t%4.4f secs\n", r.average)
+	fmt.Printf("  Requests/sec:\t%4.4f\n", r.rps)
+	if r.sizeTotal > 0 {
+		fmt.Printf("  Total data:\t%d bytes\n", r.sizeTotal)
+		fmt.Printf("  Size/request:\t%d bytes\n", r.sizeTotal/int64(len(r.lats)))
 	}
+
+	if r.trace {
+		fmt.Printf("\nHTTP Trace:\n")
+		fmt.Printf("  DNS+dialup:\t\t%4.4f secs\n", r.avgConn)
+		if r.avgDNS > 0 {
+			fmt.Printf("  DNS lookup:\t\t%4.4f secs\n", r.avgDNS)
+		}
+		fmt.Printf("  request Write:\t%4.4f secs\n", r.avgReq)
+		fmt.Printf("  response wait:\t%4.4f secs\n", r.avgDelay)
+		fmt.Printf("  response read:\t%4.4f secs\n", r.avgRes)
+	}
+
+	r.printStatusCodes()
+	r.printHistogram()
+	r.printLatencies()
 
 	if len(r.errorDist) > 0 {
 		r.printErrors()
-	}
-}
-
-func (r *report) printCSV() {
-	for i, val := range r.lats {
-		fmt.Printf("%v,%4.4f\n", i+1, val)
 	}
 }
 
