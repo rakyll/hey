@@ -18,6 +18,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	gourl "net/url"
 	"os"
@@ -49,6 +50,7 @@ var (
 	m           = flag.String("m", "GET", "")
 	headers     = flag.String("h", "", "")
 	body        = flag.String("d", "", "")
+	bodyFile    = flag.String("D", "", "")
 	accept      = flag.String("A", "", "")
 	contentType = flag.String("T", "text/html", "")
 	authHeader  = flag.String("a", "", "")
@@ -85,10 +87,11 @@ Options:
 
   -m  HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.
   -H  Custom HTTP header. You can specify as many as needed by repeating the flag.
-      for example, -H "Accept: text/html" -H "Content-Type: application/xml" .
+      For example, -H "Accept: text/html" -H "Content-Type: application/xml" .
   -t  Timeout for each request in seconds. Default is 20, use 0 for infinite.
   -A  HTTP Accept header.
   -d  HTTP request body.
+  -D  HTTP request body from file. For example, /home/user/file.txt or ./file.txt.
   -T  Content-type, defaults to "text/html".
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
@@ -162,6 +165,18 @@ func main() {
 		username, password = match[1], match[2]
 	}
 
+	var bodyAll []byte
+	if *body != "" {
+		bodyAll = []byte(*body)
+	}
+	if *bodyFile != "" {
+		slurp, err := ioutil.ReadFile(*bodyFile)
+		if err != nil {
+			errAndExit(err.Error())
+		}
+		bodyAll = slurp
+	}
+
 	if *output != "csv" && *output != "" {
 		usageAndExit("Invalid output type; only csv is supported.")
 	}
@@ -191,7 +206,7 @@ func main() {
 
 	(&requester.Work{
 		Request:            req,
-		RequestBody:        []byte(*body),
+		RequestBody:        bodyAll,
 		N:                  num,
 		C:                  conc,
 		QPS:                q,
@@ -203,6 +218,12 @@ func main() {
 		Output:             *output,
 		EnableTrace:        *enableTrace,
 	}).Run()
+}
+
+func errAndExit(msg string) {
+	fmt.Fprintf(os.Stderr, msg)
+	fmt.Fprintf(os.Stderr, "\n")
+	os.Exit(1)
 }
 
 func usageAndExit(msg string) {
