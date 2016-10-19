@@ -24,7 +24,9 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
-
+	"io/ioutil"
+	"log"
+	
 	"github.com/rakyll/hey/requester"
 )
 
@@ -49,6 +51,7 @@ var (
 	m           = flag.String("m", "GET", "")
 	headers     = flag.String("h", "", "")
 	body        = flag.String("d", "", "")
+	bodyPath    = flag.String("D", "", "")
 	accept      = flag.String("A", "", "")
 	contentType = flag.String("T", "text/html", "")
 	authHeader  = flag.String("a", "", "")
@@ -89,6 +92,7 @@ Options:
   -t  Timeout for each request in seconds. Default is 20, use 0 for infinite.
   -A  HTTP Accept header.
   -d  HTTP request body.
+  -D  HTTP request body from file, for example, -D /root/reqbody, -D ../reqbody
   -T  Content-type, defaults to "text/html".
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
@@ -187,6 +191,15 @@ func main() {
 	// set host header if set
 	if *hostHeader != "" {
 		req.Host = *hostHeader
+	}
+
+	// if request body is file
+	if *bodyPath != "" {
+		all, err := ioutil.ReadFile(*bodyPath)
+		if err != nil {
+			 log.Fatal(err)
+		}
+		*body = string(all)
 	}
 
 	(&requester.Work{
