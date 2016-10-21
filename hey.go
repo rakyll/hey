@@ -95,16 +95,17 @@ Options:
   -T  Content-type, defaults to "text/html".
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
+  -h2 Enable HTTP/2.
 
-  -h2  Enable HTTP/2.
+  -host	HTTP Host header.
 
   -disable-compression  Disable compression.
   -disable-keepalive    Disable keep-alive, prevents re-use of TCP
                         connections between different HTTP requests.
   -cpus                 Number of used cpu cores.
                         (default for current machine is %d cores)
-  -host                 HTTP Host header.
-  -more                 Provides information on DNS lookup, dialup, request and response timings.
+  -more                 Provides information on DNS lookup, dialup, request and
+                        response timings.
 `
 
 func main() {
