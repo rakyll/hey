@@ -87,7 +87,7 @@ type Work struct {
 }
 
 //Displays the progress bar and counter
-func (b *Work) displayProgress(stopChan chan int) {
+func (b *Work) displayProgress(stopChan chan struct{}) {
 	ticker := time.Tick(time.Millisecond * 200)
 	prev := 0
 	exit := false
@@ -104,7 +104,7 @@ func (b *Work) displayProgress(stopChan chan int) {
 		}
 		if exit {
 			fmt.Println()
-			stopChan <- 1
+			stopChan <- struct{}{}
 			break
 		}
 	}
@@ -115,9 +115,9 @@ const heyUA = "hey/0.0.1"
 // Run makes all the requests, prints the summary. It blocks until
 // all work is done.
 func (b *Work) Run() {
-	stopProgressChan := make(chan int)
+	stopProgressChan := make(chan struct{})
 	stopProgress := func() {
-		stopProgressChan <- 1
+		stopProgressChan <- struct{}{}
 		<-stopProgressChan
 	}
 	go b.displayProgress(stopProgressChan)
