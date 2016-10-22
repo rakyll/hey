@@ -26,12 +26,13 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"time"
 
 	"golang.org/x/net/http2"
 )
+
+const heyUA = "hey/0.0.1"
 
 type result struct {
 	err           error
@@ -86,44 +87,31 @@ type Work struct {
 	results chan *result
 }
 
-//Displays the progress bar and counter
-func (b *Work) displayProgress(stopChan chan struct{}) {
-	ticker := time.Tick(time.Millisecond * 200)
+// displayProgress outputs the displays until stopCh returns a value.
+func (b *Work) displayProgress(stopCh chan string) {
+	if b.Output != "" {
+		return
+	}
+
 	prev := 0
-	exit := false
 	for {
 		select {
-		case <-stopChan:
-			exit = true
-		case <-ticker:
+		case msg := <-stopCh:
+			fmt.Printf("%v\n\n", msg)
+			return
+		case <-time.Tick(time.Millisecond * 500):
 		}
-		curr := len(b.results)
-		if prev < curr {
-			prev = curr
-			fmt.Printf("\rRequests: %d/%d [%-40s]", prev, b.N, strings.Repeat(barChar, (prev*40)/b.N))
-		}
-		if exit {
-			fmt.Println()
-			stopChan <- struct{}{}
-			break
+		n := len(b.results)
+		if prev < n {
+			prev = n
+			fmt.Printf("%d requests done.\n", n)
 		}
 	}
 }
 
-const heyUA = "hey/0.0.1"
-
 // Run makes all the requests, prints the summary. It blocks until
 // all work is done.
 func (b *Work) Run() {
-	stopProgressChan := make(chan struct{})
-	stopProgress := func() {
-		stopProgressChan <- struct{}{}
-		<-stopProgressChan
-	}
-	go b.displayProgress(stopProgressChan)
-
-	b.results = make(chan *result, b.N)
-
 	// append hey's user agent
 	ua := b.Request.UserAgent()
 	if ua == "" {
@@ -132,18 +120,23 @@ func (b *Work) Run() {
 		ua += " " + heyUA
 	}
 
+	b.results = make(chan *result, b.N)
+
+	stopCh := make(chan string)
+	go b.displayProgress(stopCh)
+
 	start := time.Now()
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		<-c
-		stopProgress()
+		stopCh <- "Aborting."
 		newReport(b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
 		os.Exit(1)
 	}()
 
 	b.runWorkers()
-	stopProgress()
+	stopCh <- "All requests done."
 	newReport(b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
 	close(b.results)
 }
