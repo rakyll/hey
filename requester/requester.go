@@ -252,6 +252,8 @@ func cloneRequest(r *http.Request, body []byte) *http.Request {
 	for k, s := range r.Header {
 		r2.Header[k] = append([]string(nil), s...)
 	}
-	r2.Body = ioutil.NopCloser(bytes.NewReader(body))
+	if len(body) > 0 {
+		r2.Body = ioutil.NopCloser(bytes.NewReader(body))
+	}
 	return r2
 }
