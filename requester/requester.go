@@ -88,23 +88,22 @@ type Work struct {
 }
 
 // displayProgress outputs the displays until stopCh returns a value.
-func (b *Work) displayProgress(stopCh chan string) {
+func (b *Work) displayProgress(stopCh chan struct{}) {
 	if b.Output != "" {
 		return
 	}
 
-	prev := 0
+	var prev int
 	for {
 		select {
-		case msg := <-stopCh:
-			fmt.Printf("%v\n\n", msg)
+		case <-stopCh:
 			return
 		case <-time.Tick(time.Millisecond * 500):
-		}
-		n := len(b.results)
-		if prev < n {
-			prev = n
-			fmt.Printf("%d requests done.\n", n)
+			n := len(b.results)
+			if prev < n {
+				prev = n
+				fmt.Printf("%d requests done.\n", n)
+			}
 		}
 	}
 }
@@ -122,7 +121,7 @@ func (b *Work) Run() {
 
 	b.results = make(chan *result, b.N)
 
-	stopCh := make(chan string)
+	stopCh := make(chan struct{})
 	go b.displayProgress(stopCh)
 
 	start := time.Now()
@@ -130,13 +129,17 @@ func (b *Work) Run() {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		<-c
-		stopCh <- "Aborting."
+		stopCh <- struct{}{}
 		newReport(b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
 		os.Exit(1)
 	}()
 
 	b.runWorkers()
-	stopCh <- "All requests done."
+	stopCh <- struct{}{}
+	if b.Output == "" {
+		fmt.Println("All requests done.")
+	}
+
 	newReport(b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
 	close(b.results)
 }

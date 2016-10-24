@@ -136,7 +136,7 @@ func (r *report) print() {
 	sort.Float64s(r.lats)
 	r.fastest = r.lats[0]
 	r.slowest = r.lats[len(r.lats)-1]
-	fmt.Printf("Summary:\n")
+	fmt.Printf("\nSummary:\n")
 	fmt.Printf("  Total:\t%4.4f secs\n", r.total.Seconds())
 	fmt.Printf("  Slowest:\t%4.4f secs\n", r.slowest)
 	fmt.Printf("  Fastest:\t%4.4f secs\n", r.fastest)
