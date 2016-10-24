@@ -34,10 +34,12 @@ func TestN(t *testing.T) {
 	defer server.Close()
 
 	req, _ := http.NewRequest("GET", server.URL, nil)
+	results := make(chan *Result, 20)
 	w := &Work{
 		Request: req,
 		N:       20,
 		C:       2,
+		Results: results,
 	}
 	w.Run()
 	if count != 20 {
@@ -55,11 +57,13 @@ func TestQps(t *testing.T) {
 	defer server.Close()
 
 	req, _ := http.NewRequest("GET", server.URL, nil)
+	results := make(chan *Result, 20)
 	w := &Work{
 		Request: req,
 		N:       20,
 		C:       2,
 		QPS:     1,
+		Results: results,
 	}
 	wg.Add(1)
 	time.AfterFunc(time.Second, func() {
@@ -90,10 +94,12 @@ func TestRequest(t *testing.T) {
 	req, _ := http.NewRequest("GET", server.URL, nil)
 	req.Header = header
 	req.SetBasicAuth("username", "password")
+	results := make(chan *Result, 1)
 	w := &Work{
 		Request: req,
 		N:       1,
 		C:       1,
+		Results: results,
 	}
 	w.Run()
 	if uri != "/" {
@@ -122,11 +128,13 @@ func TestBody(t *testing.T) {
 	defer server.Close()
 
 	req, _ := http.NewRequest("POST", server.URL, bytes.NewBuffer([]byte("Body")))
+	results := make(chan *Result, 10)
 	w := &Work{
 		Request:     req,
 		RequestBody: []byte("Body"),
 		N:           10,
 		C:           1,
+		Results:     results,
 	}
 	w.Run()
 	if count != 10 {

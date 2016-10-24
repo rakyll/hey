@@ -18,14 +18,11 @@ package requester
 import (
 	"bytes"
 	"crypto/tls"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptrace"
 	"net/url"
-	"os"
-	"os/signal"
 	"sync"
 	"time"
 
@@ -34,16 +31,16 @@ import (
 
 const heyUA = "hey/0.0.1"
 
-type result struct {
-	err           error
-	statusCode    int
-	duration      time.Duration
-	connDuration  time.Duration // connection setup(DNS lookup + Dial up) duration
-	dnsDuration   time.Duration // dns lookup duration
-	reqDuration   time.Duration // request "write" duration
-	resDuration   time.Duration // response "read" duration
-	delayDuration time.Duration // delay between response and request
-	contentLength int64
+type Result struct {
+	Err           error
+	StatusCode    int
+	Duration      time.Duration
+	ConnDuration  time.Duration // connection setup(DNS lookup + Dial up) duration
+	DnsDuration   time.Duration // dns lookup duration
+	ReqDuration   time.Duration // request "write" duration
+	ResDuration   time.Duration // response "read" duration
+	DelayDuration time.Duration // delay between response and request
+	ContentLength int64
 }
 
 type Work struct {
@@ -76,36 +73,11 @@ type Work struct {
 	// DisableKeepAlives is an option to prevents re-use of TCP connections between different HTTP requests
 	DisableKeepAlives bool
 
-	// Output represents the output type. If "csv" is provided, the
-	// output will be dumped as a csv stream.
-	Output string
-
 	// ProxyAddr is the address of HTTP proxy server in the format on "host:port".
 	// Optional.
 	ProxyAddr *url.URL
 
-	results chan *result
-}
-
-// displayProgress outputs the displays until stopCh returns a value.
-func (b *Work) displayProgress(stopCh chan struct{}) {
-	if b.Output != "" {
-		return
-	}
-
-	var prev int
-	for {
-		select {
-		case <-stopCh:
-			return
-		case <-time.Tick(time.Millisecond * 500):
-			n := len(b.results)
-			if prev < n {
-				prev = n
-				fmt.Printf("%d requests done.\n", n)
-			}
-		}
-	}
+	Results chan<- *Result
 }
 
 // Run makes all the requests, prints the summary. It blocks until
@@ -118,30 +90,7 @@ func (b *Work) Run() {
 	} else {
 		ua += " " + heyUA
 	}
-
-	b.results = make(chan *result, b.N)
-
-	stopCh := make(chan struct{})
-	go b.displayProgress(stopCh)
-
-	start := time.Now()
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		<-c
-		stopCh <- struct{}{}
-		newReport(b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
-		os.Exit(1)
-	}()
-
 	b.runWorkers()
-	stopCh <- struct{}{}
-	if b.Output == "" {
-		fmt.Println("All requests done.")
-	}
-
-	newReport(b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
-	close(b.results)
 }
 
 func (b *Work) makeRequest(c *http.Client) {
@@ -189,16 +138,16 @@ func (b *Work) makeRequest(c *http.Client) {
 		resDuration = t.Sub(resStart)
 	}
 	finish := t.Sub(s)
-	b.results <- &result{
-		statusCode:    code,
-		duration:      finish,
-		err:           err,
-		contentLength: size,
-		connDuration:  connDuration,
-		dnsDuration:   dnsDuration,
-		reqDuration:   reqDuration,
-		resDuration:   resDuration,
-		delayDuration: delayDuration,
+	b.Results <- &Result{
+		StatusCode:    code,
+		Duration:      finish,
+		Err:           err,
+		ContentLength: size,
+		ConnDuration:  connDuration,
+		DnsDuration:   dnsDuration,
+		ReqDuration:   reqDuration,
+		ResDuration:   resDuration,
+		DelayDuration: delayDuration,
 	}
 }
 
