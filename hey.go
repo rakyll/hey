@@ -22,10 +22,13 @@ import (
 	"net/http"
 	gourl "net/url"
 	"os"
+	"os/signal"
 	"regexp"
 	"runtime"
 	"strings"
+	"time"
 
+	"github.com/rakyll/hey/printer"
 	"github.com/rakyll/hey/requester"
 )
 
@@ -205,7 +208,19 @@ func main() {
 		req.Host = *hostHeader
 	}
 
-	(&requester.Work{
+	results := make(chan *requester.Result, num)
+
+	start := time.Now()
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		endtime := time.Now().Sub(start)
+		printer.NewReport(num, results, *output, endtime, *enableTrace).Finalize()
+		os.Exit(1)
+	}()
+
+	request := (&requester.Work{
 		Request:            req,
 		RequestBody:        bodyAll,
 		N:                  num,
@@ -216,9 +231,12 @@ func main() {
 		DisableKeepAlives:  *disableKeepAlives,
 		H2:                 *h2,
 		ProxyAddr:          proxyURL,
-		Output:             *output,
 		EnableTrace:        *enableTrace,
-	}).Run()
+		Results:            results,
+	})
+	request.Run()
+	endtime := time.Now().Sub(start)
+	printer.NewReport(request.N, results, *output, endtime, *enableTrace).Finalize()
 }
 
 func errAndExit(msg string) {

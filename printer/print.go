@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package requester
+package printer
 
 import (
 	"fmt"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/rakyll/hey/requester"
 )
 
 const (
@@ -44,7 +46,7 @@ type report struct {
 	resLats   []float64
 	delayLats []float64
 
-	results chan *result
+	results <-chan *requester.Result
 	total   time.Duration
 
 	errorDist      map[string]int
@@ -55,7 +57,7 @@ type report struct {
 	output string
 }
 
-func newReport(size int, results chan *result, output string, total time.Duration, trace bool) *report {
+func NewReport(size int, results <-chan *requester.Result, output string, total time.Duration, trace bool) *report {
 	return &report{
 		output:         output,
 		results:        results,
@@ -66,30 +68,30 @@ func newReport(size int, results chan *result, output string, total time.Duratio
 	}
 }
 
-func (r *report) finalize() {
+func (r *report) Finalize() {
 	for {
 		select {
 		case res := <-r.results:
-			if res.err != nil {
-				r.errorDist[res.err.Error()]++
+			if res.Err != nil {
+				r.errorDist[res.Err.Error()]++
 			} else {
-				r.lats = append(r.lats, res.duration.Seconds())
-				r.avgTotal += res.duration.Seconds()
+				r.lats = append(r.lats, res.Duration.Seconds())
+				r.avgTotal += res.Duration.Seconds()
 				if r.trace {
-					r.avgConn += res.connDuration.Seconds()
-					r.avgDelay += res.delayDuration.Seconds()
-					r.avgDns += res.dnsDuration.Seconds()
-					r.avgReq += res.reqDuration.Seconds()
-					r.avgRes += res.resDuration.Seconds()
-					r.connLats = append(r.connLats, res.connDuration.Seconds())
-					r.dnsLats = append(r.dnsLats, res.dnsDuration.Seconds())
-					r.reqLats = append(r.reqLats, res.reqDuration.Seconds())
-					r.delayLats = append(r.delayLats, res.delayDuration.Seconds())
-					r.resLats = append(r.resLats, res.resDuration.Seconds())
+					r.avgConn += res.ConnDuration.Seconds()
+					r.avgDelay += res.DelayDuration.Seconds()
+					r.avgDns += res.DnsDuration.Seconds()
+					r.avgReq += res.ReqDuration.Seconds()
+					r.avgRes += res.ResDuration.Seconds()
+					r.connLats = append(r.connLats, res.ConnDuration.Seconds())
+					r.dnsLats = append(r.dnsLats, res.DnsDuration.Seconds())
+					r.reqLats = append(r.reqLats, res.ReqDuration.Seconds())
+					r.delayLats = append(r.delayLats, res.DelayDuration.Seconds())
+					r.resLats = append(r.resLats, res.ResDuration.Seconds())
 				}
-				r.statusCodeDist[res.statusCode]++
-				if res.contentLength > 0 {
-					r.sizeTotal += res.contentLength
+				r.statusCodeDist[res.StatusCode]++
+				if res.ContentLength > 0 {
+					r.sizeTotal += res.ContentLength
 				}
 			}
 		default:
@@ -147,6 +149,14 @@ func (r *report) print() {
 		fmt.Printf("  Size/request:\t%d bytes\n", r.sizeTotal/int64(len(r.lats)))
 	}
 
+	r.printStatusCodes()
+	r.printHistogram()
+	r.printLatencies()
+
+	if len(r.errorDist) > 0 {
+		r.printErrors()
+	}
+
 	if r.trace {
 		fmt.Printf("\nDetailed Report:\n")
 		printSection("DNS+dialup", r.avgConn, r.connLats)
@@ -156,13 +166,6 @@ func (r *report) print() {
 		printSection("Response Read", r.avgRes, r.resLats)
 	}
 
-	r.printStatusCodes()
-	r.printHistogram()
-	r.printLatencies()
-
-	if len(r.errorDist) > 0 {
-		r.printErrors()
-	}
 }
 
 //prints details for http-trace fields
