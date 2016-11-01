@@ -135,8 +135,8 @@ func (b *Work) Run() {
 	}()
 
 	b.runWorkers()
-	stopCh <- struct{}{}
 	if b.Output == "" {
+		stopCh <- struct{}{}
 		fmt.Println("All requests done.")
 	}
 
