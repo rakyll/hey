@@ -130,6 +130,7 @@ func (b *Work) Run() {
 	go func() {
 		<-c
 		stopCh <- struct{}{}
+		close(b.results)
 		newReport(b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
 		os.Exit(1)
 	}()
@@ -140,8 +141,8 @@ func (b *Work) Run() {
 		fmt.Println("All requests done.")
 	}
 
-	newReport(b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
 	close(b.results)
+	newReport(b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
 }
 
 func (b *Work) makeRequest(c *http.Client) {
