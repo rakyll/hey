@@ -120,40 +120,37 @@ func (r *report) printCSV() {
 }
 
 func (r *report) print() {
-	if len(r.lats) <= 0 {
-		return
-	}
 	if r.output == "csv" {
 		r.printCSV()
 		return
 	}
 
-	sort.Float64s(r.lats)
-	r.fastest = r.lats[0]
-	r.slowest = r.lats[len(r.lats)-1]
-	fmt.Printf("\nSummary:\n")
-	fmt.Printf("  Total:\t%4.4f secs\n", r.total.Seconds())
-	fmt.Printf("  Slowest:\t%4.4f secs\n", r.slowest)
-	fmt.Printf("  Fastest:\t%4.4f secs\n", r.fastest)
-	fmt.Printf("  Average:\t%4.4f secs\n", r.average)
-	fmt.Printf("  Requests/sec:\t%4.4f\n", r.rps)
-	if r.sizeTotal > 0 {
-		fmt.Printf("  Total data:\t%d bytes\n", r.sizeTotal)
-		fmt.Printf("  Size/request:\t%d bytes\n", r.sizeTotal/int64(len(r.lats)))
+	if len(r.lats) > 0 {
+		sort.Float64s(r.lats)
+		r.fastest = r.lats[0]
+		r.slowest = r.lats[len(r.lats)-1]
+		fmt.Printf("\nSummary:\n")
+		fmt.Printf("  Total:\t%4.4f secs\n", r.total.Seconds())
+		fmt.Printf("  Slowest:\t%4.4f secs\n", r.slowest)
+		fmt.Printf("  Fastest:\t%4.4f secs\n", r.fastest)
+		fmt.Printf("  Average:\t%4.4f secs\n", r.average)
+		fmt.Printf("  Requests/sec:\t%4.4f\n", r.rps)
+		if r.sizeTotal > 0 {
+			fmt.Printf("  Total data:\t%d bytes\n", r.sizeTotal)
+			fmt.Printf("  Size/request:\t%d bytes\n", r.sizeTotal/int64(len(r.lats)))
+		}
+		if r.trace {
+			fmt.Printf("\nDetailed Report:\n")
+			printSection("DNS+dialup", r.avgConn, r.connLats)
+			printSection("DNS-lookup", r.avgDns, r.dnsLats)
+			printSection("Request Write", r.avgReq, r.reqLats)
+			printSection("Response Wait", r.avgDelay, r.delayLats)
+			printSection("Response Read", r.avgRes, r.resLats)
+		}
+		r.printStatusCodes()
+		r.printHistogram()
+		r.printLatencies()
 	}
-
-	if r.trace {
-		fmt.Printf("\nDetailed Report:\n")
-		printSection("DNS+dialup", r.avgConn, r.connLats)
-		printSection("DNS-lookup", r.avgDns, r.dnsLats)
-		printSection("Request Write", r.avgReq, r.reqLats)
-		printSection("Response Wait", r.avgDelay, r.delayLats)
-		printSection("Response Read", r.avgRes, r.resLats)
-	}
-
-	r.printStatusCodes()
-	r.printHistogram()
-	r.printLatencies()
 
 	if len(r.errorDist) > 0 {
 		r.printErrors()
