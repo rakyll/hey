@@ -15,10 +15,12 @@
 package requester
 
 import (
+	"bufio"
 	"bytes"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -132,4 +134,46 @@ func TestBody(t *testing.T) {
 	if count != 10 {
 		t.Errorf("Expected to work 10 times, found %v", count)
 	}
+}
+
+func TestOutput(t *testing.T) {
+	var count int64
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt64(&count, int64(1))
+	}
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+
+	req, _ := http.NewRequest("GET", server.URL, nil)
+	w := &Work{
+		Request: req,
+		N:       20,
+		C:       2,
+		Output:  "csv",
+	}
+	stdOut := readStdout(w.Run)
+	if count != 20 {
+		t.Errorf("Expected to work 20 times, found %v", count)
+	}
+	scanner := bufio.NewScanner(bufio.NewReader(stdOut))
+	var csvData []string
+	for scanner.Scan() {
+		csvData = append(csvData, scanner.Text())
+	}
+	if csvData[0] != "response-time" {
+		t.Error("Expected csv response-time header")
+	}
+	if len(csvData) != 21 {
+		t.Errorf("Expected 21 lines from csv output, found %d", len(csvData))
+	}
+}
+
+func readStdout(run func()) *os.File {
+	readStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	defer w.Close()
+	os.Stdout = w
+	run()
+	os.Stdout = readStdout
+	return r
 }
