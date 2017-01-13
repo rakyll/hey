@@ -16,6 +16,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -28,6 +29,7 @@ import (
 	"strings"
 
 	"github.com/rakyll/hey/requester"
+	"github.com/vkuznet/x509proxy"
 )
 
 const (
@@ -193,6 +195,12 @@ func main() {
 		req.Host = *hostHeader
 	}
 
+	// get X509 certs
+	certs, err := tlsCerts()
+	if err != nil {
+		usageAndExit(err.Error())
+	}
+
 	w := &requester.Work{
 		Request:            req,
 		RequestBody:        bodyAll,
@@ -205,6 +213,7 @@ func main() {
 		DisableRedirects:   *disableRedirects,
 		H2:                 *h2,
 		ProxyAddr:          proxyURL,
+		Certs:              certs,
 		Output:             *output,
 	}
 
@@ -252,4 +261,27 @@ func (h *headerSlice) String() string {
 func (h *headerSlice) Set(value string) error {
 	*h = append(*h, value)
 	return nil
+}
+
+// client X509 certificates
+func tlsCerts() ([]tls.Certificate, error) {
+	uproxy := os.Getenv("X509_USER_PROXY")
+	uckey := os.Getenv("X509_USER_KEY")
+	ucert := os.Getenv("X509_USER_CERT")
+	if uproxy == "" && uckey == "" { // user doesn't have neither proxy or user certs
+		return nil, nil
+	}
+	if uproxy != "" {
+		// use local implementation of LoadX409KeyPair instead of tls one
+		x509cert, err := x509proxy.LoadX509Proxy(uproxy)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse proxy X509 proxy set by X509_USER_PROXY: %v", err)
+		}
+		return []tls.Certificate{x509cert}, nil
+	}
+	x509cert, err := tls.LoadX509KeyPair(ucert, uckey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse user X509 certificate: %v", err)
+	}
+	return []tls.Certificate{x509cert}, nil
 }

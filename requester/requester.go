@@ -27,38 +27,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vkuznet/x509proxy"
 	"golang.org/x/net/http2"
 )
-
-// Return client X509 certificates
-func Certs() (tls_certs []tls.Certificate) {
-	uproxy := os.Getenv("X509_USER_PROXY")
-	uckey := os.Getenv("X509_USER_KEY")
-	ucert := os.Getenv("X509_USER_CERT")
-	if len(uproxy) > 0 {
-		// use local implementation of LoadX409KeyPair instead of tls one
-		x509cert, err := x509proxy.LoadX509Proxy(uproxy)
-		if err != nil {
-			fmt.Println("Fail to parser proxy X509 certificate", err)
-			return
-		}
-		tls_certs = []tls.Certificate{x509cert}
-	} else if len(uckey) > 0 {
-		x509cert, err := tls.LoadX509KeyPair(ucert, uckey)
-		if err != nil {
-			fmt.Println("Fail to parser user X509 certificate", err)
-			return
-		}
-		tls_certs = []tls.Certificate{x509cert}
-	} else {
-		return
-	}
-	return
-}
-
-// load X509 certificates once
-var certs = Certs()
 
 const heyUA = "hey/0.0.1"
 
@@ -114,6 +84,9 @@ type Work struct {
 
 	// Writer is where results will be written. If nil, results are written to stdout.
 	Writer io.Writer
+
+	// Certs holds X509 certificates
+	Certs []tls.Certificate
 
 	results chan *result
 	stopCh  chan struct{}
@@ -215,7 +188,7 @@ func (b *Work) runWorker(n int) {
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
-			Certificates:       certs,
+			Certificates:       b.Certs,
 			InsecureSkipVerify: true,
 		},
 		DisableCompression: b.DisableCompression,
