@@ -29,6 +29,6 @@ parts:
   hey:
     plugin: go
     after: [go17]
-    source: https://github.com/rakyll/hey
+    source: .
     source-type: git
     go-importpath: github.com/rakyll/hey
