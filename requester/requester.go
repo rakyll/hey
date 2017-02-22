@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/http/httptrace"
 	"net/url"
@@ -30,6 +31,7 @@ import (
 	"time"
 
 	"golang.org/x/net/http2"
+	"golang.org/x/net/proxy"
 )
 
 const heyUA = "hey/0.0.1"
@@ -215,8 +217,16 @@ func (b *Work) runWorker(n int) {
 		},
 		DisableCompression: b.DisableCompression,
 		DisableKeepAlives:  b.DisableKeepAlives,
-		Proxy:              http.ProxyURL(b.ProxyAddr),
 	}
+
+	if b.ProxyAddr != nil {
+		if dial, err := proxy.FromURL(b.ProxyAddr, &net.Dialer{}); err == nil {
+			tr.Dial = dial.Dial
+		} else {
+			tr.Proxy = http.ProxyURL(b.ProxyAddr)
+		}
+	}
+
 	if b.H2 {
 		http2.ConfigureTransport(tr)
 	} else {
