@@ -16,6 +16,7 @@ package requester
 
 import (
 	"fmt"
+	"io"
 	"sort"
 	"strings"
 	"time"
@@ -53,9 +54,11 @@ type report struct {
 	sizeTotal      int64
 
 	output string
+
+	w io.Writer
 }
 
-func newReport(size int, results chan *result, output string, total time.Duration, trace bool) *report {
+func newReport(w io.Writer, size int, results chan *result, output string, total time.Duration, trace bool) *report {
 	return &report{
 		output:         output,
 		results:        results,
@@ -63,6 +66,7 @@ func newReport(size int, results chan *result, output string, total time.Duratio
 		trace:          trace,
 		statusCodeDist: make(map[int]int),
 		errorDist:      make(map[string]int),
+		w:              w,
 	}
 }
 
@@ -104,18 +108,18 @@ func (r *report) finalize() {
 }
 
 func (r *report) printCSV() {
-	fmt.Printf("response-time")
+	r.printf("response-time")
 	if r.trace {
-		fmt.Printf(",DNS+dialup,DNS,Request-write,Response-delay,Response-read")
+		r.printf(",DNS+dialup,DNS,Request-write,Response-delay,Response-read")
 	}
-	fmt.Println()
+	r.printf("\n")
 	for i, val := range r.lats {
-		fmt.Printf("%4.4f", val)
+		r.printf("%4.4f", val)
 		if r.trace {
-			fmt.Printf(",%4.4f,%4.4f,%4.4f,%4.4f,%4.4f", r.connLats[i], r.dnsLats[i], r.reqLats[i],
+			r.printf(",%4.4f,%4.4f,%4.4f,%4.4f,%4.4f", r.connLats[i], r.dnsLats[i], r.reqLats[i],
 				r.delayLats[i], r.resLats[i])
 		}
-		fmt.Println()
+		r.printf("\n")
 	}
 }
 
@@ -129,23 +133,23 @@ func (r *report) print() {
 		sort.Float64s(r.lats)
 		r.fastest = r.lats[0]
 		r.slowest = r.lats[len(r.lats)-1]
-		fmt.Printf("\nSummary:\n")
-		fmt.Printf("  Total:\t%4.4f secs\n", r.total.Seconds())
-		fmt.Printf("  Slowest:\t%4.4f secs\n", r.slowest)
-		fmt.Printf("  Fastest:\t%4.4f secs\n", r.fastest)
-		fmt.Printf("  Average:\t%4.4f secs\n", r.average)
-		fmt.Printf("  Requests/sec:\t%4.4f\n", r.rps)
+		r.printf("\nSummary:\n")
+		r.printf("  Total:\t%4.4f secs\n", r.total.Seconds())
+		r.printf("  Slowest:\t%4.4f secs\n", r.slowest)
+		r.printf("  Fastest:\t%4.4f secs\n", r.fastest)
+		r.printf("  Average:\t%4.4f secs\n", r.average)
+		r.printf("  Requests/sec:\t%4.4f\n", r.rps)
 		if r.sizeTotal > 0 {
-			fmt.Printf("  Total data:\t%d bytes\n", r.sizeTotal)
-			fmt.Printf("  Size/request:\t%d bytes\n", r.sizeTotal/int64(len(r.lats)))
+			r.printf("  Total data:\t%d bytes\n", r.sizeTotal)
+			r.printf("  Size/request:\t%d bytes\n", r.sizeTotal/int64(len(r.lats)))
 		}
 		if r.trace {
-			fmt.Printf("\nDetailed Report:\n")
-			printSection("DNS+dialup", r.avgConn, r.connLats)
-			printSection("DNS-lookup", r.avgDns, r.dnsLats)
-			printSection("Request Write", r.avgReq, r.reqLats)
-			printSection("Response Wait", r.avgDelay, r.delayLats)
-			printSection("Response Read", r.avgRes, r.resLats)
+			r.printf("\nDetailed Report:\n")
+			r.printSection("DNS+dialup", r.avgConn, r.connLats)
+			r.printSection("DNS-lookup", r.avgDns, r.dnsLats)
+			r.printSection("Request Write", r.avgReq, r.reqLats)
+			r.printSection("Response Wait", r.avgDelay, r.delayLats)
+			r.printSection("Response Read", r.avgRes, r.resLats)
 		}
 		r.printStatusCodes()
 		r.printHistogram()
@@ -157,14 +161,14 @@ func (r *report) print() {
 	}
 }
 
-//prints details for http-trace fields
-func printSection(tag string, avg float64, lats []float64) {
+// printSection prints details for http-trace fields
+func (r *report) printSection(tag string, avg float64, lats []float64) {
 	sort.Float64s(lats)
 	fastest, slowest := lats[0], lats[len(lats)-1]
-	fmt.Printf("\n\t%s:\n", tag)
-	fmt.Printf("  \t\tAverage:\t%4.4f secs\n", avg)
-	fmt.Printf("  \t\tFastest:\t%4.4f secs\n", fastest)
-	fmt.Printf("  \t\tSlowest:\t%4.4f secs\n", slowest)
+	r.printf("\n\t%s:\n", tag)
+	r.printf("  \t\tAverage:\t%4.4f secs\n", avg)
+	r.printf("  \t\tFastest:\t%4.4f secs\n", fastest)
+	r.printf("  \t\tSlowest:\t%4.4f secs\n", slowest)
 }
 
 // Prints percentile latencies.
@@ -179,10 +183,10 @@ func (r *report) printLatencies() {
 			j++
 		}
 	}
-	fmt.Printf("\nLatency distribution:\n")
+	r.printf("\nLatency distribution:\n")
 	for i := 0; i < len(pctls); i++ {
 		if data[i] > 0 {
-			fmt.Printf("  %v%% in %4.4f secs\n", pctls[i], data[i])
+			r.printf("  %v%% in %4.4f secs\n", pctls[i], data[i])
 		}
 	}
 }
@@ -209,28 +213,32 @@ func (r *report) printHistogram() {
 			bi++
 		}
 	}
-	fmt.Printf("\nResponse time histogram:\n")
+	r.printf("\nResponse time histogram:\n")
 	for i := 0; i < len(buckets); i++ {
 		// Normalize bar lengths.
 		var barLen int
 		if max > 0 {
 			barLen = (counts[i]*40 + max/2) / max
 		}
-		fmt.Printf("  %4.3f [%v]\t|%v\n", buckets[i], counts[i], strings.Repeat(barChar, barLen))
+		r.printf("  %4.3f [%v]\t|%v\n", buckets[i], counts[i], strings.Repeat(barChar, barLen))
 	}
 }
 
 // Prints status code distribution.
 func (r *report) printStatusCodes() {
-	fmt.Printf("\nStatus code distribution:\n")
+	r.printf("\nStatus code distribution:\n")
 	for code, num := range r.statusCodeDist {
-		fmt.Printf("  [%d]\t%d responses\n", code, num)
+		r.printf("  [%d]\t%d responses\n", code, num)
 	}
 }
 
 func (r *report) printErrors() {
-	fmt.Printf("\nError distribution:\n")
+	r.printf("\nError distribution:\n")
 	for err, num := range r.errorDist {
-		fmt.Printf("  [%d]\t%s\n", num, err)
+		r.printf("  [%d]\t%s\n", num, err)
 	}
+}
+
+func (r *report) printf(s string, v ...interface{}) {
+	fmt.Fprintf(r.w, s, v...)
 }
