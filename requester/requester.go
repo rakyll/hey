@@ -84,7 +84,17 @@ type Work struct {
 	// Optional.
 	ProxyAddr *url.URL
 
+	// Writer is where results will be written. If nil, results are written to stdout.
+	Writer io.Writer
+
 	results chan *result
+}
+
+func (b *Work) writer() io.Writer {
+	if b.Writer == nil {
+		return os.Stdout
+	}
+	return b.Writer
 }
 
 // displayProgress outputs the displays until stopCh returns a value.
@@ -102,7 +112,7 @@ func (b *Work) displayProgress(stopCh chan struct{}) {
 			n := len(b.results)
 			if prev < n {
 				prev = n
-				fmt.Printf("%d requests done.\n", n)
+				fmt.Fprintf(b.writer(), "%d requests done.\n", n)
 			}
 		}
 	}
@@ -131,18 +141,18 @@ func (b *Work) Run() {
 		<-c
 		stopCh <- struct{}{}
 		close(b.results)
-		newReport(b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
+		newReport(b.writer(), b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
 		os.Exit(1)
 	}()
 
 	b.runWorkers()
 	stopCh <- struct{}{}
 	if b.Output == "" {
-		fmt.Println("All requests done.")
+		fmt.Fprintln(b.writer(), "All requests done.")
 	}
 
 	close(b.results)
-	newReport(b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
+	newReport(b.writer(), b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
 }
 
 func (b *Work) makeRequest(c *http.Client) {
