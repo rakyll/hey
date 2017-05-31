@@ -69,6 +69,7 @@ var (
 
 	disableCompression = flag.Bool("disable-compression", false, "")
 	disableKeepAlives  = flag.Bool("disable-keepalive", false, "")
+	disableRedirects   = flag.Bool("disable-redirects", false, "")
 	proxyAddr          = flag.String("x", "", "")
 
 	enableTrace = flag.Bool("more", false, "")
@@ -102,6 +103,7 @@ Options:
   -disable-compression  Disable compression.
   -disable-keepalive    Disable keep-alive, prevents re-use of TCP
                         connections between different HTTP requests.
+  -disable-redirects    Disable following of HTTP redirects
   -cpus                 Number of used cpu cores.
                         (default for current machine is %d cores)
   -more                 Provides information on DNS lookup, dialup, request and
@@ -214,6 +216,7 @@ func main() {
 		Timeout:            *t,
 		DisableCompression: *disableCompression,
 		DisableKeepAlives:  *disableKeepAlives,
+		DisableRedirects:   *disableRedirects,
 		H2:                 *h2,
 		ProxyAddr:          proxyURL,
 		Output:             *output,

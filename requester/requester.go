@@ -76,6 +76,9 @@ type Work struct {
 	// DisableKeepAlives is an option to prevents re-use of TCP connections between different HTTP requests
 	DisableKeepAlives bool
 
+	// DisableRedirects is an option to prevent the following of HTTP redirects
+	DisableRedirects bool
+
 	// Output represents the output type. If "csv" is provided, the
 	// output will be dumped as a csv stream.
 	Output string
@@ -232,7 +235,13 @@ func (b *Work) runWorker(n int) {
 	} else {
 		tr.TLSNextProto = make(map[string]func(string, *tls.Conn) http.RoundTripper)
 	}
+
 	client := &http.Client{Transport: tr, Timeout: time.Duration(b.Timeout) * time.Second}
+	if b.DisableRedirects {
+		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
+	}
 	for i := 0; i < n; i++ {
 		if b.QPS > 0 {
 			<-throttle
