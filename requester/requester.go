@@ -18,7 +18,6 @@ package requester
 import (
 	"bytes"
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -34,8 +33,6 @@ import (
 )
 
 const heyUA = "hey/0.0.1"
-
-var errRedirectNotAllowed = errors.New("redirect not allowed")
 
 type result struct {
 	err           error
@@ -195,8 +192,7 @@ func (b *Work) makeRequest(c *http.Client) {
 		req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
 	}
 	resp, err := c.Do(req)
-	skippedRedirect := isRedirectError(err)
-	if err == nil || skippedRedirect {
+	if err == nil {
 		size = resp.ContentLength
 		code = resp.StatusCode
 		io.Copy(ioutil.Discard, resp.Body)
@@ -207,9 +203,6 @@ func (b *Work) makeRequest(c *http.Client) {
 		resDuration = t.Sub(resStart)
 	}
 	finish := t.Sub(s)
-	if skippedRedirect {
-		err = nil
-	}
 	b.results <- &result{
 		statusCode:    code,
 		duration:      finish,
@@ -243,14 +236,12 @@ func (b *Work) runWorker(n int) {
 		tr.TLSNextProto = make(map[string]func(string, *tls.Conn) http.RoundTripper)
 	}
 
-	var checkRedirect func(req *http.Request, via []*http.Request) error
+	client := &http.Client{Transport: tr, Timeout: time.Duration(b.Timeout) * time.Second}
 	if b.DisableRedirects {
-		checkRedirect = func(req *http.Request, via []*http.Request) error {
-			return errRedirectNotAllowed
+		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
 		}
 	}
-
-	client := &http.Client{Transport: tr, Timeout: time.Duration(b.Timeout) * time.Second, CheckRedirect: checkRedirect}
 	for i := 0; i < n; i++ {
 		if b.QPS > 0 {
 			<-throttle
@@ -288,12 +279,4 @@ func cloneRequest(r *http.Request, body []byte) *http.Request {
 		r2.Body = ioutil.NopCloser(bytes.NewReader(body))
 	}
 	return r2
-}
-
-func isRedirectError(err error) bool {
-	urlerr, found := err.(*url.Error)
-	if !found {
-		return false
-	}
-	return urlerr.Err == errRedirectNotAllowed
 }
