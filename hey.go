@@ -34,19 +34,7 @@ const (
 	authRegexp   = `^(.+):([^\s].+)`
 )
 
-type headerSlice []string
-
-func (h *headerSlice) String() string {
-	return fmt.Sprintf("%s", *h)
-}
-
-func (h *headerSlice) Set(value string) error {
-	*h = append(*h, value)
-	return nil
-}
-
 var (
-	headerslice headerSlice
 	m           = flag.String("m", "GET", "")
 	headers     = flag.String("h", "", "")
 	body        = flag.String("d", "", "")
@@ -115,7 +103,8 @@ func main() {
 		fmt.Fprint(os.Stderr, fmt.Sprintf(usage, runtime.NumCPU()))
 	}
 
-	flag.Var(&headerslice, "H", "")
+	var hs headerSlice
+	flag.Var(&hs, "H", "")
 
 	flag.Parse()
 	if flag.NArg() < 1 {
@@ -146,7 +135,7 @@ func main() {
 		usageAndExit("Flag '-h' is deprecated, please use '-H' instead.")
 	}
 	// set any other additional repeatable headers
-	for _, h := range headerslice {
+	for _, h := range hs {
 		match, err := parseInputWithRegexp(h, headerRegexp)
 		if err != nil {
 			usageAndExit(err.Error())
@@ -247,4 +236,15 @@ func parseInputWithRegexp(input, regx string) ([]string, error) {
 		return nil, fmt.Errorf("could not parse the provided input; input = %v", input)
 	}
 	return matches, nil
+}
+
+type headerSlice []string
+
+func (h *headerSlice) String() string {
+	return fmt.Sprintf("%s", *h)
+}
+
+func (h *headerSlice) Set(value string) error {
+	*h = append(*h, value)
+	return nil
 }
