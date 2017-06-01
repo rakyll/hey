@@ -22,6 +22,7 @@ import (
 	"net/http"
 	gourl "net/url"
 	"os"
+	"os/signal"
 	"regexp"
 	"runtime"
 	"strings"
@@ -196,7 +197,7 @@ func main() {
 		req.Host = *hostHeader
 	}
 
-	(&requester.Work{
+	w := &requester.Work{
 		Request:            req,
 		RequestBody:        bodyAll,
 		N:                  num,
@@ -210,7 +211,16 @@ func main() {
 		ProxyAddr:          proxyURL,
 		Output:             *output,
 		EnableTrace:        *enableTrace,
-	}).Run()
+	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		w.Finish()
+		os.Exit(1)
+	}()
+	w.Run()
 }
 
 func errAndExit(msg string) {

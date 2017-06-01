@@ -18,14 +18,12 @@ package requester
 import (
 	"bytes"
 	"crypto/tls"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptrace"
 	"net/url"
 	"os"
-	"os/signal"
 	"sync"
 	"time"
 
@@ -91,6 +89,8 @@ type Work struct {
 	Writer io.Writer
 
 	results chan *result
+	stopCh  chan struct{}
+	start   time.Time
 }
 
 func (b *Work) writer() io.Writer {
@@ -98,27 +98,6 @@ func (b *Work) writer() io.Writer {
 		return os.Stdout
 	}
 	return b.Writer
-}
-
-// displayProgress outputs the displays until stopCh returns a value.
-func (b *Work) displayProgress(stopCh chan struct{}) {
-	if b.Output != "" {
-		return
-	}
-
-	var prev int
-	for {
-		select {
-		case <-stopCh:
-			return
-		case <-time.Tick(time.Millisecond * 500):
-			n := len(b.results)
-			if prev < n {
-				prev = n
-				fmt.Fprintf(b.writer(), "%d requests done.\n", n)
-			}
-		}
-	}
 }
 
 // Run makes all the requests, prints the summary. It blocks until
@@ -133,29 +112,17 @@ func (b *Work) Run() {
 	}
 
 	b.results = make(chan *result, b.N)
-
-	stopCh := make(chan struct{})
-	go b.displayProgress(stopCh)
-
-	start := time.Now()
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		<-c
-		stopCh <- struct{}{}
-		close(b.results)
-		newReport(b.writer(), b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
-		os.Exit(1)
-	}()
+	b.stopCh = make(chan struct{}, 1000)
+	b.start = time.Now()
 
 	b.runWorkers()
-	stopCh <- struct{}{}
-	if b.Output == "" {
-		fmt.Fprintln(b.writer(), "All requests done.")
-	}
+	b.Finish()
+}
 
+func (b *Work) Finish() {
+	b.stopCh <- struct{}{}
 	close(b.results)
-	newReport(b.writer(), b.N, b.results, b.Output, time.Now().Sub(start), b.EnableTrace).finalize()
+	newReport(b.writer(), b.N, b.results, b.Output, time.Now().Sub(b.start), b.EnableTrace).finalize()
 }
 
 func (b *Work) makeRequest(c *http.Client) {
