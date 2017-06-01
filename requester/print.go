@@ -33,9 +33,8 @@ type report struct {
 	average  float64
 	rps      float64
 
-	trace     bool //if trace is set, the following fields will be filled
 	avgConn   float64
-	avgDns    float64
+	avgDNS    float64
 	avgReq    float64
 	avgRes    float64
 	avgDelay  float64
@@ -58,12 +57,11 @@ type report struct {
 	w io.Writer
 }
 
-func newReport(w io.Writer, size int, results chan *result, output string, total time.Duration, trace bool) *report {
+func newReport(w io.Writer, size int, results chan *result, output string, total time.Duration) *report {
 	return &report{
 		output:         output,
 		results:        results,
 		total:          total,
-		trace:          trace,
 		statusCodeDist: make(map[int]int),
 		errorDist:      make(map[string]int),
 		w:              w,
@@ -77,18 +75,16 @@ func (r *report) finalize() {
 		} else {
 			r.lats = append(r.lats, res.duration.Seconds())
 			r.avgTotal += res.duration.Seconds()
-			if r.trace {
-				r.avgConn += res.connDuration.Seconds()
-				r.avgDelay += res.delayDuration.Seconds()
-				r.avgDns += res.dnsDuration.Seconds()
-				r.avgReq += res.reqDuration.Seconds()
-				r.avgRes += res.resDuration.Seconds()
-				r.connLats = append(r.connLats, res.connDuration.Seconds())
-				r.dnsLats = append(r.dnsLats, res.dnsDuration.Seconds())
-				r.reqLats = append(r.reqLats, res.reqDuration.Seconds())
-				r.delayLats = append(r.delayLats, res.delayDuration.Seconds())
-				r.resLats = append(r.resLats, res.resDuration.Seconds())
-			}
+			r.avgConn += res.connDuration.Seconds()
+			r.avgDelay += res.delayDuration.Seconds()
+			r.avgDNS += res.dnsDuration.Seconds()
+			r.avgReq += res.reqDuration.Seconds()
+			r.avgRes += res.resDuration.Seconds()
+			r.connLats = append(r.connLats, res.connDuration.Seconds())
+			r.dnsLats = append(r.dnsLats, res.dnsDuration.Seconds())
+			r.reqLats = append(r.reqLats, res.reqDuration.Seconds())
+			r.delayLats = append(r.delayLats, res.delayDuration.Seconds())
+			r.resLats = append(r.resLats, res.resDuration.Seconds())
 			r.statusCodeDist[res.statusCode]++
 			if res.contentLength > 0 {
 				r.sizeTotal += res.contentLength
@@ -97,29 +93,19 @@ func (r *report) finalize() {
 	}
 	r.rps = float64(len(r.lats)) / r.total.Seconds()
 	r.average = r.avgTotal / float64(len(r.lats))
-	if r.trace {
-		r.avgConn = r.avgConn / float64(len(r.lats))
-		r.avgDelay = r.avgDelay / float64(len(r.lats))
-		r.avgDns = r.avgDns / float64(len(r.lats))
-		r.avgReq = r.avgReq / float64(len(r.lats))
-		r.avgRes = r.avgRes / float64(len(r.lats))
-	}
+	r.avgConn = r.avgConn / float64(len(r.lats))
+	r.avgDelay = r.avgDelay / float64(len(r.lats))
+	r.avgDNS = r.avgDNS / float64(len(r.lats))
+	r.avgReq = r.avgReq / float64(len(r.lats))
+	r.avgRes = r.avgRes / float64(len(r.lats))
 	r.print()
 }
 
 func (r *report) printCSV() {
-	r.printf("response-time")
-	if r.trace {
-		r.printf(",DNS+dialup,DNS,Request-write,Response-delay,Response-read")
-	}
-	r.printf("\n")
+	r.printf("response-time,DNS+dialup,DNS,Request-write,Response-delay,Response-read\n")
 	for i, val := range r.lats {
-		r.printf("%4.4f", val)
-		if r.trace {
-			r.printf(",%4.4f,%4.4f,%4.4f,%4.4f,%4.4f", r.connLats[i], r.dnsLats[i], r.reqLats[i],
-				r.delayLats[i], r.resLats[i])
-		}
-		r.printf("\n")
+		r.printf("%4.4f,%4.4f,%4.4f,%4.4f,%4.4f,%4.4f\n",
+			val, r.connLats[i], r.dnsLats[i], r.reqLats[i], r.delayLats[i], r.resLats[i])
 	}
 }
 
@@ -143,14 +129,12 @@ func (r *report) print() {
 			r.printf("  Total data:\t%d bytes\n", r.sizeTotal)
 			r.printf("  Size/request:\t%d bytes\n", r.sizeTotal/int64(len(r.lats)))
 		}
-		if r.trace {
-			r.printf("\nDetailed Report:\n")
-			r.printSection("DNS+dialup", r.avgConn, r.connLats)
-			r.printSection("DNS-lookup", r.avgDns, r.dnsLats)
-			r.printSection("Request Write", r.avgReq, r.reqLats)
-			r.printSection("Response Wait", r.avgDelay, r.delayLats)
-			r.printSection("Response Read", r.avgRes, r.resLats)
-		}
+		r.printf("\nDetailed Report:\n")
+		r.printSection("DNS+dialup", r.avgConn, r.connLats)
+		r.printSection("DNS-lookup", r.avgDNS, r.dnsLats)
+		r.printSection("Request Write", r.avgReq, r.reqLats)
+		r.printSection("Response Wait", r.avgDelay, r.delayLats)
+		r.printSection("Response Read", r.avgRes, r.resLats)
 		r.printStatusCodes()
 		r.printHistogram()
 		r.printLatencies()
@@ -171,7 +155,7 @@ func (r *report) printSection(tag string, avg float64, lats []float64) {
 	r.printf("  \t\tSlowest:\t%4.4f secs\n", slowest)
 }
 
-// Prints percentile latencies.
+// printLatencies prints percentile latencies.
 func (r *report) printLatencies() {
 	pctls := []int{10, 25, 50, 75, 90, 95, 99}
 	data := make([]float64, len(pctls))
@@ -224,7 +208,7 @@ func (r *report) printHistogram() {
 	}
 }
 
-// Prints status code distribution.
+// printStatusCodes prints status code distribution.
 func (r *report) printStatusCodes() {
 	r.printf("\nStatus code distribution:\n")
 	for code, num := range r.statusCodeDist {

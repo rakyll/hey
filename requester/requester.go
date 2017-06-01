@@ -59,9 +59,6 @@ type Work struct {
 	// H2 is an option to make HTTP/2 requests
 	H2 bool
 
-	// EnableTrace is an option to enable httpTrace
-	EnableTrace bool
-
 	// Timeout in seconds.
 	Timeout int
 
@@ -122,7 +119,7 @@ func (b *Work) Run() {
 func (b *Work) Finish() {
 	b.stopCh <- struct{}{}
 	close(b.results)
-	newReport(b.writer(), b.N, b.results, b.Output, time.Now().Sub(b.start), b.EnableTrace).finalize()
+	newReport(b.writer(), b.N, b.results, b.Output, time.Now().Sub(b.start)).finalize()
 }
 
 func (b *Work) makeRequest(c *http.Client) {
@@ -132,32 +129,30 @@ func (b *Work) makeRequest(c *http.Client) {
 	var dnsStart, connStart, resStart, reqStart, delayStart time.Time
 	var dnsDuration, connDuration, resDuration, reqDuration, delayDuration time.Duration
 	req := cloneRequest(b.Request, b.RequestBody)
-	if b.EnableTrace {
-		trace := &httptrace.ClientTrace{
-			DNSStart: func(info httptrace.DNSStartInfo) {
-				dnsStart = time.Now()
-			},
-			DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
-				dnsDuration = time.Now().Sub(dnsStart)
-			},
-			GetConn: func(h string) {
-				connStart = time.Now()
-			},
-			GotConn: func(connInfo httptrace.GotConnInfo) {
-				connDuration = time.Now().Sub(connStart)
-				reqStart = time.Now()
-			},
-			WroteRequest: func(w httptrace.WroteRequestInfo) {
-				reqDuration = time.Now().Sub(reqStart)
-				delayStart = time.Now()
-			},
-			GotFirstResponseByte: func() {
-				delayDuration = time.Now().Sub(delayStart)
-				resStart = time.Now()
-			},
-		}
-		req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
+	trace := &httptrace.ClientTrace{
+		DNSStart: func(info httptrace.DNSStartInfo) {
+			dnsStart = time.Now()
+		},
+		DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
+			dnsDuration = time.Now().Sub(dnsStart)
+		},
+		GetConn: func(h string) {
+			connStart = time.Now()
+		},
+		GotConn: func(connInfo httptrace.GotConnInfo) {
+			connDuration = time.Now().Sub(connStart)
+			reqStart = time.Now()
+		},
+		WroteRequest: func(w httptrace.WroteRequestInfo) {
+			reqDuration = time.Now().Sub(reqStart)
+			delayStart = time.Now()
+		},
+		GotFirstResponseByte: func() {
+			delayDuration = time.Now().Sub(delayStart)
+			resStart = time.Now()
+		},
 	}
+	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
 	resp, err := c.Do(req)
 	if err == nil {
 		size = resp.ContentLength
@@ -166,9 +161,7 @@ func (b *Work) makeRequest(c *http.Client) {
 		resp.Body.Close()
 	}
 	t := time.Now()
-	if b.EnableTrace {
-		resDuration = t.Sub(resStart)
-	}
+	resDuration = t.Sub(resStart)
 	finish := t.Sub(s)
 	b.results <- &result{
 		statusCode:    code,

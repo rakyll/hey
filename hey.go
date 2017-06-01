@@ -60,8 +60,6 @@ var (
 	disableKeepAlives  = flag.Bool("disable-keepalive", false, "")
 	disableRedirects   = flag.Bool("disable-redirects", false, "")
 	proxyAddr          = flag.String("x", "", "")
-
-	enableTrace = flag.Bool("more", false, "")
 )
 
 var usage = `Usage: hey [options...] <url>
@@ -210,7 +208,6 @@ func main() {
 		H2:                 *h2,
 		ProxyAddr:          proxyURL,
 		Output:             *output,
-		EnableTrace:        *enableTrace,
 	}
 
 	c := make(chan os.Signal, 1)
