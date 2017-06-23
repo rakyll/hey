@@ -27,7 +27,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/rakyll/hey/requester"
+	"github.com/hallelujah-shih/hey/requester"
 )
 
 const (
@@ -54,7 +54,8 @@ var (
 
 	h2 = flag.Bool("h2", false, "")
 
-	cpus = flag.Int("cpus", runtime.GOMAXPROCS(-1), "")
+	cpus       = flag.Int("cpus", runtime.GOMAXPROCS(-1), "")
+	nssLogFile = flag.String("nss_log_path", "nss_key.log", "")
 
 	disableCompression = flag.Bool("disable-compression", false, "")
 	disableKeepAlives  = flag.Bool("disable-keepalive", false, "")
@@ -195,6 +196,14 @@ func main() {
 		req.Host = *hostHeader
 	}
 
+	var writer *requester.InnerWriter
+	if nssLogFile != "" {
+		writer = requester.NewInnerWriter(nssLogFile)
+		if err := writer.Init(); err != nil {
+			errAndExit(err.Error())
+		}
+	}
+
 	w := &requester.Work{
 		Request:            req,
 		RequestBody:        bodyAll,
@@ -208,6 +217,7 @@ func main() {
 		H2:                 *h2,
 		ProxyAddr:          proxyURL,
 		Output:             *output,
+		KeyLogWriter:       writer,
 	}
 
 	c := make(chan os.Signal, 1)
