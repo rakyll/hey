@@ -85,6 +85,8 @@ type Work struct {
 	// Writer is where results will be written. If nil, results are written to stdout.
 	Writer io.Writer
 
+	KeyLogWriter io.Writer
+
 	results chan *result
 	stopCh  chan struct{}
 	start   time.Time
@@ -185,6 +187,7 @@ func (b *Work) runWorker(n int) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
+			KeyLogWriter:       b.KeyLogWriter,
 		},
 		DisableCompression: b.DisableCompression,
 		DisableKeepAlives:  b.DisableKeepAlives,
