@@ -2,12 +2,6 @@
 
 [![Build Status](https://travis-ci.org/rakyll/hey.png?branch=master)](https://travis-ci.org/rakyll/hey)
 
-Previously known as [github.com/rakyll/boom](https://github.com/rakyll/boom).
-
-Requires go 1.7 or greater.
-
-----
-
 hey is a tiny program that sends some load to a web application.
 
 hey was originally called boom and was influenced from Tarek Ziade's
@@ -59,3 +53,7 @@ Options:
   -more                 Provides information on DNS lookup, dialup, request and
                         response timings.
 ```
+
+Previously known as [github.com/rakyll/boom](https://github.com/rakyll/boom).
+
+Note: Requires go 1.7 or greater.
