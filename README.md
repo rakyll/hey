@@ -1,4 +1,4 @@
-# hey
+![hey](http://i.imgur.com/szzD9q0.png)
 
 [![Build Status](https://travis-ci.org/rakyll/hey.png?branch=master)](https://travis-ci.org/rakyll/hey)
 
