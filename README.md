@@ -50,8 +50,6 @@ Options:
                         connections between different HTTP requests.
   -cpus                 Number of used cpu cores.
                         (default for current machine is 8 cores)
-  -more                 Provides information on DNS lookup, dialup, request and
-                        response timings.
 ```
 
 Previously known as [github.com/rakyll/boom](https://github.com/rakyll/boom).
