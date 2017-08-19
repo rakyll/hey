@@ -52,8 +52,7 @@ var (
 	q = flag.Int("q", 0, "")
 	t = flag.Int("t", 20, "")
 
-	h2 = flag.Bool("h2", false, "")
-
+	h2   = flag.Bool("h2", false, "")
 	cpus = flag.Int("cpus", runtime.GOMAXPROCS(-1), "")
 
 	disableCompression = flag.Bool("disable-compression", false, "")
