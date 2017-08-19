@@ -119,7 +119,7 @@ func (r *report) print() {
 		sort.Float64s(r.lats)
 		r.fastest = r.lats[0]
 		r.slowest = r.lats[len(r.lats)-1]
-		r.printf("\nSummary:\n")
+		r.printf("Summary:\n")
 		r.printf("  Total:\t%4.4f secs\n", r.total.Seconds())
 		r.printf("  Slowest:\t%4.4f secs\n", r.slowest)
 		r.printf("  Fastest:\t%4.4f secs\n", r.fastest)
@@ -129,15 +129,15 @@ func (r *report) print() {
 			r.printf("  Total data:\t%d bytes\n", r.sizeTotal)
 			r.printf("  Size/request:\t%d bytes\n", r.sizeTotal/int64(len(r.lats)))
 		}
-		r.printf("\nDetailed Report:\n")
-		r.printSection("DNS+dialup", r.avgConn, r.connLats)
-		r.printSection("DNS-lookup", r.avgDNS, r.dnsLats)
-		r.printSection("Request Write", r.avgReq, r.reqLats)
-		r.printSection("Response Wait", r.avgDelay, r.delayLats)
-		r.printSection("Response Read", r.avgRes, r.resLats)
-		r.printStatusCodes()
 		r.printHistogram()
 		r.printLatencies()
+		r.printf("\nDetails (average, fastest, slowest):")
+		r.printSection("DNS+dialup", r.avgConn, r.connLats)
+		r.printSection("DNS-lookup", r.avgDNS, r.dnsLats)
+		r.printSection("req write", r.avgReq, r.reqLats)
+		r.printSection("resp wait", r.avgDelay, r.delayLats)
+		r.printSection("resp read", r.avgRes, r.resLats)
+		r.printStatusCodes()
 	}
 
 	if len(r.errorDist) > 0 {
@@ -149,10 +149,8 @@ func (r *report) print() {
 func (r *report) printSection(tag string, avg float64, lats []float64) {
 	sort.Float64s(lats)
 	fastest, slowest := lats[0], lats[len(lats)-1]
-	r.printf("\n\t%s:\n", tag)
-	r.printf("  \t\tAverage:\t%4.4f secs\n", avg)
-	r.printf("  \t\tFastest:\t%4.4f secs\n", fastest)
-	r.printf("  \t\tSlowest:\t%4.4f secs\n", slowest)
+	r.printf("\n  %s:\t", tag)
+	r.printf(" %4.4f secs, %4.4f secs, %4.4f secs", avg, fastest, slowest)
 }
 
 // printLatencies prints percentile latencies.
@@ -210,7 +208,7 @@ func (r *report) printHistogram() {
 
 // printStatusCodes prints status code distribution.
 func (r *report) printStatusCodes() {
-	r.printf("\nStatus code distribution:\n")
+	r.printf("\n\nStatus code distribution:\n")
 	for code, num := range r.statusCodeDist {
 		r.printf("  [%d]\t%d responses\n", code, num)
 	}

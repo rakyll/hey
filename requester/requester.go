@@ -119,7 +119,8 @@ func (b *Work) Run() {
 func (b *Work) Finish() {
 	b.stopCh <- struct{}{}
 	close(b.results)
-	newReport(b.writer(), b.N, b.results, b.Output, time.Now().Sub(b.start)).finalize()
+	total := time.Now().Sub(b.start)
+	newReport(b.writer(), b.N, b.results, b.Output, total).finalize()
 }
 
 func (b *Work) makeRequest(c *http.Client) {
