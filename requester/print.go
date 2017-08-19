@@ -139,10 +139,10 @@ func (r *report) print() {
 		r.printSection("resp read", r.avgRes, r.resLats)
 		r.printStatusCodes()
 	}
-
 	if len(r.errorDist) > 0 {
 		r.printErrors()
 	}
+	r.printf("\n")
 }
 
 // printSection prints details for http-trace fields
