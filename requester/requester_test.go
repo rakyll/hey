@@ -16,9 +16,11 @@ package requester
 
 import (
 	"bytes"
+	"encoding/csv"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -42,6 +44,57 @@ func TestN(t *testing.T) {
 	w.Run()
 	if count != 20 {
 		t.Errorf("Expected to boom 20 times, found %v", count)
+	}
+}
+
+func TestCSV(t *testing.T) {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+	}
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+
+	outputBuffer := &bytes.Buffer{}
+
+	req, _ := http.NewRequest("GET", server.URL, nil)
+	w := &Work{
+		Request: req,
+		N:       10,
+		C:       2,
+		Writer:  outputBuffer,
+		Output:  "csv",
+	}
+	w.Run()
+
+	csvReader := csv.NewReader(outputBuffer)
+	records, err := csvReader.ReadAll()
+	if err != nil {
+		t.Errorf("parsing csv: %s", err)
+	}
+
+	nExpectedRecords := w.N + 1 // for header
+	if got, want := len(records), nExpectedRecords; got != want {
+		t.Errorf("num records = %d; want %d", len(records), nExpectedRecords)
+	}
+
+	expectedHeadersLine := "response-time,DNS+dialup,DNS,Request-write,Response-delay,Response-read,start-time"
+	if got, want := strings.Join(records[0], ","), expectedHeadersLine; got != want {
+		t.Errorf("headers = %s; want %s", records[0], expectedHeadersLine)
+	}
+
+	// last column is start-time, can be parsed as a RFC339Nano
+	startTimeColumn := len(records[0]) - 1
+	startTime1 := records[1][startTimeColumn]
+	_, err = time.Parse(time.RFC3339Nano, startTime1)
+	if err != nil {
+		t.Errorf("parsing start time as integer: %s", err)
+	}
+
+	const nExpectedColumns = 7
+	for i, row := range records {
+		if got, want := len(row), nExpectedColumns; got != want {
+			t.Errorf("row %d column count = %d; want %d", i, len(row), nExpectedColumns)
+		}
 	}
 }
 
