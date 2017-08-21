@@ -110,7 +110,7 @@ func (r *report) printCSV() {
 }
 
 func (r *report) printGTS() {
-	startTime := time.Now().UnixNano() / int64(time.Millisecond)
+	startTime := time.Now().UnixNano() / int64(time.Microsecond)
 	sizePerRequest := r.sizeTotal / int64(len(r.lats))
 	for i, val := range r.lats {
 		r.printf("%d// request.size{} %d\n", startTime, sizePerRequest)
