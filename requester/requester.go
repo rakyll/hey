@@ -85,6 +85,9 @@ type Work struct {
 	// Writer is where results will be written. If nil, results are written to stdout.
 	Writer io.Writer
 
+	// X509 certificates
+	Certs []tls.Certificate
+
 	results chan *result
 	stopCh  chan struct{}
 	start   time.Time
@@ -185,6 +188,7 @@ func (b *Work) runWorker(n int) {
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
+			Certificates:       b.Certs,
 			InsecureSkipVerify: true,
 		},
 		DisableCompression: b.DisableCompression,
