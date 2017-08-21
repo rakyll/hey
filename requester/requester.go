@@ -57,6 +57,9 @@ func Certs() (tls_certs []tls.Certificate) {
 	return
 }
 
+// load X509 certificates once
+var certs = Certs()
+
 const heyUA = "hey/0.0.1"
 
 type result struct {
@@ -212,7 +215,7 @@ func (b *Work) runWorker(n int) {
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
-			Certificates:       Certs(),
+			Certificates:       certs,
 			InsecureSkipVerify: true,
 		},
 		DisableCompression: b.DisableCompression,
