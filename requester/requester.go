@@ -35,6 +35,7 @@ const heyUA = "hey/0.0.1"
 type result struct {
 	err           error
 	statusCode    int
+	startTime     time.Time
 	duration      time.Duration
 	connDuration  time.Duration // connection setup(DNS lookup + Dial up) duration
 	dnsDuration   time.Duration // dns lookup duration
@@ -165,6 +166,7 @@ func (b *Work) makeRequest(c *http.Client) {
 	resDuration = t.Sub(resStart)
 	finish := t.Sub(s)
 	b.results <- &result{
+		startTime:     s,
 		statusCode:    code,
 		duration:      finish,
 		err:           err,
