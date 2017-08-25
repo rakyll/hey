@@ -107,6 +107,7 @@ func (b *Work) Run() {
 	} else {
 		ua += " " + heyUA
 	}
+	b.Request.Header.Set("User-Agent", ua)
 
 	b.results = make(chan *result, b.N)
 	b.stopCh = make(chan struct{}, 1000)
@@ -158,7 +159,10 @@ func (b *Work) makeRequest(c *http.Client) {
 	if err == nil {
 		size = resp.ContentLength
 		code = resp.StatusCode
-		io.Copy(ioutil.Discard, resp.Body)
+		n, _ := io.Copy(ioutil.Discard, resp.Body)
+		if size < 0 && n > 0 {
+			size = n
+		}
 		resp.Body.Close()
 	}
 	t := time.Now()
