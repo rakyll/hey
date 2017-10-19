@@ -30,7 +30,7 @@ import (
 
 	"golang.org/x/net/proxy"
 
-	"github.com/mmcloughlin/hey/requester"
+	"github.com/rakyll/hey/requester"
 )
 
 const (

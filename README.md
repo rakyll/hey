@@ -41,6 +41,7 @@ Options:
   -T  Content-type, defaults to "text/html".
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
+  -s  SOCKS5 Proxy address as host:port.
   -h2 Enable HTTP/2.
 
   -host	HTTP Host header.
