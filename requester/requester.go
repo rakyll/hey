@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/http/httptrace"
 	"net/url"
@@ -77,6 +78,9 @@ type Work struct {
 	// Output represents the output type. If "csv" is provided, the
 	// output will be dumped as a csv stream.
 	Output string
+
+	// Dial is a dialer for the underlying Transport. Optional.
+	Dial func(network, addr string) (net.Conn, error)
 
 	// ProxyAddr is the address of HTTP proxy server in the format on "host:port".
 	// Optional.
@@ -184,6 +188,7 @@ func (b *Work) runWorker(n int) {
 	}
 
 	tr := &http.Transport{
+		Dial: b.Dial,
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
 		},

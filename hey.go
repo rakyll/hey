@@ -19,6 +19,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	gourl "net/url"
 	"os"
@@ -27,7 +28,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/rakyll/hey/requester"
+	"golang.org/x/net/proxy"
+
+	"github.com/mmcloughlin/hey/requester"
 )
 
 const (
@@ -59,6 +62,7 @@ var (
 	disableKeepAlives  = flag.Bool("disable-keepalive", false, "")
 	disableRedirects   = flag.Bool("disable-redirects", false, "")
 	proxyAddr          = flag.String("x", "", "")
+	socks5Addr         = flag.String("s", "", "")
 )
 
 var usage = `Usage: hey [options...] <url>
@@ -82,6 +86,7 @@ Options:
   -T  Content-type, defaults to "text/html".
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
+  -s  SOCKS5 Proxy address as host:port.
   -h2 Enable HTTP/2.
 
   -host	HTTP Host header.
@@ -180,6 +185,15 @@ func main() {
 		}
 	}
 
+	var dial func(string, string) (net.Conn, error)
+	if *socks5Addr != "" {
+		dialer, err := proxy.SOCKS5("tcp", *socks5Addr, nil, proxy.Direct)
+		if err != nil {
+			usageAndExit(err.Error())
+		}
+		dial = dialer.Dial
+	}
+
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		usageAndExit(err.Error())
@@ -205,6 +219,7 @@ func main() {
 		DisableKeepAlives:  *disableKeepAlives,
 		DisableRedirects:   *disableRedirects,
 		H2:                 *h2,
+		Dial:               dial,
 		ProxyAddr:          proxyURL,
 		Output:             *output,
 	}
