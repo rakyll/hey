@@ -92,8 +92,6 @@ Options:
   -disable-redirects    Disable following of HTTP redirects
   -cpus                 Number of used cpu cores.
                         (default for current machine is %d cores)
-  -more                 Provides information on DNS lookup, dialup, request and
-                        response timings.
 `
 
 func main() {
