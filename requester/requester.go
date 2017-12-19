@@ -191,27 +191,12 @@ func (b *Work) makeRequest(c *http.Client) {
 	}
 }
 
-func (b *Work) runWorker(c *http.Client, n int) {
+func (b *Work) runWorker(client *http.Client, n int) {
 	var throttle <-chan time.Time
 	if b.QPS > 0 {
 		throttle = time.Tick(time.Duration(1e6/(b.QPS)) * time.Microsecond)
 	}
 
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
-		DisableCompression: b.DisableCompression,
-		DisableKeepAlives:  b.DisableKeepAlives,
-		Proxy:              http.ProxyURL(b.ProxyAddr),
-	}
-	if b.H2 {
-		http2.ConfigureTransport(tr)
-	} else {
-		tr.TLSNextProto = make(map[string]func(string, *tls.Conn) http.RoundTripper)
-	}
-
-	client := &http.Client{Transport: tr, Timeout: time.Duration(b.Timeout) * time.Second}
 	if b.DisableRedirects {
 		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
@@ -240,7 +225,12 @@ func (b *Work) runWorkers() {
 		TLSHandshakeTimeout: time.Duration(b.Timeout) * time.Millisecond,
 		Proxy:               http.ProxyURL(b.ProxyAddr),
 	}
-	client := &http.Client{Transport: tr}
+	if b.H2 {
+		http2.ConfigureTransport(tr)
+	} else {
+		tr.TLSNextProto = make(map[string]func(string, *tls.Conn) http.RoundTripper)
+	}
+	client := &http.Client{Transport: tr, Timeout: time.Duration(b.Timeout) * time.Second}
 
 	// Ignore the case where b.N % b.C != 0.
 	for i := 0; i < b.C; i++ {
