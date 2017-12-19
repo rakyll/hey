@@ -31,8 +31,10 @@ import (
 )
 
 const heyUA = "hey/0.0.1"
+
 // Max size of the buffer of result channel.
 const maxResult = 1000000
+const maxIdleConn = 500
 
 type result struct {
 	err           error
@@ -112,11 +114,7 @@ func (b *Work) Run() {
 		ua += " " + heyUA
 	}
 
-	var resultSize = b.C * 1000
-	if resultSize > maxResult {
-		resultSize = maxResult
-	}
-	b.results = make(chan *result, resultSize)
+	b.results = make(chan *result, min(b.C*1000, maxResult))
 	b.stopCh = make(chan struct{}, 1000)
 	b.start = time.Now()
 	b.report = newReport(b.writer(), b.results, b.Output, b.N)
@@ -218,7 +216,7 @@ func (b *Work) runWorkers() {
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
 		},
-		MaxIdleConnsPerHost: b.C,
+		MaxIdleConnsPerHost: min(b.C, maxIdleConn),
 		DisableCompression:  b.DisableCompression,
 		DisableKeepAlives:   b.DisableKeepAlives,
 		// TODO(jbd): Add dial timeout.
@@ -235,7 +233,7 @@ func (b *Work) runWorkers() {
 	// Ignore the case where b.N % b.C != 0.
 	for i := 0; i < b.C; i++ {
 		go func() {
-			b.runWorker(client, b.N / b.C)
+			b.runWorker(client, b.N/b.C)
 			wg.Done()
 		}()
 	}
@@ -257,4 +255,11 @@ func cloneRequest(r *http.Request, body []byte) *http.Request {
 		r2.Body = ioutil.NopCloser(bytes.NewReader(body))
 	}
 	return r2
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

@@ -62,10 +62,7 @@ type report struct {
 }
 
 func newReport(w io.Writer, results chan *result, output string, n int) *report {
-	cap := n
-	if n > maxRes {
-		cap = maxRes
-	}
+	cap := min(n, maxRes)
 	return &report{
 		output:         output,
 		results:        results,
