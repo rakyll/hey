@@ -123,7 +123,7 @@ func (b *Work) Run() {
 		runReporter(b.report)
 	}()
 	b.runWorkers()
-	b.Report()
+	b.Finish()
 }
 
 func (b *Work) Interrupt() {
@@ -134,7 +134,7 @@ func (b *Work) Interrupt() {
 	}
 }
 
-func (b *Work) Report() {
+func (b *Work) Finish() {
 	close(b.results)
 	total := time.Now().Sub(b.start)
 	// Wait until the reporter is done.

@@ -211,8 +211,7 @@ func main() {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		<-c
-		w.Finish()
-		os.Exit(1)
+		w.Interrupt()
 	}()
 	w.Run()
 }
