@@ -182,6 +182,7 @@ func main() {
 	if err != nil {
 		usageAndExit(err.Error())
 	}
+	req.ContentLength = int64(len(bodyAll))
 	req.Header = header
 	if username != "" || password != "" {
 		req.SetBasicAuth(username, password)
