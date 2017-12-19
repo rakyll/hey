@@ -55,7 +55,7 @@ type report struct {
 	statusCodeDist map[int]int
 	lats           []float64
 	sizeTotal      int64
-	numReqs        int64
+	numRes         int64
 	output         string
 
 	w io.Writer
@@ -82,7 +82,7 @@ func newReport(w io.Writer, results chan *result, output string, n int) *report 
 func runReporter(r *report) {
 	// Loop will continue until channel is closed
 	for res := range r.results {
-		r.numReqs++
+		r.numRes++
 		if res.err != nil {
 			r.errorDist[res.err.Error()]++
 		} else {
@@ -112,7 +112,7 @@ func runReporter(r *report) {
 
 func (r *report) finalize(total time.Duration) {
 	r.total = total
-	r.rps = float64(r.numReqs) / r.total.Seconds()
+	r.rps = float64(r.numRes) / r.total.Seconds()
 	r.average = r.avgTotal / float64(len(r.lats))
 	r.avgConn = r.avgConn / float64(len(r.lats))
 	r.avgDelay = r.avgDelay / float64(len(r.lats))
@@ -150,7 +150,7 @@ func (r *report) print() {
 			r.printf("  Total data:\t%d bytes\n", r.sizeTotal)
 			r.printf("  Size/request:\t%d bytes\n", r.sizeTotal/int64(len(r.lats)))
 		}
-		if r.numReqs > maxRes {
+		if r.numRes > maxRes {
 			r.printf("\nNote:  Distributions are for first %d results.", len(r.lats))
 		}
 		r.printHistogram()
