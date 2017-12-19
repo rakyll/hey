@@ -31,6 +31,8 @@ import (
 )
 
 const heyUA = "hey/0.0.1"
+// Max size of the buffer of result channel.
+const maxResult = 1000000
 
 type result struct {
 	err           error
@@ -88,6 +90,8 @@ type Work struct {
 	results chan *result
 	stopCh  chan struct{}
 	start   time.Time
+
+	report *report
 }
 
 func (b *Work) writer() io.Writer {
@@ -108,10 +112,18 @@ func (b *Work) Run() {
 		ua += " " + heyUA
 	}
 
-	b.results = make(chan *result, b.N)
+	var resultSize = b.C * 1000
+	if resultSize > maxResult {
+		resultSize = maxResult
+	}
+	b.results = make(chan *result, resultSize)
 	b.stopCh = make(chan struct{}, 1000)
 	b.start = time.Now()
-
+	b.report = newReport(b.writer(), b.results, b.Output, b.N)
+	// Run the reporter first, it polls the result channel until it is closed.
+	go func() {
+		runReporter(b.report)
+	}()
 	b.runWorkers()
 	b.Finish()
 }
@@ -120,7 +132,9 @@ func (b *Work) Finish() {
 	b.stopCh <- struct{}{}
 	close(b.results)
 	total := time.Now().Sub(b.start)
-	newReport(b.writer(), b.N, b.results, b.Output, total).finalize()
+	// Wait until the reporter is done.
+	<-b.report.done
+	b.report.finalize(total)
 }
 
 func (b *Work) makeRequest(c *http.Client) {
@@ -177,7 +191,7 @@ func (b *Work) makeRequest(c *http.Client) {
 	}
 }
 
-func (b *Work) runWorker(n int) {
+func (b *Work) runWorker(c *http.Client, n int) {
 	var throttle <-chan time.Time
 	if b.QPS > 0 {
 		throttle = time.Tick(time.Duration(1e6/(b.QPS)) * time.Microsecond)
@@ -215,10 +229,23 @@ func (b *Work) runWorkers() {
 	var wg sync.WaitGroup
 	wg.Add(b.C)
 
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+		MaxIdleConnsPerHost: b.C,
+		DisableCompression:  b.DisableCompression,
+		DisableKeepAlives:   b.DisableKeepAlives,
+		// TODO(jbd): Add dial timeout.
+		TLSHandshakeTimeout: time.Duration(b.Timeout) * time.Millisecond,
+		Proxy:               http.ProxyURL(b.ProxyAddr),
+	}
+	client := &http.Client{Transport: tr}
+
 	// Ignore the case where b.N % b.C != 0.
 	for i := 0; i < b.C; i++ {
 		go func() {
-			b.runWorker(b.N / b.C)
+			b.runWorker(client, b.N / b.C)
 			wg.Done()
 		}()
 	}
