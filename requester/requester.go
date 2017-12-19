@@ -115,7 +115,7 @@ func (b *Work) Run() {
 	}
 
 	b.results = make(chan *result, min(b.C*1000, maxResult))
-	b.stopCh = make(chan struct{}, 1000)
+	b.stopCh = make(chan struct{}, b.C)
 	b.start = time.Now()
 	b.report = newReport(b.writer(), b.results, b.Output, b.N)
 	// Run the reporter first, it polls the result channel until it is closed.
@@ -123,11 +123,18 @@ func (b *Work) Run() {
 		runReporter(b.report)
 	}()
 	b.runWorkers()
-	b.Finish()
+	b.Report()
 }
 
-func (b *Work) Finish() {
-	b.stopCh <- struct{}{}
+func (b *Work) Interrupt() {
+	// Send stop signal so that workers can stop gracefully in case of program
+	// interruption.
+	for i := 0; i < b.C; i++ {
+		b.stopCh <- struct{}{}
+	}
+}
+
+func (b *Work) Report() {
 	close(b.results)
 	total := time.Now().Sub(b.start)
 	// Wait until the reporter is done.
@@ -135,7 +142,7 @@ func (b *Work) Finish() {
 	b.report.finalize(total)
 }
 
-func (b *Work) makeRequest(c *http.Client) {
+func (b *Work) makeRequest(c *http.Client) result {
 	s := time.Now()
 	var size int64
 	var code int
@@ -176,7 +183,7 @@ func (b *Work) makeRequest(c *http.Client) {
 	t := time.Now()
 	resDuration = t.Sub(resStart)
 	finish := t.Sub(s)
-	b.results <- &result{
+	return result{
 		statusCode:    code,
 		duration:      finish,
 		err:           err,
@@ -204,7 +211,14 @@ func (b *Work) runWorker(client *http.Client, n int) {
 		if b.QPS > 0 {
 			<-throttle
 		}
-		b.makeRequest(client)
+		result := b.makeRequest(client)
+		// Check if application is stopped. Do not send into a closed channel.
+		select {
+		case <-b.stopCh:
+			return
+		default:
+			b.results <- &result
+		}
 	}
 }
 

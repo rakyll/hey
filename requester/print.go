@@ -151,7 +151,7 @@ func (r *report) print() {
 			r.printf("  Size/request:\t%d bytes\n", r.sizeTotal/int64(len(r.lats)))
 		}
 		if r.n > maxRes {
-			r.printf("\nNote:  Distributions are for first %d results.", maxRes)
+			r.printf("\nNote:  Distributions are for first %d results.", len(r.lats))
 		}
 		r.printHistogram()
 		r.printLatencies()
