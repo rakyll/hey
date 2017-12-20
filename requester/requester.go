@@ -126,9 +126,8 @@ func (b *Work) Run() {
 	b.Finish()
 }
 
-func (b *Work) Interrupt() {
-	// Send stop signal so that workers can stop gracefully in case of program
-	// interruption.
+func (b *Work) Stop() {
+	// Send stop signal so that workers can stop gracefully.
 	for i := 0; i < b.C; i++ {
 		b.stopCh <- struct{}{}
 	}
@@ -142,7 +141,7 @@ func (b *Work) Finish() {
 	b.report.finalize(total)
 }
 
-func (b *Work) makeRequest(c *http.Client) result {
+func (b *Work) makeRequest(c *http.Client) {
 	s := time.Now()
 	var size int64
 	var code int
@@ -183,7 +182,7 @@ func (b *Work) makeRequest(c *http.Client) result {
 	t := time.Now()
 	resDuration = t.Sub(resStart)
 	finish := t.Sub(s)
-	return result{
+	b.results <- &result{
 		statusCode:    code,
 		duration:      finish,
 		err:           err,
@@ -211,13 +210,12 @@ func (b *Work) runWorker(client *http.Client, n int) {
 		if b.QPS > 0 {
 			<-throttle
 		}
-		result := b.makeRequest(client)
 		// Check if application is stopped. Do not send into a closed channel.
 		select {
 		case <-b.stopCh:
 			return
 		default:
-			b.results <- &result
+			b.makeRequest(client)
 		}
 	}
 }
