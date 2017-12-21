@@ -26,6 +26,9 @@ const (
 	barChar = "∎"
 )
 
+// We report for max 1M results.
+const maxRes = 1000000
+
 type report struct {
 	avgTotal float64
 	fastest  float64
@@ -45,53 +48,71 @@ type report struct {
 	delayLats []float64
 
 	results chan *result
+	done    chan bool
 	total   time.Duration
 
 	errorDist      map[string]int
 	statusCodeDist map[int]int
 	lats           []float64
 	sizeTotal      int64
-
-	output string
+	numRes         int64
+	output         string
 
 	w io.Writer
 }
 
-func newReport(w io.Writer, size int, results chan *result, output string, total time.Duration) *report {
+func newReport(w io.Writer, results chan *result, output string, n int) *report {
+	cap := min(n, maxRes)
 	return &report{
 		output:         output,
 		results:        results,
-		total:          total,
+		done:           make(chan bool, 1),
 		statusCodeDist: make(map[int]int),
 		errorDist:      make(map[string]int),
 		w:              w,
+		connLats:       make([]float64, 0, cap),
+		dnsLats:        make([]float64, 0, cap),
+		reqLats:        make([]float64, 0, cap),
+		resLats:        make([]float64, 0, cap),
+		delayLats:      make([]float64, 0, cap),
+		lats:           make([]float64, 0, cap),
 	}
 }
 
-func (r *report) finalize() {
+func runReporter(r *report) {
+	// Loop will continue until channel is closed
 	for res := range r.results {
+		r.numRes++
 		if res.err != nil {
 			r.errorDist[res.err.Error()]++
 		} else {
-			r.lats = append(r.lats, res.duration.Seconds())
 			r.avgTotal += res.duration.Seconds()
 			r.avgConn += res.connDuration.Seconds()
 			r.avgDelay += res.delayDuration.Seconds()
 			r.avgDNS += res.dnsDuration.Seconds()
 			r.avgReq += res.reqDuration.Seconds()
 			r.avgRes += res.resDuration.Seconds()
-			r.connLats = append(r.connLats, res.connDuration.Seconds())
-			r.dnsLats = append(r.dnsLats, res.dnsDuration.Seconds())
-			r.reqLats = append(r.reqLats, res.reqDuration.Seconds())
-			r.delayLats = append(r.delayLats, res.delayDuration.Seconds())
-			r.resLats = append(r.resLats, res.resDuration.Seconds())
+			if len(r.resLats) < maxRes {
+				r.lats = append(r.lats, res.duration.Seconds())
+				r.connLats = append(r.connLats, res.connDuration.Seconds())
+				r.dnsLats = append(r.dnsLats, res.dnsDuration.Seconds())
+				r.reqLats = append(r.reqLats, res.reqDuration.Seconds())
+				r.delayLats = append(r.delayLats, res.delayDuration.Seconds())
+				r.resLats = append(r.resLats, res.resDuration.Seconds())
+			}
 			r.statusCodeDist[res.statusCode]++
 			if res.contentLength > 0 {
 				r.sizeTotal += res.contentLength
 			}
 		}
 	}
-	r.rps = float64(len(r.lats)) / r.total.Seconds()
+	// Signal reporter is done.
+	r.done <- true
+}
+
+func (r *report) finalize(total time.Duration) {
+	r.total = total
+	r.rps = float64(r.numRes) / r.total.Seconds()
 	r.average = r.avgTotal / float64(len(r.lats))
 	r.avgConn = r.avgConn / float64(len(r.lats))
 	r.avgDelay = r.avgDelay / float64(len(r.lats))
@@ -128,6 +149,9 @@ func (r *report) print() {
 		if r.sizeTotal > 0 {
 			r.printf("  Total data:\t%d bytes\n", r.sizeTotal)
 			r.printf("  Size/request:\t%d bytes\n", r.sizeTotal/int64(len(r.lats)))
+		}
+		if r.numRes > maxRes {
+			r.printf("\nNote:  Distributions are for first %d results.", len(r.lats))
 		}
 		r.printHistogram()
 		r.printLatencies()
