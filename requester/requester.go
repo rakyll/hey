@@ -231,8 +231,6 @@ func (b *Work) runWorkers() {
 		MaxIdleConnsPerHost: min(b.C, maxIdleConn),
 		DisableCompression:  b.DisableCompression,
 		DisableKeepAlives:   b.DisableKeepAlives,
-		// TODO(jbd): Add dial timeout.
-		TLSHandshakeTimeout: time.Duration(b.Timeout) * time.Millisecond,
 		Proxy:               http.ProxyURL(b.ProxyAddr),
 	}
 	if b.H2 {
