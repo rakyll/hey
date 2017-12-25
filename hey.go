@@ -110,7 +110,6 @@ func main() {
 	runtime.GOMAXPROCS(*cpus)
 	num := *n
 	conc := *c
-	q := *q
 
 	if num <= 0 || conc <= 0 {
 		usageAndExit("-n and -c cannot be smaller than 1.")
@@ -119,6 +118,12 @@ func main() {
 	if num < conc {
 		usageAndExit("-n cannot be less than -c.")
 	}
+
+	if *q > 0 && *q < conc {
+		usageAndExit("-q cannot be less than -c.")
+	}
+
+	qps := *q / conc
 
 	url := flag.Args()[0]
 	method := strings.ToUpper(*m)
@@ -198,7 +203,7 @@ func main() {
 		RequestBody:        bodyAll,
 		N:                  num,
 		C:                  conc,
-		QPS:                q,
+		QPS:                qps,
 		Timeout:            *t,
 		DisableCompression: *disableCompression,
 		DisableKeepAlives:  *disableKeepAlives,

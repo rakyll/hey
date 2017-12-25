@@ -63,8 +63,8 @@ func TestQps(t *testing.T) {
 	}
 	wg.Add(1)
 	time.AfterFunc(time.Second, func() {
-		if count > 1 {
-			t.Errorf("Expected to work 1 times, found %v", count)
+		if count != 2 {
+			t.Errorf("Expected to work 2 times, found %v", count)
 		}
 		wg.Done()
 	})

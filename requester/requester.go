@@ -66,7 +66,7 @@ type Work struct {
 	// Timeout in seconds.
 	Timeout int
 
-	// Qps is the rate limit.
+	// Qps is the request rate limit per worker.
 	QPS int
 
 	// DisableCompression is an option to disable compression in response
@@ -197,8 +197,10 @@ func (b *Work) makeRequest(c *http.Client) {
 
 func (b *Work) runWorker(client *http.Client, n int) {
 	var throttle <-chan time.Time
+	var wg sync.WaitGroup
 	if b.QPS > 0 {
 		throttle = time.Tick(time.Duration(1e6/(b.QPS)) * time.Microsecond)
+		wg.Add(n)
 	}
 
 	if b.DisableRedirects {
@@ -207,16 +209,24 @@ func (b *Work) runWorker(client *http.Client, n int) {
 		}
 	}
 	for i := 0; i < n; i++ {
-		if b.QPS > 0 {
-			<-throttle
-		}
 		// Check if application is stopped. Do not send into a closed channel.
 		select {
 		case <-b.stopCh:
 			return
 		default:
-			b.makeRequest(client)
+			if b.QPS > 0 {
+				go func() {
+					b.makeRequest(client)
+					wg.Done()
+				}()
+				<-throttle
+			} else {
+				b.makeRequest(client)
+			}
 		}
+	}
+	if b.QPS > 0 {
+		wg.Wait()
 	}
 }
 
