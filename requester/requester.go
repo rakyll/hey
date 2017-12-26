@@ -197,7 +197,7 @@ func (b *Work) makeRequest(c *http.Client) {
 
 func (b *Work) runWorker(client *http.Client, n int) {
 	var throttle <-chan time.Time
-	if b.QPS > 0.0 {
+	if b.QPS > 0 {
 		throttle = time.Tick(time.Duration(1e6/(b.QPS)) * time.Microsecond)
 	}
 
@@ -207,14 +207,14 @@ func (b *Work) runWorker(client *http.Client, n int) {
 		}
 	}
 	for i := 0; i < n; i++ {
-		if b.QPS > 0 {
-			<-throttle
-		}
 		// Check if application is stopped. Do not send into a closed channel.
 		select {
 		case <-b.stopCh:
 			return
 		default:
+			if b.QPS > 0 {
+				<-throttle
+			}
 			b.makeRequest(client)
 		}
 	}
