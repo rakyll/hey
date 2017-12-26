@@ -212,7 +212,6 @@ func main() {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		<-c
-		fmt.Fprintf(os.Stderr, "\nInterrupted, stopping workers.")
 		w.Stop()
 	}()
 	w.Run()
