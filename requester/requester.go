@@ -30,8 +30,6 @@ import (
 	"golang.org/x/net/http2"
 )
 
-const heyUA = "hey/0.0.1"
-
 // Max size of the buffer of result channel.
 const maxResult = 1000000
 const maxIdleConn = 500
@@ -106,14 +104,6 @@ func (b *Work) writer() io.Writer {
 // Run makes all the requests, prints the summary. It blocks until
 // all work is done.
 func (b *Work) Run() {
-	// append hey's user agent
-	ua := b.Request.UserAgent()
-	if ua == "" {
-		ua = heyUA
-	} else {
-		ua += " " + heyUA
-	}
-
 	b.results = make(chan *result, min(b.C*1000, maxResult))
 	b.stopCh = make(chan struct{}, b.C)
 	b.start = time.Now()

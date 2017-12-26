@@ -35,6 +35,7 @@ import (
 const (
 	headerRegexp = `^([\w-]+):\s*(.+)`
 	authRegexp   = `^(.+):([^\s].+)`
+	heyUA        = "hey/0.0.1"
 )
 
 var (
@@ -197,7 +198,6 @@ func main() {
 		usageAndExit(err.Error())
 	}
 	req.ContentLength = int64(len(bodyAll))
-	req.Header = header
 	if username != "" || password != "" {
 		req.SetBasicAuth(username, password)
 	}
@@ -206,6 +206,15 @@ func main() {
 	if *hostHeader != "" {
 		req.Host = *hostHeader
 	}
+
+	ua := req.UserAgent()
+	if ua == "" {
+		ua = heyUA
+	} else {
+		ua += " " + heyUA
+	}
+	header.Set("User-Agent", ua)
+	req.Header = header
 
 	w := &requester.Work{
 		Request:            req,
