@@ -41,7 +41,7 @@ func TestN(t *testing.T) {
 	}
 	w.Run()
 	if count != 20 {
-		t.Errorf("Expected to boom 20 times, found %v", count)
+		t.Errorf("Expected to send 20 requests, found %v", count)
 	}
 }
 
