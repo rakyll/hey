@@ -49,7 +49,7 @@ var (
 
 	c = flag.Int("c", 50, "")
 	n = flag.Int("n", 200, "")
-	q = flag.Int("q", 0, "")
+	q = flag.Float64("q", 0, "")
 	t = flag.Int("t", 20, "")
 
 	h2   = flag.Bool("h2", false, "")
@@ -67,7 +67,7 @@ Options:
   -n  Number of requests to run. Default is 200.
   -c  Number of requests to run concurrently. Total number of requests cannot
       be smaller than the concurrency level. Default is 50.
-  -q  Rate limit, in seconds (QPS).
+  -q  Rate limit, in queries per second (QPS). Default is no rate limit.
   -o  Output type. If none provided, a summary is printed.
       "csv" is the only supported alternative. Dumps the response
       metrics in comma-separated values format.
