@@ -26,7 +26,10 @@ Options:
   -n  Number of requests to run. Default is 200.
   -c  Number of requests to run concurrently. Total number of requests cannot
       be smaller than the concurrency level. Default is 50.
-  -q  Rate limit, in seconds (QPS).
+  -q  Rate limit, in queries per second (QPS). Default is no rate limit.
+  -z  Duration of application to send requests. When duration is reached,
+      application stops and exits. If duration is specified, n is ignored.
+      Examples: -z 10s -z 3m.
   -o  Output type. If none provided, a summary is printed.
       "csv" is the only supported alternative. Dumps the response
       metrics in comma-separated values format.
@@ -48,6 +51,7 @@ Options:
   -disable-compression  Disable compression.
   -disable-keepalive    Disable keep-alive, prevents re-use of TCP
                         connections between different HTTP requests.
+  -disable-redirects    Disable following of HTTP redirects
   -cpus                 Number of used cpu cores.
                         (default for current machine is 8 cores)
 ```
