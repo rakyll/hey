@@ -109,9 +109,10 @@ func (b *Work) Run() {
 	// append hey's user agent
 	ua := b.Request.UserAgent()
 	if ua == "" {
-		ua = heyUA
+		b.Request.Header.Set("User-Agent", heyUA)
 	} else {
 		ua += " " + heyUA
+		b.Request.Header.Set("User-Agent", ua)
 	}
 
 	b.results = make(chan *result, min(b.C*1000, maxResult))
