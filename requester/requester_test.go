@@ -41,7 +41,7 @@ func TestN(t *testing.T) {
 	}
 	w.Run()
 	if count != 20 {
-		t.Errorf("Expected to boom 20 times, found %v", count)
+		t.Errorf("Expected to send 20 requests, found %v", count)
 	}
 }
 
@@ -63,8 +63,8 @@ func TestQps(t *testing.T) {
 	}
 	wg.Add(1)
 	time.AfterFunc(time.Second, func() {
-		if count > 1 {
-			t.Errorf("Expected to work 1 times, found %v", count)
+		if count > 2 {
+			t.Errorf("Expected to work at most 2 times, found %v", count)
 		}
 		wg.Done()
 	})

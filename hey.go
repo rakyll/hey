@@ -28,6 +28,8 @@ import (
 	"strings"
 
 	"github.com/rakyll/hey/requester"
+	"math"
+	"time"
 )
 
 const (
@@ -51,6 +53,7 @@ var (
 	n = flag.Int("n", 200, "")
 	q = flag.Float64("q", 0, "")
 	t = flag.Int("t", 20, "")
+	z = flag.Duration("z", 0, "")
 
 	h2   = flag.Bool("h2", false, "")
 	cpus = flag.Int("cpus", runtime.GOMAXPROCS(-1), "")
@@ -68,6 +71,9 @@ Options:
   -c  Number of requests to run concurrently. Total number of requests cannot
       be smaller than the concurrency level. Default is 50.
   -q  Rate limit, in queries per second (QPS). Default is no rate limit.
+  -z  Duration of application to send requests. When duration is reached,
+      application stops and exits. If duration is specified, n is ignored.
+      Examples: -z 10s -z 3m.
   -o  Output type. If none provided, a summary is printed.
       "csv" is the only supported alternative. Dumps the response
       metrics in comma-separated values format.
@@ -111,13 +117,21 @@ func main() {
 	num := *n
 	conc := *c
 	q := *q
+	dur := *z
 
-	if num <= 0 || conc <= 0 {
-		usageAndExit("-n and -c cannot be smaller than 1.")
-	}
+	if dur > 0 {
+		num = math.MaxInt32
+		if conc <= 0 {
+			usageAndExit("-c cannot be smaller than 1.")
+		}
+	} else {
+		if num <= 0 || conc <= 0 {
+			usageAndExit("-n and -c cannot be smaller than 1.")
+		}
 
-	if num < conc {
-		usageAndExit("-n cannot be less than -c.")
+		if num < conc {
+			usageAndExit("-n cannot be less than -c.")
+		}
 	}
 
 	url := flag.Args()[0]
@@ -214,6 +228,12 @@ func main() {
 		<-c
 		w.Stop()
 	}()
+	if dur > 0 {
+		go func() {
+			time.Sleep(dur)
+			w.Stop()
+		}()
+	}
 	w.Run()
 }
 
