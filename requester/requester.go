@@ -149,7 +149,9 @@ func (b *Work) makeRequest(c *http.Client) {
 			connStart = time.Now()
 		},
 		GotConn: func(connInfo httptrace.GotConnInfo) {
-			connDuration = time.Now().Sub(connStart)
+			if !connInfo.Reused {
+				connDuration = time.Now().Sub(connStart)
+			}
 			reqStart = time.Now()
 		},
 		WroteRequest: func(w httptrace.WroteRequestInfo) {
