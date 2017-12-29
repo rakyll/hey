@@ -19,6 +19,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"net/http"
 	gourl "net/url"
 	"os"
@@ -26,10 +27,9 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/rakyll/hey/requester"
-	"math"
-	"time"
 )
 
 const (
