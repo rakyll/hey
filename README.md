@@ -1,6 +1,8 @@
 ![hey](http://i.imgur.com/szzD9q0.png)
 
 [![Build Status](https://travis-ci.org/rakyll/hey.svg?branch=master)](https://travis-ci.org/rakyll/hey)
+[![codecov](https://codecov.io/gh/rakyll/hey/branch/master/graph/badge.svg)](https://codecov.io/gh/rakyll/hey)
+[![GoDoc](https://godoc.org/github.com/rakyll/hey?status.svg)](https://godoc.org/github.com/rakyll/hey)
 
 hey is a tiny program that sends some load to a web application.
 
