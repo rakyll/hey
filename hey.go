@@ -58,6 +58,7 @@ var (
 
 	h2   = flag.Bool("h2", false, "")
 	cpus = flag.Int("cpus", runtime.GOMAXPROCS(-1), "")
+	s    = flag.Int("s", 0, "")
 
 	disableCompression = flag.Bool("disable-compression", false, "")
 	disableKeepAlives  = flag.Bool("disable-keepalive", false, "")
@@ -90,6 +91,7 @@ Options:
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
   -h2 Enable HTTP/2.
+  -s  Capacity of TLS sesion ticket. 
 
   -host	HTTP Host header.
 
@@ -221,6 +223,7 @@ func main() {
 		RequestBody:        bodyAll,
 		N:                  num,
 		C:                  conc,
+		S:                  *c,
 		QPS:                q,
 		Timeout:            *t,
 		DisableCompression: *disableCompression,
