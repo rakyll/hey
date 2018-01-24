@@ -203,7 +203,7 @@ func main() {
 		req.Host = *hostHeader
 	}
 
-	ua := req.UserAgent()
+	ua := header.Get("User-Agent")
 	if ua == "" {
 		ua = heyUA
 	} else {
