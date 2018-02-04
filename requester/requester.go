@@ -18,6 +18,7 @@ package requester
 import (
 	"bytes"
 	"crypto/tls"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -47,6 +48,9 @@ type result struct {
 }
 
 type Work struct {
+	// Should be implemented when some specific logic is necessary to generate the requests.
+	ReqFactory RequestFactory
+
 	// Request is the request to be made.
 	Request *http.Request
 
@@ -131,13 +135,24 @@ func (b *Work) Finish() {
 	b.report.finalize(total)
 }
 
-func (b *Work) makeRequest(c *http.Client) {
+func (b *Work) makeRequest(c *http.Client, i int) {
 	s := time.Now()
 	var size int64
 	var code int
 	var dnsStart, connStart, resStart, reqStart, delayStart time.Time
 	var dnsDuration, connDuration, resDuration, reqDuration, delayDuration time.Duration
-	req := cloneRequest(b.Request, b.RequestBody)
+
+	var req *http.Request
+	var err error
+	if b.ReqFactory != nil {
+		req, err = b.ReqFactory.Create(i)
+		if err != nil {
+			fmt.Printf("Error creating request: %v", err)
+		}
+	} else {
+		req = cloneRequest(b.Request, b.RequestBody)
+	}
+
 	trace := &httptrace.ClientTrace{
 		DNSStart: func(info httptrace.DNSStartInfo) {
 			dnsStart = time.Now()
@@ -207,7 +222,7 @@ func (b *Work) runWorker(client *http.Client, n int) {
 			if b.QPS > 0 {
 				<-throttle
 			}
-			b.makeRequest(client)
+			b.makeRequest(client, i)
 		}
 	}
 }
