@@ -18,6 +18,7 @@ package requester
 import (
 	"bytes"
 	"crypto/tls"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -142,8 +143,12 @@ func (b *Work) makeRequest(c *http.Client, i int) {
 	var dnsDuration, connDuration, resDuration, reqDuration, delayDuration time.Duration
 
 	var req *http.Request
+	var err error
 	if b.ReqFactory != nil {
-		req = b.ReqFactory.create(i)
+		req, err = b.ReqFactory.Create(i)
+		if err != nil {
+			fmt.Printf("Error creating request: %v", err)
+		}
 	} else {
 		req = cloneRequest(b.Request, b.RequestBody)
 	}

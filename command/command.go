@@ -110,7 +110,7 @@ func Hey(reqFactory requester.RequestFactory) {
 	flag.Var(&hs, "H", "")
 
 	flag.Parse()
-	if flag.NArg() < 1 {
+	if flag.NArg() < 1 && reqFactory == nil {
 		usageAndExit("")
 	}
 
@@ -135,6 +135,74 @@ func Hey(reqFactory requester.RequestFactory) {
 		}
 	}
 
+	var req *http.Request
+	var bodyAll []byte
+	var proxyURL *gourl.URL
+
+	if reqFactory == nil {
+		req, bodyAll, proxyURL = createStaticRequest(hs)
+	}
+
+	w := &requester.Work{
+		Request:            req,
+		RequestBody:        bodyAll,
+		N:                  num,
+		C:                  conc,
+		QPS:                q,
+		Timeout:            *t,
+		DisableCompression: *disableCompression,
+		DisableKeepAlives:  *disableKeepAlives,
+		DisableRedirects:   *disableRedirects,
+		H2:                 *h2,
+		ProxyAddr:          proxyURL,
+		Output:             *output,
+	}
+
+	if reqFactory != nil {
+		w.ReqFactory = reqFactory
+	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		w.Stop()
+	}()
+	if dur > 0 {
+		go func() {
+			time.Sleep(dur)
+			w.Stop()
+		}()
+	}
+	w.Run()
+}
+
+func errAndExit(msg string) {
+	fmt.Fprintf(os.Stderr, msg)
+	fmt.Fprintf(os.Stderr, "\n")
+	os.Exit(1)
+}
+
+func usageAndExit(msg string) {
+	if msg != "" {
+		fmt.Fprintf(os.Stderr, msg)
+		fmt.Fprintf(os.Stderr, "\n\n")
+	}
+	flag.Usage()
+	fmt.Fprintf(os.Stderr, "\n")
+	os.Exit(1)
+}
+
+func parseInputWithRegexp(input, regx string) ([]string, error) {
+	re := regexp.MustCompile(regx)
+	matches := re.FindStringSubmatch(input)
+	if len(matches) < 1 {
+		return nil, fmt.Errorf("could not parse the provided input; input = %v", input)
+	}
+	return matches, nil
+}
+
+func createStaticRequest(hs headerSlice) (*http.Request, []byte, *gourl.URL) {
 	url := flag.Args()[0]
 	method := strings.ToUpper(*m)
 
@@ -216,63 +284,7 @@ func Hey(reqFactory requester.RequestFactory) {
 	header.Set("User-Agent", ua)
 	req.Header = header
 
-	w := &requester.Work{
-		Request:            req,
-		RequestBody:        bodyAll,
-		N:                  num,
-		C:                  conc,
-		QPS:                q,
-		Timeout:            *t,
-		DisableCompression: *disableCompression,
-		DisableKeepAlives:  *disableKeepAlives,
-		DisableRedirects:   *disableRedirects,
-		H2:                 *h2,
-		ProxyAddr:          proxyURL,
-		Output:             *output,
-	}
-
-	if reqFactory != nil {
-		w.ReqFactory = reqFactory
-	}
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		<-c
-		w.Stop()
-	}()
-	if dur > 0 {
-		go func() {
-			time.Sleep(dur)
-			w.Stop()
-		}()
-	}
-	w.Run()
-}
-
-func errAndExit(msg string) {
-	fmt.Fprintf(os.Stderr, msg)
-	fmt.Fprintf(os.Stderr, "\n")
-	os.Exit(1)
-}
-
-func usageAndExit(msg string) {
-	if msg != "" {
-		fmt.Fprintf(os.Stderr, msg)
-		fmt.Fprintf(os.Stderr, "\n\n")
-	}
-	flag.Usage()
-	fmt.Fprintf(os.Stderr, "\n")
-	os.Exit(1)
-}
-
-func parseInputWithRegexp(input, regx string) ([]string, error) {
-	re := regexp.MustCompile(regx)
-	matches := re.FindStringSubmatch(input)
-	if len(matches) < 1 {
-		return nil, fmt.Errorf("could not parse the provided input; input = %v", input)
-	}
-	return matches, nil
+	return req, bodyAll, proxyURL
 }
 
 type headerSlice []string
