@@ -130,9 +130,29 @@ func (r *report) printCSV() {
 	}
 }
 
+func (r *report) printGTS() {
+	startTime := time.Now().UnixNano() / int64(time.Microsecond)
+	sizePerRequest := r.sizeTotal / int64(len(r.lats))
+	for i, val := range r.lats {
+		r.printf("%d// request.size{} %d\n", startTime, sizePerRequest)
+		r.printf("%d// response.time{} %f\n", startTime, val)
+		r.printf("%d// dns.dialup{} %f\n", startTime, r.connLats[i])
+		r.printf("%d// dns{} %f\n", startTime, r.dnsLats[i])
+		r.printf("%d// request.write{} %f\n", startTime, r.reqLats[i])
+		r.printf("%d// request.delay{} %f\n", startTime, r.delayLats[i])
+		r.printf("%d// request.read{} %f\n", startTime, r.resLats[i])
+		startTime += 1
+	}
+}
+
 func (r *report) print() {
-	if r.output == "csv" {
+	switch r.output {
+	case "csv":
 		r.printCSV()
+		return
+
+	case "gts":
+		r.printGTS()
 		return
 	}
 
