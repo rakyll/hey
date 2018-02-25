@@ -249,7 +249,7 @@ func (r *report) histogram() []Bucket {
 		res[i] = Bucket{
 			Mark:      buckets[i],
 			Count:     counts[i],
-			Frequency: float64(counts[i] / len(r.lats)),
+			Frequency: float64(counts[i]) / float64(len(r.lats)),
 		}
 	}
 	return res
