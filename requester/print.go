@@ -15,6 +15,7 @@
 package requester
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"text/template"
@@ -34,6 +35,12 @@ func newTemplate(output string) *template.Template {
 var tmplFuncMap = template.FuncMap{
 	"formatNumber": formatNumber,
 	"histogram":    histogram,
+	"jsonify":      jsonify,
+}
+
+func jsonify(v interface{}) string {
+	d, _ := json.Marshal(v)
+	return string(d)
 }
 
 func formatNumber(duration float64) string {
