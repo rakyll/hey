@@ -123,14 +123,6 @@ func (r *report) finalize(total time.Duration) {
 	r.print()
 }
 
-func (r *report) printCSV() {
-	r.printf("response-time,DNS+dialup,DNS,Request-write,Response-delay,Response-read\n")
-	for i, val := range r.lats {
-		r.printf("%4.4f,%4.4f,%4.4f,%4.4f,%4.4f,%4.4f\n",
-			val, r.connLats[i], r.dnsLats[i], r.reqLats[i], r.delayLats[i], r.resLats[i])
-	}
-}
-
 func (r *report) print() {
 	buf := &bytes.Buffer{}
 	if err := newTemplate(r.output).Execute(buf, r.snapshot()); err != nil {
