@@ -144,7 +144,6 @@ func (r *report) snapshot() Report {
 		Average:        r.average,
 		Rps:            r.rps,
 		SizeTotal:      r.sizeTotal,
-		SizeReq:        r.sizeTotal / int64(len(r.lats)),
 		AvgConn:        r.avgConn,
 		AvgDNS:         r.avgDNS,
 		AvgReq:         r.avgReq,
@@ -165,6 +164,8 @@ func (r *report) snapshot() Report {
 	if len(r.lats) == 0 {
 		return snapshot
 	}
+
+	snapshot.SizeReq = r.sizeTotal / int64(len(r.lats))
 
 	copy(snapshot.Lats, r.lats)
 	copy(snapshot.ConnLats, r.connLats)
