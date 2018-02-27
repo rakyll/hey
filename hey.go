@@ -215,7 +215,6 @@ func main() {
 
 	if username != "" || password != "" {
 		req.SetBasicAuth(username, password)
-		fmt.Printf("username %s, password %s\n", username, password)
 	}
 
 	w := &requester.Work{
