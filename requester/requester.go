@@ -67,6 +67,9 @@ type Work struct {
 	// Qps is the rate limit in queries per second.
 	QPS float64
 
+	// EnableRenderer is an option to enable template-based rendering of response
+	EnableRenderer bool
+
 	// DisableCompression is an option to disable compression in response
 	DisableCompression bool
 
@@ -87,9 +90,11 @@ type Work struct {
 	// Writer is where results will be written. If nil, results are written to stdout.
 	Writer io.Writer
 
-	results chan *result
-	stopCh  chan struct{}
-	start   time.Time
+	renderer   *renderer
+	rendererCh chan []byte
+	results    chan *result
+	stopCh     chan struct{}
+	start      time.Time
 
 	report *report
 }
@@ -104,6 +109,7 @@ func (b *Work) writer() io.Writer {
 // Run makes all the requests, prints the summary. It blocks until
 // all work is done.
 func (b *Work) Run() {
+	b.rendererCh = make(chan []byte, 256)
 	b.results = make(chan *result, min(b.C*1000, maxResult))
 	b.stopCh = make(chan struct{}, b.C)
 	b.start = time.Now()
@@ -111,6 +117,10 @@ func (b *Work) Run() {
 	// Run the reporter first, it polls the result channel until it is closed.
 	go func() {
 		runReporter(b.report)
+	}()
+	b.renderer = newRenderer(b.rendererCh)
+	go func() {
+		runRenderer(b.renderer, b.RequestBody, b.N)
 	}()
 	b.runWorkers()
 	b.Finish()
@@ -137,7 +147,12 @@ func (b *Work) makeRequest(c *http.Client) {
 	var code int
 	var dnsStart, connStart, resStart, reqStart, delayStart time.Time
 	var dnsDuration, connDuration, resDuration, reqDuration, delayDuration time.Duration
-	req := cloneRequest(b.Request, b.RequestBody)
+	body := b.RequestBody
+	if b.EnableRenderer {
+		body = <-b.rendererCh
+	}
+
+	req := cloneRequest(b.Request, body)
 	trace := &httptrace.ClientTrace{
 		DNSStart: func(info httptrace.DNSStartInfo) {
 			dnsStart = time.Now()
@@ -256,6 +271,7 @@ func cloneRequest(r *http.Request, body []byte) *http.Request {
 	}
 	if len(body) > 0 {
 		r2.Body = ioutil.NopCloser(bytes.NewReader(body))
+		r2.ContentLength = int64(len(body))
 	}
 	return r2
 }
