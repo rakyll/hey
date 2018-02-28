@@ -109,7 +109,6 @@ func (b *Work) writer() io.Writer {
 // Run makes all the requests, prints the summary. It blocks until
 // all work is done.
 func (b *Work) Run() {
-	b.rendererCh = make(chan []byte, 256)
 	b.results = make(chan *result, min(b.C*1000, maxResult))
 	b.stopCh = make(chan struct{}, b.C)
 	b.start = time.Now()
@@ -118,10 +117,13 @@ func (b *Work) Run() {
 	go func() {
 		runReporter(b.report)
 	}()
-	b.renderer = newRenderer(b.rendererCh)
-	go func() {
-		runRenderer(b.renderer, b.RequestBody, b.N)
-	}()
+	if b.EnableRenderer {
+		b.rendererCh = make(chan []byte, 256)
+		b.renderer = newRenderer(b.rendererCh)
+		go func() {
+			runRenderer(b.renderer, b.RequestBody, b.N)
+		}()
+	}
 	b.runWorkers()
 	b.Finish()
 }
@@ -148,7 +150,7 @@ func (b *Work) makeRequest(c *http.Client) {
 	var dnsStart, connStart, resStart, reqStart, delayStart time.Time
 	var dnsDuration, connDuration, resDuration, reqDuration, delayDuration time.Duration
 	body := b.RequestBody
-	if b.EnableRenderer {
+	if b.rendererCh != nil {
 		body = <-b.rendererCh
 	}
 
