@@ -15,6 +15,7 @@
 package requester
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -54,7 +55,7 @@ func histogram(buckets []Bucket) string {
 			max = v
 		}
 	}
-	res := strings.Builder{}
+	res := new(bytes.Buffer)
 	for i := 0; i < len(buckets); i++ {
 		// Normalize bar lengths.
 		var barLen int
