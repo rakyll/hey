@@ -180,10 +180,6 @@ func main() {
 		bodyAll = slurp
 	}
 
-	if *output != "csv" && *output != "" {
-		usageAndExit("Invalid output type; only csv is supported.")
-	}
-
 	var proxyURL *gourl.URL
 	if *proxyAddr != "" {
 		var err error
