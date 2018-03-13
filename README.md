@@ -44,6 +44,9 @@ Options:
   -T  Content-type, defaults to "text/html".
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
+  -X  Dynamic HTTP request body generation from template.
+      For example, {{int}} will be replaced with an incrementing integer from 0 to n;
+      {{datetime}} with current RFC3339 time.
   -h2 Enable HTTP/2.
 
   -host	HTTP Host header.

@@ -29,7 +29,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rakyll/hey/requester"
+	"github.com/segmentio/hey/requester" // XXX
 )
 
 const (
@@ -59,6 +59,7 @@ var (
 	h2   = flag.Bool("h2", false, "")
 	cpus = flag.Int("cpus", runtime.GOMAXPROCS(-1), "")
 
+	enableRenderer     = flag.Bool("X", false, "")
 	disableCompression = flag.Bool("disable-compression", false, "")
 	disableKeepAlives  = flag.Bool("disable-keepalive", false, "")
 	disableRedirects   = flag.Bool("disable-redirects", false, "")
@@ -89,6 +90,9 @@ Options:
   -T  Content-type, defaults to "text/html".
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
+  -X  Dynamic HTTP request body generation from template.
+      For example, {{int}} will be replaced with an incrementing integer from 0 to n;
+      {{datetime}} with current RFC3339 time.
   -h2 Enable HTTP/2.
 
   -host	HTTP Host header.
@@ -193,10 +197,6 @@ func main() {
 	if err != nil {
 		usageAndExit(err.Error())
 	}
-	req.ContentLength = int64(len(bodyAll))
-	if username != "" || password != "" {
-		req.SetBasicAuth(username, password)
-	}
 
 	// set host header if set
 	if *hostHeader != "" {
@@ -212,6 +212,10 @@ func main() {
 	header.Set("User-Agent", ua)
 	req.Header = header
 
+	if username != "" || password != "" {
+		req.SetBasicAuth(username, password)
+	}
+
 	w := &requester.Work{
 		Request:            req,
 		RequestBody:        bodyAll,
@@ -219,6 +223,7 @@ func main() {
 		C:                  conc,
 		QPS:                q,
 		Timeout:            *t,
+		EnableRenderer:     *enableRenderer,
 		DisableCompression: *disableCompression,
 		DisableKeepAlives:  *disableKeepAlives,
 		DisableRedirects:   *disableRedirects,
