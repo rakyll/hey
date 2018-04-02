@@ -18,8 +18,8 @@ package main
 import (
 	gourl "net/url"
 	"strings"
-	"hey/requester"
-	"hey/version"
+	"github.com/rakyll/hey/requester"
+	"github.com/rakyll/hey/version"
 	"flag"
 	"fmt"
 	"os"

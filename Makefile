@@ -2,9 +2,9 @@ PROJ=hey
 VERSION?=$(shell ./scripts/git-version.sh)
 TIME=$(shell date "+%F_%T")
 
-LD_FLAGS="-w -X $(PROJ)/version.BuildName=$(PROJ) \
-			 -X $(PROJ)/version.BuildVersion=$(VERSION) \
-			 -X $(PROJ)/version.BuildTime=$(TIME) \
+LD_FLAGS="-w -X github.com/rakyll/$(PROJ)/version.BuildName=$(PROJ) \
+			 -X github.com/rakyll/$(PROJ)/version.BuildVersion=$(VERSION) \
+			 -X github.com/rakyll/$(PROJ)/version.BuildTime=$(TIME) \
 			-linkmode external -extldflags '-static'"
 
 # create some temporary folder
