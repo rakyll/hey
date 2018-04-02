@@ -16,20 +16,20 @@
 package main
 
 import (
+	gourl "net/url"
+	"strings"
+	"github.com/rakyll/hey/requester"
+	"github.com/rakyll/hey/version"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"os"
+	"runtime"
 	"math"
 	"net/http"
-	gourl "net/url"
-	"os"
+	"io/ioutil"
 	"os/signal"
-	"regexp"
-	"runtime"
-	"strings"
 	"time"
-
-	"github.com/rakyll/hey/requester"
+	"regexp"
 )
 
 const (
@@ -63,6 +63,8 @@ var (
 	disableKeepAlives  = flag.Bool("disable-keepalive", false, "")
 	disableRedirects   = flag.Bool("disable-redirects", false, "")
 	proxyAddr          = flag.String("x", "", "")
+
+	v = flag.Bool("version", false, "")
 )
 
 var usage = `Usage: hey [options...] <url>
@@ -99,6 +101,8 @@ Options:
   -disable-redirects    Disable following of HTTP redirects
   -cpus                 Number of used cpu cores.
                         (default for current machine is %d cores)
+
+  -version				display version information and exit.
 `
 
 func main() {
@@ -110,6 +114,16 @@ func main() {
 	flag.Var(&hs, "H", "")
 
 	flag.Parse()
+
+	if *v {
+		fmt.Printf("Project: %s\nVersion: %s\nBuildTime: %s\n",
+			version.BuildName,
+			version.BuildVersion,
+			version.BuildTime,
+		)
+		return
+	}
+
 	if flag.NArg() < 1 {
 		usageAndExit("")
 	}
