@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	barChar = "∎"
+	barChar = "■"
 )
 
 // We report for max 1M results.
