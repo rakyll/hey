@@ -138,29 +138,39 @@ func (b *Work) makeRequest(c *http.Client) {
 	var dnsStart, connStart, resStart, reqStart, delayStart time.Time
 	var dnsDuration, connDuration, resDuration, reqDuration, delayDuration time.Duration
 	req := cloneRequest(b.Request, b.RequestBody)
+
+	var wg sync.WaitGroup
+	wg.Add(6)
+
 	trace := &httptrace.ClientTrace{
 		DNSStart: func(info httptrace.DNSStartInfo) {
 			dnsStart = time.Now()
+			wg.Done()
 		},
 		DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
 			dnsDuration = time.Now().Sub(dnsStart)
+			wg.Done()
 		},
 		GetConn: func(h string) {
 			connStart = time.Now()
+			wg.Done()
 		},
 		GotConn: func(connInfo httptrace.GotConnInfo) {
 			if !connInfo.Reused {
 				connDuration = time.Now().Sub(connStart)
 			}
 			reqStart = time.Now()
+			wg.Done()
 		},
 		WroteRequest: func(w httptrace.WroteRequestInfo) {
 			reqDuration = time.Now().Sub(reqStart)
 			delayStart = time.Now()
+			wg.Done()
 		},
 		GotFirstResponseByte: func() {
 			delayDuration = time.Now().Sub(delayStart)
 			resStart = time.Now()
+			wg.Done()
 		},
 	}
 	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
@@ -174,6 +184,8 @@ func (b *Work) makeRequest(c *http.Client) {
 	t := time.Now()
 	resDuration = t.Sub(resStart)
 	finish := t.Sub(s)
+
+	wg.Wait()
 	b.results <- &result{
 		statusCode:    code,
 		duration:      finish,
