@@ -17,6 +17,7 @@ package requester
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"io"
 	"io/ioutil"
@@ -138,6 +139,7 @@ func (b *Work) makeRequest(c *http.Client) {
 	var dnsStart, connStart, resStart, reqStart, delayStart time.Time
 	var dnsDuration, connDuration, resDuration, reqDuration, delayDuration time.Duration
 	req := cloneRequest(b.Request, b.RequestBody)
+	traceFinish := make(chan struct{})
 	trace := &httptrace.ClientTrace{
 		DNSStart: func(info httptrace.DNSStartInfo) {
 			dnsStart = time.Now()
@@ -161,8 +163,14 @@ func (b *Work) makeRequest(c *http.Client) {
 		GotFirstResponseByte: func() {
 			delayDuration = time.Now().Sub(delayStart)
 			resStart = time.Now()
+			// Signal that trace is done.
+			close(traceFinish)
 		},
 	}
+
+	// Add timeout in case server never responds.
+	ctx, cancel := context.WithTimeout(req.Context(), 5*time.Second)
+	defer cancel()
 	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
 	resp, err := c.Do(req)
 	if err == nil {
@@ -174,6 +182,12 @@ func (b *Work) makeRequest(c *http.Client) {
 	t := time.Now()
 	resDuration = t.Sub(resStart)
 	finish := t.Sub(s)
+
+	select {
+	case <-traceFinish:
+	case <-ctx.Done():
+	}
+
 	b.results <- &result{
 		statusCode:    code,
 		duration:      finish,
