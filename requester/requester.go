@@ -146,6 +146,8 @@ func (b *Work) makeRequest(c *http.Client) {
 		},
 		DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
 			dnsDuration = time.Now().Sub(dnsStart)
+			// Signal that trace is done.
+			close(traceFinish)
 		},
 		GetConn: func(h string) {
 			connStart = time.Now()
@@ -163,8 +165,6 @@ func (b *Work) makeRequest(c *http.Client) {
 		GotFirstResponseByte: func() {
 			delayDuration = time.Now().Sub(delayStart)
 			resStart = time.Now()
-			// Signal that trace is done.
-			close(traceFinish)
 		},
 	}
 
