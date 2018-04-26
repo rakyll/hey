@@ -87,10 +87,10 @@ type Work struct {
 	// Writer is where results will be written. If nil, results are written to stdout.
 	Writer io.Writer
 
-	init    sync.Once
-	results chan *result
-	stopCh  chan struct{}
-	start   time.Duration
+	initOnce sync.Once
+	results  chan *result
+	stopCh   chan struct{}
+	start    time.Duration
 
 	report *report
 }
@@ -104,7 +104,7 @@ func (b *Work) writer() io.Writer {
 
 // Init initializes internal data-structures
 func (b *Work) Init() {
-	b.init.Do(func() {
+	b.initOnce.Do(func() {
 		b.results = make(chan *result, min(b.C*1000, maxResult))
 		b.stopCh = make(chan struct{}, b.C)
 	})
