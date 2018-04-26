@@ -87,6 +87,7 @@ type Work struct {
 	// Writer is where results will be written. If nil, results are written to stdout.
 	Writer io.Writer
 
+	init    sync.Once
 	results chan *result
 	stopCh  chan struct{}
 	start   time.Duration
@@ -101,11 +102,18 @@ func (b *Work) writer() io.Writer {
 	return b.Writer
 }
 
+// Init initializes internal data-structures
+func (b *Work) Init() {
+	b.init.Do(func() {
+		b.results = make(chan *result, min(b.C*1000, maxResult))
+		b.stopCh = make(chan struct{}, b.C)
+	})
+}
+
 // Run makes all the requests, prints the summary. It blocks until
 // all work is done.
 func (b *Work) Run() {
-	b.results = make(chan *result, min(b.C*1000, maxResult))
-	b.stopCh = make(chan struct{}, b.C)
+	b.Init()
 	b.start = now()
 	b.report = newReport(b.writer(), b.results, b.Output, b.N)
 	// Run the reporter first, it polls the result channel until it is closed.

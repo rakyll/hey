@@ -226,6 +226,7 @@ func main() {
 		ProxyAddr:          proxyURL,
 		Output:             *output,
 	}
+	w.Init()
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
