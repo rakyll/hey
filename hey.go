@@ -194,9 +194,6 @@ func main() {
 		usageAndExit(err.Error())
 	}
 	req.ContentLength = int64(len(bodyAll))
-	if username != "" || password != "" {
-		req.SetBasicAuth(username, password)
-	}
 
 	// set host header if set
 	if *hostHeader != "" {
@@ -211,6 +208,10 @@ func main() {
 	}
 	header.Set("User-Agent", ua)
 	req.Header = header
+
+	if username != "" || password != "" {
+		req.SetBasicAuth(username, password)
+	}
 
 	w := &requester.Work{
 		Request:            req,
