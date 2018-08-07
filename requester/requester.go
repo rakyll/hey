@@ -78,6 +78,7 @@ type Work struct {
 
 	// Output represents the output type. If "csv" is provided, the
 	// output will be dumped as a csv stream.
+	// If "vcsv" is provided, the output will be dumped as csv with response codes
 	Output string
 
 	// ProxyAddr is the address of HTTP proxy server in the format on "host:port".

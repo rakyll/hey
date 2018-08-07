@@ -47,6 +47,7 @@ type report struct {
 	reqLats   []float64
 	resLats   []float64
 	delayLats []float64
+	respCodes []int
 
 	results chan *result
 	done    chan bool
@@ -77,6 +78,7 @@ func newReport(w io.Writer, results chan *result, output string, n int) *report 
 		resLats:        make([]float64, 0, cap),
 		delayLats:      make([]float64, 0, cap),
 		lats:           make([]float64, 0, cap),
+		respCodes:		make([]int, 0, cap),
 	}
 }
 
@@ -100,6 +102,7 @@ func runReporter(r *report) {
 				r.reqLats = append(r.reqLats, res.reqDuration.Seconds())
 				r.delayLats = append(r.delayLats, res.delayDuration.Seconds())
 				r.resLats = append(r.resLats, res.resDuration.Seconds())
+				r.respCodes = append(r.respCodes, res.statusCode)
 			}
 			r.statusCodeDist[res.statusCode]++
 			if res.contentLength > 0 {
@@ -159,6 +162,7 @@ func (r *report) snapshot() Report {
 		ReqLats:        make([]float64, len(r.lats)),
 		ResLats:        make([]float64, len(r.lats)),
 		DelayLats:      make([]float64, len(r.lats)),
+		RespCodes:		make([]int,		len(r.lats)),
 	}
 
 	if len(r.lats) == 0 {
@@ -173,6 +177,7 @@ func (r *report) snapshot() Report {
 	copy(snapshot.ReqLats, r.reqLats)
 	copy(snapshot.ResLats, r.resLats)
 	copy(snapshot.DelayLats, r.delayLats)
+	copy(snapshot.RespCodes, r.respCodes)
 
 	sort.Float64s(r.lats)
 	r.fastest = r.lats[0]
@@ -285,6 +290,7 @@ type Report struct {
 	ReqLats   []float64
 	ResLats   []float64
 	DelayLats []float64
+	RespCodes []int
 
 	Total time.Duration
 

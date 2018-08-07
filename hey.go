@@ -76,7 +76,7 @@ Options:
       application stops and exits. If duration is specified, n is ignored.
       Examples: -z 10s -z 3m.
   -o  Output type. If none provided, a summary is printed.
-      "csv" is the only supported alternative. Dumps the response
+      "csv" and "vcsv" are the alternatives. Dumps the response
       metrics in comma-separated values format.
 
   -m  HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.
@@ -211,7 +211,7 @@ func main() {
 	}
 	header.Set("User-Agent", ua)
 	req.Header = header
-
+	
 	w := &requester.Work{
 		Request:            req,
 		RequestBody:        bodyAll,
