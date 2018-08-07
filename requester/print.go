@@ -29,6 +29,8 @@ func newTemplate(output string) *template.Template {
 		outputTmpl = defaultTmpl
 	case "csv":
 		outputTmpl = csvTmpl
+	case "vcsv":
+		outputTmpl = verboseCSVTmpl
 	}
 	return template.Must(template.New("tmpl").Funcs(tmplFuncMap).Parse(outputTmpl))
 }
@@ -102,4 +104,6 @@ Status code distribution:{{ range $code, $num := .StatusCodeDist }}
 response-time,DNS+dialup,DNS,Request-write,Response-delay,Response-read{{ range $i, $v := .Lats }}
 {{ formatNumber $v }},{{ formatNumber (index $connLats $i) }},{{ formatNumber (index $dnsLats $i) }},{{ formatNumber (index $reqLats $i) }},{{ formatNumber (index $delayLats $i) }},{{ formatNumber (index $resLats $i) }}{{ end }}
 `
+	verboseCSVTmpl = `{{ $respCodes := .RespCodes}}{{ $connLats := .ConnLats }}{{ $dnsLats := .DnsLats }}{{ $dnsLats := .DnsLats }}{{ $reqLats := .ReqLats }}{{ $delayLats := .DelayLats }}{{ $resLats := .ResLats }}Response-Code,response-time,DNS+dialup,DNS,Request-write,Response-delay,Response-read{{ range $i, $v := .Lats }}
+{{(index $respCodes $i)}},{{ formatNumber $v }},{{ formatNumber (index $connLats $i) }},{{ formatNumber (index $dnsLats $i) }},{{ formatNumber (index $reqLats $i) }},{{ formatNumber (index $delayLats $i) }},{{ formatNumber (index $resLats $i) }}{{ end }}`
 )
