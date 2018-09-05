@@ -37,27 +37,27 @@ type report struct {
 	average  float64
 	rps      float64
 
-	avgConn   float64
-	avgDNS    float64
-	avgReq    float64
-	avgRes    float64
-	avgDelay  float64
-	connLats  []float64
-	dnsLats   []float64
-	reqLats   []float64
-	resLats   []float64
-	delayLats []float64
+	avgConn     float64
+	avgDNS      float64
+	avgReq      float64
+	avgRes      float64
+	avgDelay    float64
+	connLats    []float64
+	dnsLats     []float64
+	reqLats     []float64
+	resLats     []float64
+	delayLats   []float64
+	statusCodes []int
 
 	results chan *result
 	done    chan bool
 	total   time.Duration
 
-	errorDist      map[string]int
-	statusCodeDist map[int]int
-	lats           []float64
-	sizeTotal      int64
-	numRes         int64
-	output         string
+	errorDist map[string]int
+	lats      []float64
+	sizeTotal int64
+	numRes    int64
+	output    string
 
 	w io.Writer
 }
@@ -65,18 +65,18 @@ type report struct {
 func newReport(w io.Writer, results chan *result, output string, n int) *report {
 	cap := min(n, maxRes)
 	return &report{
-		output:         output,
-		results:        results,
-		done:           make(chan bool, 1),
-		statusCodeDist: make(map[int]int),
-		errorDist:      make(map[string]int),
-		w:              w,
-		connLats:       make([]float64, 0, cap),
-		dnsLats:        make([]float64, 0, cap),
-		reqLats:        make([]float64, 0, cap),
-		resLats:        make([]float64, 0, cap),
-		delayLats:      make([]float64, 0, cap),
-		lats:           make([]float64, 0, cap),
+		output:      output,
+		results:     results,
+		done:        make(chan bool, 1),
+		errorDist:   make(map[string]int),
+		w:           w,
+		connLats:    make([]float64, 0, cap),
+		dnsLats:     make([]float64, 0, cap),
+		reqLats:     make([]float64, 0, cap),
+		resLats:     make([]float64, 0, cap),
+		delayLats:   make([]float64, 0, cap),
+		lats:        make([]float64, 0, cap),
+		statusCodes: make([]int, 0, cap),
 	}
 }
 
@@ -100,8 +100,8 @@ func runReporter(r *report) {
 				r.reqLats = append(r.reqLats, res.reqDuration.Seconds())
 				r.delayLats = append(r.delayLats, res.delayDuration.Seconds())
 				r.resLats = append(r.resLats, res.resDuration.Seconds())
+				r.statusCodes = append(r.statusCodes, res.statusCode)
 			}
-			r.statusCodeDist[res.statusCode]++
 			if res.contentLength > 0 {
 				r.sizeTotal += res.contentLength
 			}
@@ -140,25 +140,25 @@ func (r *report) printf(s string, v ...interface{}) {
 
 func (r *report) snapshot() Report {
 	snapshot := Report{
-		AvgTotal:       r.avgTotal,
-		Average:        r.average,
-		Rps:            r.rps,
-		SizeTotal:      r.sizeTotal,
-		AvgConn:        r.avgConn,
-		AvgDNS:         r.avgDNS,
-		AvgReq:         r.avgReq,
-		AvgRes:         r.avgRes,
-		AvgDelay:       r.avgDelay,
-		Total:          r.total,
-		ErrorDist:      r.errorDist,
-		StatusCodeDist: r.statusCodeDist,
-		NumRes:         r.numRes,
-		Lats:           make([]float64, len(r.lats)),
-		ConnLats:       make([]float64, len(r.lats)),
-		DnsLats:        make([]float64, len(r.lats)),
-		ReqLats:        make([]float64, len(r.lats)),
-		ResLats:        make([]float64, len(r.lats)),
-		DelayLats:      make([]float64, len(r.lats)),
+		AvgTotal:    r.avgTotal,
+		Average:     r.average,
+		Rps:         r.rps,
+		SizeTotal:   r.sizeTotal,
+		AvgConn:     r.avgConn,
+		AvgDNS:      r.avgDNS,
+		AvgReq:      r.avgReq,
+		AvgRes:      r.avgRes,
+		AvgDelay:    r.avgDelay,
+		Total:       r.total,
+		ErrorDist:   r.errorDist,
+		NumRes:      r.numRes,
+		Lats:        make([]float64, len(r.lats)),
+		ConnLats:    make([]float64, len(r.lats)),
+		DnsLats:     make([]float64, len(r.lats)),
+		ReqLats:     make([]float64, len(r.lats)),
+		ResLats:     make([]float64, len(r.lats)),
+		DelayLats:   make([]float64, len(r.lats)),
+		StatusCodes: make([]int, len(r.lats)),
 	}
 
 	if len(r.lats) == 0 {
@@ -173,6 +173,7 @@ func (r *report) snapshot() Report {
 	copy(snapshot.ReqLats, r.reqLats)
 	copy(snapshot.ResLats, r.resLats)
 	copy(snapshot.DelayLats, r.delayLats)
+	copy(snapshot.StatusCodes, r.statusCodes)
 
 	sort.Float64s(r.lats)
 	r.fastest = r.lats[0]
@@ -199,6 +200,12 @@ func (r *report) snapshot() Report {
 	snapshot.DelayMin = r.delayLats[len(r.delayLats)-1]
 	snapshot.ResMax = r.resLats[0]
 	snapshot.ResMin = r.resLats[len(r.resLats)-1]
+
+	statusCodeDist := make(map[int]int, len(snapshot.StatusCodes))
+	for _, statusCode := range snapshot.StatusCodes {
+		statusCodeDist[statusCode]++
+	}
+	snapshot.StatusCodeDist = statusCodeDist
 
 	return snapshot
 }
@@ -279,12 +286,13 @@ type Report struct {
 	DelayMax float64
 	DelayMin float64
 
-	Lats      []float64
-	ConnLats  []float64
-	DnsLats   []float64
-	ReqLats   []float64
-	ResLats   []float64
-	DelayLats []float64
+	Lats        []float64
+	ConnLats    []float64
+	DnsLats     []float64
+	ReqLats     []float64
+	ResLats     []float64
+	DelayLats   []float64
+	StatusCodes []int
 
 	Total time.Duration
 

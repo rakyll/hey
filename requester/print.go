@@ -34,9 +34,10 @@ func newTemplate(output string) *template.Template {
 }
 
 var tmplFuncMap = template.FuncMap{
-	"formatNumber": formatNumber,
-	"histogram":    histogram,
-	"jsonify":      jsonify,
+	"formatNumber":    formatNumber,
+	"formatNumberInt": formatNumberInt,
+	"histogram":       histogram,
+	"jsonify":         jsonify,
 }
 
 func jsonify(v interface{}) string {
@@ -46,6 +47,10 @@ func jsonify(v interface{}) string {
 
 func formatNumber(duration float64) string {
 	return fmt.Sprintf("%4.4f", duration)
+}
+
+func formatNumberInt(duration int) string {
+	return fmt.Sprintf("%d", duration)
 }
 
 func histogram(buckets []Bucket) string {
@@ -98,8 +103,7 @@ Status code distribution:{{ range $code, $num := .StatusCodeDist }}
 {{ if gt (len .ErrorDist) 0 }}Error distribution:{{ range $err, $num := .ErrorDist }}
   [{{ $num }}]	{{ $err }}{{ end }}{{ end }}
 `
-	csvTmpl = `{{ $connLats := .ConnLats }}{{ $dnsLats := .DnsLats }}{{ $dnsLats := .DnsLats }}{{ $reqLats := .ReqLats }}{{ $delayLats := .DelayLats }}{{ $resLats := .ResLats }}
-response-time,DNS+dialup,DNS,Request-write,Response-delay,Response-read{{ range $i, $v := .Lats }}
-{{ formatNumber $v }},{{ formatNumber (index $connLats $i) }},{{ formatNumber (index $dnsLats $i) }},{{ formatNumber (index $reqLats $i) }},{{ formatNumber (index $delayLats $i) }},{{ formatNumber (index $resLats $i) }}{{ end }}
-`
+	csvTmpl = `{{ $connLats := .ConnLats }}{{ $dnsLats := .DnsLats }}{{ $dnsLats := .DnsLats }}{{ $reqLats := .ReqLats }}{{ $delayLats := .DelayLats }}{{ $resLats := .ResLats }}{{ $statusCodeLats := .StatusCodes }}
+response-time,DNS+dialup,DNS,Request-write,Response-delay,Response-read,status-code{{ range $i, $v := .Lats }}
+{{ formatNumber $v }},{{ formatNumber (index $connLats $i) }},{{ formatNumber (index $dnsLats $i) }},{{ formatNumber (index $reqLats $i) }},{{ formatNumber (index $delayLats $i) }},{{ formatNumber (index $resLats $i) }},{{ formatNumberInt (index $statusCodeLats $i) }}{{ end }}`
 )
