@@ -29,7 +29,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rakyll/hey/requester"
+	"github.com/dezmodue/hey/requester"
 )
 
 const (
@@ -63,6 +63,7 @@ var (
 	disableKeepAlives  = flag.Bool("disable-keepalive", false, "")
 	disableRedirects   = flag.Bool("disable-redirects", false, "")
 	proxyAddr          = flag.String("x", "", "")
+	metricsAddr        = flag.String("listen-address", ":8080", "Address on which to expose metrics.")
 )
 
 var usage = `Usage: hey [options...] <url>
@@ -98,7 +99,8 @@ Options:
                         connections between different HTTP requests.
   -disable-redirects    Disable following of HTTP redirects
   -cpus                 Number of used cpu cores.
-                        (default for current machine is %d cores)
+						(default for current machine is %d cores)
+  -listen-address		Address on which to expose metrics, defaults to localhost:8080.
 `
 
 func main() {
@@ -119,6 +121,7 @@ func main() {
 	conc := *c
 	q := *q
 	dur := *z
+	addr := *metricsAddr
 
 	if dur > 0 {
 		num = math.MaxInt32
@@ -240,7 +243,7 @@ func main() {
 			w.Stop()
 		}()
 	}
-	w.Run()
+	w.Run(addr)
 }
 
 func errAndExit(msg string) {

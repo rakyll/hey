@@ -26,9 +26,67 @@ import (
 	"os"
 	"sync"
 	"time"
+	"strconv"
 
 	"golang.org/x/net/http2"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/common/log"
+
 )
+
+var httpRequestsTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Name: "http_requests_total",
+	Help: "Count of all HTTP requests",
+}, []string{"code"},
+)
+
+var	httpRequestsDurationTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "http_requests_duration_total",
+		Help: "Duration of all HTTP requests",
+	}, []string{"code"},
+	)
+
+var	httpConnDurationTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Name: "http_connection_duration_total",
+	Help: "Duration of the connection setup for all HTTP requests (DNS lookup + Dial up)",
+}, []string{"code"},
+)
+
+var	dnsLookupDurationTotal = prometheus.NewCounter(prometheus.CounterOpts{
+	Name: "dns_lookup_duration_total",
+	Help: "Duration of the dns lookup",
+},
+)
+
+var	httpRequestDurationTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Name: "http_request_duration_total",
+	Help: "Duration request 'write'",
+}, []string{"code"},
+)
+
+var	httpResponseDurationTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Name: "http_response_duration_total",
+	Help: "Duration of the response 'read'",
+}, []string{"code"},
+)
+
+var	httpDelayDurationTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Name: "http_delay_duration_total",
+	Help: "Delay between response and request",
+}, []string{"code"},
+)
+
+func init(){
+	prometheus.MustRegister(
+		httpRequestsTotal,
+		httpDelayDurationTotal,
+		httpResponseDurationTotal,
+		httpRequestDurationTotal,
+		dnsLookupDurationTotal,
+		httpConnDurationTotal,
+		httpRequestsDurationTotal)
+}
 
 // Max size of the buffer of result channel.
 const maxResult = 1000000
@@ -112,7 +170,7 @@ func (b *Work) Init() {
 
 // Run makes all the requests, prints the summary. It blocks until
 // all work is done.
-func (b *Work) Run() {
+func (b *Work) Run(addr string) {
 	b.Init()
 	b.start = now()
 	b.report = newReport(b.writer(), b.results, b.Output, b.N)
@@ -120,8 +178,9 @@ func (b *Work) Run() {
 	go func() {
 		runReporter(b.report)
 	}()
-	b.runWorkers()
-	b.Finish()
+	go b.runWorkers()
+	http.Handle("/metrics", promhttp.Handler())
+	log.Fatal(http.ListenAndServe(addr, nil))
 }
 
 func (b *Work) Stop() {
@@ -137,6 +196,7 @@ func (b *Work) Finish() {
 	// Wait until the reporter is done.
 	<-b.report.done
 	b.report.finalize(total)
+	os.Exit(0)
 }
 
 func (b *Work) makeRequest(c *http.Client) {
@@ -193,6 +253,17 @@ func (b *Work) makeRequest(c *http.Client) {
 		resDuration:   resDuration,
 		delayDuration: delayDuration,
 	}
+
+	var httpcode = strconv.Itoa(code)
+
+	httpRequestsTotal.With(prometheus.Labels{"code": httpcode}).Inc()
+	httpRequestsDurationTotal.With(prometheus.Labels{"code": httpcode}).Add(float64(finish.Nanoseconds()/1000000))
+	httpConnDurationTotal.With(prometheus.Labels{"code": httpcode}).Add(float64(connDuration.Nanoseconds()/1000000))
+	dnsLookupDurationTotal.Add(float64(dnsDuration.Nanoseconds()/1000000))
+	httpRequestDurationTotal.With(prometheus.Labels{"code": httpcode}).Add(float64(reqDuration.Nanoseconds()/1000000))
+	httpResponseDurationTotal.With(prometheus.Labels{"code": httpcode}).Add(float64(resDuration.Nanoseconds()/1000000))
+	httpDelayDurationTotal.With(prometheus.Labels{"code": httpcode}).Add(float64(delayDuration.Nanoseconds()/1000000))
+
 }
 
 func (b *Work) runWorker(client *http.Client, n int) {
@@ -249,6 +320,7 @@ func (b *Work) runWorkers() {
 		}()
 	}
 	wg.Wait()
+	b.Finish()
 }
 
 // cloneRequest returns a clone of the provided *http.Request.
