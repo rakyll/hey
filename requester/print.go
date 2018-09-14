@@ -12,6 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/*
+Hey supports two output formats: summary and CSV
+
+The summary output presents a number of statistics about the requests in a
+human-readable format, including:
+- general statistics: requests/second, total runtime, and average, fastest, and slowest requests.
+- a response time histogram.
+- a percentile latency distribution.
+- statistics (average, fastest, slowest) on the stages of the requests.
+
+The comma-separated CSV format is proceeded by a header, and consists of the following columns:
+1. response-time:	Total time taken for request (in seconds)
+2. DNS+dialup:		Time taken to establish the TCP connection (in seconds)
+3. DNS:				Time taken to do the DNS lookup (in seconds)
+4. Request-write:	Time taken to write full request (in seconds)
+5. Response-delay: 	Time taken to first byte received (in seconds)
+6. Response-read:	Time taken to read full response (in seconds)
+7. status-code:		HTTP status code of the response (e.g. 200)
+8. offset:			The time since the start of the benchmark when the request was started. (in seconds)
+*/
 package requester
 
 import (
