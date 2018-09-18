@@ -37,6 +37,7 @@ const maxIdleConn = 500
 type result struct {
 	err           error
 	statusCode    int
+	offset        time.Duration
 	duration      time.Duration
 	connDuration  time.Duration // connection setup(DNS lookup + Dial up) duration
 	dnsDuration   time.Duration // dns lookup duration
@@ -183,6 +184,7 @@ func (b *Work) makeRequest(c *http.Client) {
 	resDuration = t - resStart
 	finish := t - s
 	b.results <- &result{
+		offset:        s,
 		statusCode:    code,
 		duration:      finish,
 		err:           err,
