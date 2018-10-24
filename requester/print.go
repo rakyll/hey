@@ -54,10 +54,11 @@ func newTemplate(output string) *template.Template {
 }
 
 var tmplFuncMap = template.FuncMap{
-	"formatNumber":    formatNumber,
-	"formatNumberInt": formatNumberInt,
-	"histogram":       histogram,
-	"jsonify":         jsonify,
+	"formatNumber":      formatNumber,
+	"formatNumberInt":   formatNumberInt,
+	"formatNumberInt64": formatNumberInt64,
+	"histogram":         histogram,
+	"jsonify":           jsonify,
 }
 
 func jsonify(v interface{}) string {
@@ -70,6 +71,10 @@ func formatNumber(duration float64) string {
 }
 
 func formatNumberInt(duration int) string {
+	return fmt.Sprintf("%d", duration)
+}
+
+func formatNumberInt64(duration int64) string {
 	return fmt.Sprintf("%d", duration)
 }
 
@@ -123,6 +128,6 @@ Status code distribution:{{ range $code, $num := .StatusCodeDist }}
 {{ if gt (len .ErrorDist) 0 }}Error distribution:{{ range $err, $num := .ErrorDist }}
   [{{ $num }}]	{{ $err }}{{ end }}{{ end }}
 `
-	csvTmpl = `{{ $connLats := .ConnLats }}{{ $dnsLats := .DnsLats }}{{ $dnsLats := .DnsLats }}{{ $reqLats := .ReqLats }}{{ $delayLats := .DelayLats }}{{ $resLats := .ResLats }}{{ $statusCodeLats := .StatusCodes }}{{ $offsets := .Offsets}}response-time,DNS+dialup,DNS,Request-write,Response-delay,Response-read,status-code,offset{{ range $i, $v := .Lats }}
-{{ formatNumber $v }},{{ formatNumber (index $connLats $i) }},{{ formatNumber (index $dnsLats $i) }},{{ formatNumber (index $reqLats $i) }},{{ formatNumber (index $delayLats $i) }},{{ formatNumber (index $resLats $i) }},{{ formatNumberInt (index $statusCodeLats $i) }},{{ formatNumber (index $offsets $i) }}{{ end }}`
+	csvTmpl = `{{ $connLats := .ConnLats }}{{ $dnsLats := .DnsLats }}{{ $dnsLats := .DnsLats }}{{ $reqLats := .ReqLats }}{{ $delayLats := .DelayLats }}{{ $resLats := .ResLats }}{{ $statusCodeLats := .StatusCodes }}{{ $offsets := .Offsets}}{{ $finTime := .FinTime}}response-time,DNS+dialup,DNS,Request-write,Response-delay,Response-read,status-code,offset,fin-time{{ range $i, $v := .Lats }}
+{{ formatNumber $v }},{{ formatNumber (index $connLats $i) }},{{ formatNumber (index $dnsLats $i) }},{{ formatNumber (index $reqLats $i) }},{{ formatNumber (index $delayLats $i) }},{{ formatNumber (index $resLats $i) }},{{ formatNumberInt (index $statusCodeLats $i) }},{{ formatNumber (index $offsets $i) }},{{ formatNumberInt64 (index $finTime $i) }}{{ end }}`
 )
