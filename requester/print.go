@@ -87,20 +87,22 @@ func histogram(buckets []Bucket) string {
 		if max > 0 {
 			barLen = (buckets[i].Count*40 + max/2) / max
 		}
-		res.WriteString(fmt.Sprintf("  %4.3f [%v]\t|%v\n", buckets[i].Mark, buckets[i].Count, strings.Repeat(barChar, barLen)))
+		res.WriteString(fmt.Sprintf("  %4.3f [%v]\t|%v", buckets[i].Mark, buckets[i].Count, strings.Repeat(barChar, barLen)))
+		if i < len(buckets) - 1 {
+			res.WriteString("\n")
+		}
 	}
 	return res.String()
 }
 
 var (
-	defaultTmpl = `
-Summary:
+	defaultTmpl = `Summary:
   Total:	{{ formatNumber .Total.Seconds }} secs
   Slowest:	{{ formatNumber .Slowest }} secs
   Fastest:	{{ formatNumber .Fastest }} secs
   Average:	{{ formatNumber .Average }} secs
   Requests/sec:	{{ formatNumber .Rps }}
-  {{ if gt .SizeTotal 0 }}
+  {{- if gt .SizeTotal 0 -}}
   Total data:	{{ .SizeTotal }} bytes
   Size/request:	{{ .SizeReq }} bytes{{ end }}
 
@@ -120,9 +122,11 @@ Details (average, fastest, slowest):
 Status code distribution:{{ range $code, $num := .StatusCodeDist }}
   [{{ $code }}]	{{ $num }} responses{{ end }}
 
-{{ if gt (len .ErrorDist) 0 }}Error distribution:{{ range $err, $num := .ErrorDist }}
+{{- if gt (len .ErrorDist) 0 -}}
+Error distribution:{{ range $err, $num := .ErrorDist }}
   [{{ $num }}]	{{ $err }}{{ end }}{{ end }}
 `
 	csvTmpl = `{{ $connLats := .ConnLats }}{{ $dnsLats := .DnsLats }}{{ $dnsLats := .DnsLats }}{{ $reqLats := .ReqLats }}{{ $delayLats := .DelayLats }}{{ $resLats := .ResLats }}{{ $statusCodeLats := .StatusCodes }}{{ $offsets := .Offsets}}response-time,DNS+dialup,DNS,Request-write,Response-delay,Response-read,status-code,offset{{ range $i, $v := .Lats }}
-{{ formatNumber $v }},{{ formatNumber (index $connLats $i) }},{{ formatNumber (index $dnsLats $i) }},{{ formatNumber (index $reqLats $i) }},{{ formatNumber (index $delayLats $i) }},{{ formatNumber (index $resLats $i) }},{{ formatNumberInt (index $statusCodeLats $i) }},{{ formatNumber (index $offsets $i) }}{{ end }}`
+{{ formatNumber $v }},{{ formatNumber (index $connLats $i) }},{{ formatNumber (index $dnsLats $i) }},{{ formatNumber (index $reqLats $i) }},{{ formatNumber (index $delayLats $i) }},{{ formatNumber (index $resLats $i) }},{{ formatNumberInt (index $statusCodeLats $i) }},{{ formatNumber (index $offsets $i) }}{{ end }}
+`
 )
