@@ -5,7 +5,7 @@ LABEL maintainer="Ming Cheng"
 COPY . /usr/src/hey
 RUN cd /usr/src/hey && \
   go mod download && \
-  env GO111MODULE=on GO15VENDOREXPERIMENT=1 go build -ldflags="-linkmode external -extldflags -static" . 
+  GO111MODULE=on GO15VENDOREXPERIMENT=1 CGO_ENABLED=0 go build -a -ldflags="-extldflags -static" . 
 
 # # # Stage2
 FROM alpine:3.9.2
