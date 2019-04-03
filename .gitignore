@@ -1,0 +1,45 @@
+# Compiled Object files, Static and Dynamic libs (Shared Objects)
+*.o
+*.a
+*.so
+
+# Folders
+_obj
+_test
+.vagrant
+releases
+tmp
+.idea/
+
+# Architecture specific extensions/prefixes
+trace.out
+*.out
+.DS_Store
+
+*.cgo1.go
+*.cgo2.c
+_cgo_defun.c
+_cgo_gotypes.go
+_cgo_export.*
+
+_testmain.go
+
+*.exe
+*.test
+*.prof
+profile.cov
+coverage.html
+
+# Emacs backup files
+*~
+
+# ctags files
+tags
+
+# Project specific
+target
+
+# Website
+site-build
+
+/hey

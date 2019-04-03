@@ -1,6 +1,7 @@
-![hey](http://i.imgur.com/szzD9q0.png)
+# Hey from https://github.com/rakyll/hey
 
-[![Build Status](https://travis-ci.org/rakyll/hey.svg?branch=master)](https://travis-ci.org/rakyll/hey)
+
+针对容器环境的 ApacheBench（ab）测试工具，目前纳入轻舟的测试工具集中。可以直接使用 `docker run --rm hub.c.163.com/qingzhou/hey` 运行和测试。
 
 hey is a tiny program that sends some load to a web application.
 
