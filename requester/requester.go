@@ -53,6 +53,10 @@ type Work struct {
 
 	RequestBody []byte
 
+	// RequestFunc is a function to generate requests. If it is nil, then
+	// Request and RequestData are cloned for each request.
+	RequestFunc func() *http.Request
+
 	// N is the total number of requests to make.
 	N int
 
@@ -146,7 +150,12 @@ func (b *Work) makeRequest(c *http.Client) {
 	var code int
 	var dnsStart, connStart, resStart, reqStart, delayStart time.Duration
 	var dnsDuration, connDuration, resDuration, reqDuration, delayDuration time.Duration
-	req := cloneRequest(b.Request, b.RequestBody)
+	var req *http.Request
+	if b.RequestFunc != nil {
+		req = b.RequestFunc()
+	} else {
+		req = cloneRequest(b.Request, b.RequestBody)
+	}
 	trace := &httptrace.ClientTrace{
 		DNSStart: func(info httptrace.DNSStartInfo) {
 			dnsStart = now()
