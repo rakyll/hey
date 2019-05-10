@@ -37,9 +37,7 @@ coverage.html
 tags
 
 # Project specific
-target
+/target
 
 # Website
 site-build
-
-/hey
