@@ -1,14 +1,6 @@
-# YanXuan Hey
+# Hey Improved
 
-本项目基于开源工具库 https://github.com/rakyll/hey 修改（基于 Apache 协议）。这是主要针对容器环境的 ApacheBench（ab）测试工具，目前纳入轻舟的测试工具集中。
-
-在内网环境中，可以直接使用 
-
-```
-docker run --rm hub.c.163.com/qingzhou/hey
-```
-
-运行和测试。
+本项目基于开源工具库 https://github.com/rakyll/hey 修改（基于 Apache 协议）。主要针对容器环境的部署以及 K8S 的部署作了些针对性的修改，目前纳入轻舟的测试工具集中。
 
 hey is a tiny program that sends some load to a web application.
 
@@ -17,11 +9,9 @@ tool at [tarekziade/boom](https://github.com/tarekziade/boom). Using the same na
 where binary name conflicts created confusion.
 To preserve the name for its original owner, we renamed this project to hey.
 
-## Installation
-
-    go get -u github.com/rakyll/hey
-
 ## Usage
+
+在内网环境中，可以直接使用 `docker run --rm hub.c.163.com/qingzhou/hey` 运行和测试。
 
 hey runs provided number of requests in the provided concurrency level and prints stats.
 
