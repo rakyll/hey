@@ -99,6 +99,9 @@ func TestRequest(t *testing.T) {
 	if uri != "/" {
 		t.Errorf("Uri is expected to be /, %v is found", uri)
 	}
+	if method != "GET" {
+		t.Errorf("Method is expected to be GET, %v is found", uri)
+	}
 	if contentType != "text/html" {
 		t.Errorf("Content type is expected to be text/html, %v is found", contentType)
 	}
