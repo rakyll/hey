@@ -94,6 +94,7 @@ type Work struct {
 	start    time.Duration
 
 	report *report
+	mutex  sync.Mutex
 }
 
 func (b *Work) writer() io.Writer {
@@ -152,7 +153,11 @@ func (b *Work) makeRequest(c *http.Client) {
 			dnsStart = now()
 		},
 		DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
+			//  DNSDone hook (along with other hooks) may be called concurrently
+			//  from different goroutines.
+			b.mutex.Lock()
 			dnsDuration = now() - dnsStart
+			defer b.mutex.Unlock()
 		},
 		GetConn: func(h string) {
 			connStart = now()
@@ -183,6 +188,7 @@ func (b *Work) makeRequest(c *http.Client) {
 	t := now()
 	resDuration = t - resStart
 	finish := t - s
+	b.mutex.Lock()
 	b.results <- &result{
 		offset:        s,
 		statusCode:    code,
@@ -195,6 +201,7 @@ func (b *Work) makeRequest(c *http.Client) {
 		resDuration:   resDuration,
 		delayDuration: delayDuration,
 	}
+	b.mutex.Unlock()
 }
 
 func (b *Work) runWorker(client *http.Client, n int) {
