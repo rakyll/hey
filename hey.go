@@ -63,6 +63,7 @@ var (
 	disableKeepAlives  = flag.Bool("disable-keepalive", false, "")
 	disableRedirects   = flag.Bool("disable-redirects", false, "")
 	proxyAddr          = flag.String("x", "", "")
+	unixDomainSocket   = flag.String("unix-socket", "", "")
 )
 
 var usage = `Usage: hey [options...] <url>
@@ -119,6 +120,14 @@ func main() {
 	conc := *c
 	q := *q
 	dur := *z
+	uds := unixDomainSocket
+
+	if len(*uds) > 0 {
+		_, err := os.Stat(*uds);
+		if os.IsNotExist(err){
+			usageAndExit("-unix-socket unix domain socket must exist")
+		}
+	}
 
 	if dur > 0 {
 		num = math.MaxInt32
@@ -223,6 +232,7 @@ func main() {
 		DisableKeepAlives:  *disableKeepAlives,
 		DisableRedirects:   *disableRedirects,
 		H2:                 *h2,
+		UnixDomainSocket:	*uds,
 		ProxyAddr:          proxyURL,
 		Output:             *output,
 	}

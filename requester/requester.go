@@ -17,9 +17,11 @@ package requester
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/http/httptrace"
 	"net/url"
@@ -87,6 +89,8 @@ type Work struct {
 
 	// Writer is where results will be written. If nil, results are written to stdout.
 	Writer io.Writer
+
+	UnixDomainSocket string
 
 	initOnce sync.Once
 	results  chan *result
@@ -235,6 +239,11 @@ func (b *Work) runWorkers() {
 		DisableCompression:  b.DisableCompression,
 		DisableKeepAlives:   b.DisableKeepAlives,
 		Proxy:               http.ProxyURL(b.ProxyAddr),
+	}
+	if len(b.UnixDomainSocket) > 0 {
+		tr.DialContext = func(_ context.Context, _, _ string) (net.Conn, error) {
+			return net.Dial("unix", b.UnixDomainSocket)
+		}
 	}
 	if b.H2 {
 		http2.ConfigureTransport(tr)
