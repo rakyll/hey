@@ -59,3 +59,9 @@ Options:
 Previously known as [github.com/rakyll/boom](https://github.com/rakyll/boom).
 
 Note: Requires go 1.7 or greater.
+
+## Binaries
+
+Linux 64-bit: https://storage.googleapis.com/hey-release/hey_linux_amd64
+Mac 64-bit: https://storage.googleapis.com/hey-release/hey_darwin_amd64
+Windows 64-bit: https://storage.googleapis.com/hey-release/hey_windows_amd64
