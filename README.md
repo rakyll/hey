@@ -10,6 +10,7 @@ where binary name conflicts created confusion.
 To preserve the name for its original owner, we renamed this project to hey.
 
 ## Installation
+something something something...
 
     go get -u github.com/rakyll/hey
 
