@@ -16,9 +16,11 @@
 package main
 
 import (
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math"
 	"net/http"
 	gourl "net/url"
@@ -63,6 +65,9 @@ var (
 	disableKeepAlives  = flag.Bool("disable-keepalive", false, "")
 	disableRedirects   = flag.Bool("disable-redirects", false, "")
 	proxyAddr          = flag.String("x", "", "")
+
+	cert = flag.String("cert", "", "TLS certificate")
+	key  = flag.String("key", "", "TLS key")
 )
 
 var usage = `Usage: hey [options...] <url>
@@ -98,7 +103,10 @@ Options:
                         connections between different HTTP requests.
   -disable-redirects    Disable following of HTTP redirects
   -cpus                 Number of used cpu cores.
-                        (default for current machine is %d cores)
+						(default for current machine is %d cores)
+
+  -cert <cert.pem>      Client certificate to use for mTLS.
+  -key <key.pem>        Client private key to use for mTLS.
 `
 
 func main() {
@@ -212,6 +220,16 @@ func main() {
 	header.Set("User-Agent", ua)
 	req.Header = header
 
+	certs := make([]tls.Certificate, 0)
+	if *cert != "" && *key != "" {
+		tlsCert, err := tls.LoadX509KeyPair(*cert, *key)
+		if err != nil {
+			log.Fatalf("Error loading TLS cert & key: %v", err)
+		}
+		log.Printf("Loaded TLS certificate: %s/%s", *cert, *key)
+		certs = append(certs, tlsCert)
+	}
+
 	w := &requester.Work{
 		Request:            req,
 		RequestBody:        bodyAll,
@@ -225,6 +243,7 @@ func main() {
 		H2:                 *h2,
 		ProxyAddr:          proxyURL,
 		Output:             *output,
+		Certs:              certs,
 	}
 	w.Init()
 
