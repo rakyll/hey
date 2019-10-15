@@ -13,6 +13,11 @@ To preserve the name for its original owner, we renamed this project to hey.
 
     go get -u github.com/rakyll/hey
 
+### Using package manager
+
+macOS:
+-  [Homebrew](https://brew.sh/) users can use `brew install hey`.
+
 ## Usage
 
 hey runs provided number of requests in the provided concurrency level and prints stats.
