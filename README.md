@@ -15,9 +15,8 @@ To preserve the name for its original owner, we renamed this project to hey.
 
 ### Using package manager
 
-If you want to use a package manager:
-
-- [Homebrew](https://brew.sh/) users can use `brew install hey`.
+macOS:
+-  [Homebrew](https://brew.sh/) users can use `brew install hey`.
 
 ## Usage
 
