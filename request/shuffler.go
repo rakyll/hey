@@ -43,6 +43,8 @@ func newShuffler(baseRequest *http.Request, genFunc func(match string) generator
 }
 
 func (s *Shuffler) Shuffle(r *http.Request) {
+	// NOTE: In a future revision, the parameter won't be needed.
+	// This change requires the extraction of a local Request type and wrapping http.Request with it.
 	for match, gen := range s.generatorMap {
 		r.URL, _ = r.URL.Parse(strings.Replace(r.URL.Path, match, gen.Generate(1), -1))
 	}
