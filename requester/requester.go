@@ -18,6 +18,8 @@ package requester
 import (
 	"bytes"
 	"crypto/tls"
+	"fmt"
+	"github.com/rakyll/hey/request"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -140,13 +142,18 @@ func (b *Work) Finish() {
 	b.report.finalize(total)
 }
 
-func (b *Work) makeRequest(c *http.Client) {
+func (b *Work) makeRequest(c *http.Client, preHooks ...func(r *http.Request)) {
 	s := now()
 	var size int64
 	var code int
 	var dnsStart, connStart, resStart, reqStart, delayStart time.Duration
 	var dnsDuration, connDuration, resDuration, reqDuration, delayDuration time.Duration
 	req := cloneRequest(b.Request, b.RequestBody)
+
+	for _, f := range preHooks {
+		f(req)
+	}
+
 	trace := &httptrace.ClientTrace{
 		DNSStart: func(info httptrace.DNSStartInfo) {
 			dnsStart = now()
@@ -208,6 +215,8 @@ func (b *Work) runWorker(client *http.Client, n int) {
 			return http.ErrUseLastResponse
 		}
 	}
+
+	s := request.NewShuffler(b.Request)
 	for i := 0; i < n; i++ {
 		// Check if application is stopped. Do not send into a closed channel.
 		select {
@@ -217,7 +226,10 @@ func (b *Work) runWorker(client *http.Client, n int) {
 			if b.QPS > 0 {
 				<-throttle
 			}
-			b.makeRequest(client)
+			b.makeRequest(client, func(r *http.Request) {
+				s.Shuffle(r)
+				fmt.Println(r.URL)
+			})
 		}
 	}
 }
@@ -267,6 +279,7 @@ func cloneRequest(r *http.Request, body []byte) *http.Request {
 	if len(body) > 0 {
 		r2.Body = ioutil.NopCloser(bytes.NewReader(body))
 	}
+
 	return r2
 }
 

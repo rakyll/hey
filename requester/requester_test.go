@@ -105,6 +105,9 @@ func TestRequest(t *testing.T) {
 	if some != "value" {
 		t.Errorf("X-some header is expected to be value, %v is found", some)
 	}
+	if method != "GET" {
+		t.Errorf("HTTP method is expected to be /, %v is found", method)
+	}
 	if auth != "Basic dXNlcm5hbWU6cGFzc3dvcmQ=" {
 		t.Errorf("Basic authorization is not properly set")
 	}
