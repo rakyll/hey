@@ -159,8 +159,10 @@ func getFunc(cmd *cobra.Command, args []string) {
 	w := &requester.Work{
 		Request:            req,
 		RequestURL:			func() string {
-			k := make([]byte, gKeySize)
-			binary.PutVarint(k, int64(rand.Intn(gKeySpaceSize)))
+			k := make([]byte, keySize)
+			for i := 0; i < keySize; i+=8 {
+				binary.PutVarint(k[i:i+8], rand.Int63())
+			}
 			return fmt.Sprintf( "%s/v1/kv/%s", args[0], base64.StdEncoding.EncodeToString(k))
 		},
 		RequestBody:        func() []byte {

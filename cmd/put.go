@@ -168,12 +168,16 @@ func putFunc(cmd *cobra.Command, args []string) {
 		Request:            req,
 		RequestURL:			func() string {
 			k := make([]byte, keySize)
-			binary.PutVarint(k, int64(rand.Intn(keySpaceSize)))
+			for i := 0; i < keySize; i+=8 {
+				binary.LittleEndian.PutUint64( k[i:i+8], rand.Uint64())
+			}
 			return fmt.Sprintf( "%s/v1/kv/%s", args[0], base64.StdEncoding.EncodeToString(k))
 		},
 		RequestBody:        func() []byte {
-			fmt.Fprintln(os.Stdout, "HHHHHHHHHHHHHHHHHHHHHHHHHH")
-			v := mustRandBytes(valSize)
+			v := make([]byte, valSize)
+			for i := 0; i < valSize; i+=8 {
+				binary.LittleEndian.PutUint64( v[i:i+8], rand.Uint64())
+			}
 			return v
 		},
 		N:                  num,
