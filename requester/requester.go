@@ -18,6 +18,7 @@ package requester
 import (
 	"bytes"
 	"crypto/tls"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -50,8 +51,9 @@ type result struct {
 type Work struct {
 	// Request is the request to be made.
 	Request *http.Request
+	RequestURL func() string
 
-	RequestBody []byte
+	RequestBody func() []byte
 
 	// N is the total number of requests to make.
 	N int
@@ -140,13 +142,14 @@ func (b *Work) Finish() {
 	b.report.finalize(total)
 }
 
-func (b *Work) makeRequest(c *http.Client) {
+func (b *Work) makeRequest(c *http.Client, cid int, n int) {
 	s := now()
 	var size int64
 	var code int
 	var dnsStart, connStart, resStart, reqStart, delayStart time.Duration
 	var dnsDuration, connDuration, resDuration, reqDuration, delayDuration time.Duration
-	req := cloneRequest(b.Request, b.RequestBody)
+	val := b.RequestBody()
+	req := cloneRequest(b.Request, b.RequestURL(), val)
 	trace := &httptrace.ClientTrace{
 		DNSStart: func(info httptrace.DNSStartInfo) {
 			dnsStart = now()
@@ -172,17 +175,23 @@ func (b *Work) makeRequest(c *http.Client) {
 			resStart = now()
 		},
 	}
+	req.Close = true
 	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
 	resp, err := c.Do(req)
 	if err == nil {
 		size = resp.ContentLength
 		code = resp.StatusCode
 		io.Copy(ioutil.Discard, resp.Body)
-		resp.Body.Close()
+		defer resp.Body.Close()
 	}
 	t := now()
 	resDuration = t - resStart
 	finish := t - s
+	if resp != nil {
+		fmt.Fprintln(os.Stdout, "req OUT code ", cid, n, resp.StatusCode, time.Now())
+	} else {
+		fmt.Fprintln(os.Stdout, "req OUT NRSP code ", cid, n, time.Now())
+	}
 	b.results <- &result{
 		offset:        s,
 		statusCode:    code,
@@ -197,7 +206,7 @@ func (b *Work) makeRequest(c *http.Client) {
 	}
 }
 
-func (b *Work) runWorker(client *http.Client, n int) {
+func (b *Work) runWorker(client *http.Client, cid int, n int) {
 	var throttle <-chan time.Time
 	if b.QPS > 0 {
 		throttle = time.Tick(time.Duration(1e6/(b.QPS)) * time.Microsecond)
@@ -217,7 +226,8 @@ func (b *Work) runWorker(client *http.Client, n int) {
 			if b.QPS > 0 {
 				<-throttle
 			}
-			b.makeRequest(client)
+			fmt.Fprintln(os.Stdout, "req!!! ", cid, i, n, time.Now())
+			b.makeRequest(client, cid, i)
 		}
 	}
 }
@@ -226,6 +236,7 @@ func (b *Work) runWorkers() {
 	var wg sync.WaitGroup
 	wg.Add(b.C)
 
+	fmt.Fprintf(os.Stdout, "runworkers b.c %d dka %d timeout %d\n", b.C, b.DisableKeepAlives, b.Timeout)
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
@@ -245,26 +256,34 @@ func (b *Work) runWorkers() {
 
 	// Ignore the case where b.N % b.C != 0.
 	for i := 0; i < b.C; i++ {
-		go func() {
-			b.runWorker(client, b.N/b.C)
+		go func(j int) {
+			fmt.Fprintln(os.Stdout, "I is ", j)
+			b.runWorker(client, j, b.N/b.C)
 			wg.Done()
-		}()
+		}(i)
 	}
 	wg.Wait()
 }
 
 // cloneRequest returns a clone of the provided *http.Request.
 // The clone is a shallow copy of the struct and its Header map.
-func cloneRequest(r *http.Request, body []byte) *http.Request {
+func cloneRequest(r *http.Request, uri string, body []byte) *http.Request {
 	// shallow copy of the struct
 	r2 := new(http.Request)
 	*r2 = *r
+	url, err := url.Parse(uri)
+	if err != nil {
+		return nil
+	}
+
+	r2.URL = url
 	// deep copy of the Header
 	r2.Header = make(http.Header, len(r.Header))
 	for k, s := range r.Header {
 		r2.Header[k] = append([]string(nil), s...)
 	}
 	if len(body) > 0 {
+		r2.ContentLength = int64(len(body))
 		r2.Body = ioutil.NopCloser(bytes.NewReader(body))
 	}
 	return r2

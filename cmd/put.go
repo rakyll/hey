@@ -16,10 +16,13 @@
 package cmd
 
 import (
+	"encoding/base64"
+	"encoding/binary"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"math"
+	"math/rand"
 	"net/http"
 	gourl "net/url"
 	"os"
@@ -45,13 +48,15 @@ var (
 	valSize		int
 
 	keySpaceSize int
-	seqKeys      bool
 )
 
 func init() {
 	RootCmd.AddCommand( PutCmd)
 	PutCmd.PersistentFlags().StringVar(&body, "d", "", "HTTP request body.")
 	PutCmd.PersistentFlags().StringVar(&bodyFile, "D", "", "HTTP request body from file. For example, /home/user/file.txt or ./file.txt.")
+	PutCmd.Flags().IntVar(&keySize, "key-size", 8, "Key size of put request")
+	PutCmd.Flags().IntVar(&valSize, "val-size", 8, "Value size of put request")
+	PutCmd.Flags().IntVar(&keySpaceSize, "key-space-size", 10000000, "Maximum possible keys")
 }
 
 const (
@@ -90,7 +95,6 @@ func putFunc(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	url := args[0]
 	method := "PUT"
 
 	// set content-type
@@ -144,11 +148,11 @@ func putFunc(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	req, err := http.NewRequest(method, url, nil)
+	req, err := http.NewRequest(method, args[0], nil)
 	if err != nil {
 		usageAndExit(err.Error())
 	}
-	req.ContentLength = int64(len(bodyAll))
+	bodyAll = bodyAll
 	if username != "" || password != "" {
 		req.SetBasicAuth(username, password)
 	}
@@ -169,7 +173,16 @@ func putFunc(cmd *cobra.Command, args []string) {
 
 	w := &requester.Work{
 		Request:            req,
-		RequestBody:        bodyAll,
+		RequestURL:			func() string {
+			k := make([]byte, keySize)
+			binary.PutVarint(k, int64(rand.Intn(keySpaceSize)))
+			return fmt.Sprintf( "%s/v1/kv/%s", args[0], base64.StdEncoding.EncodeToString(k))
+		},
+		RequestBody:        func() []byte {
+			fmt.Fprintln(os.Stdout, "HHHHHHHHHHHHHHHHHHHHHHHHHH")
+			v := mustRandBytes(valSize)
+			return v
+		},
 		N:                  num,
 		C:                  conc,
 		QPS:                q,
@@ -232,4 +245,14 @@ func (h *headerSlice) String() string {
 func (h *headerSlice) Set(value string) error {
 	*h = append(*h, value)
 	return nil
+}
+
+func mustRandBytes(n int) []byte {
+	rb := make([]byte, n)
+	_, err := rand.Read(rb)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to generate value: %v\n", err)
+		os.Exit(1)
+	}
+	return rb
 }
