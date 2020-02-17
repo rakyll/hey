@@ -34,31 +34,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var PutCmd = &cobra.Command{
-	Use:   "put",
-	Short: "benchmark put",
-	Run: putFunc,
+var GetCmd = &cobra.Command{
+	Use:   "get",
+	Short: "benchmark get",
+	Run: getFunc,
 }
-
 var (
-	body        string
-	bodyFile    string
-	keySize		int
-	valSize		int
-
-	keySpaceSize int
+	gKeySize      int
+	gKeySpaceSize int
 )
 
 func init() {
-	RootCmd.AddCommand( PutCmd)
-	PutCmd.PersistentFlags().StringVar(&body, "d", "", "HTTP request body.")
-	PutCmd.PersistentFlags().StringVar(&bodyFile, "D", "", "HTTP request body from file. For example, /home/user/file.txt or ./file.txt.")
-	PutCmd.Flags().IntVar(&keySize, "key-size", 8, "Key size of put request")
-	PutCmd.Flags().IntVar(&valSize, "val-size", 8, "Value size of put request")
-	PutCmd.Flags().IntVar(&keySpaceSize, "key-space-size", 10000000, "Maximum possible keys")
+	RootCmd.AddCommand( GetCmd)
+	GetCmd.Flags().IntVar(&gKeySize, "key-size", 8, "Key size of get request")
+	GetCmd.Flags().IntVar(&gKeySpaceSize, "key-space-size", 10000000, "Maximum possible keys")
 }
 
-func putFunc(cmd *cobra.Command, args []string) {
+func getFunc(cmd *cobra.Command, args []string) {
 	var hs headerSlice
 	flag.Var(&hs, "H", "")
 
@@ -88,7 +80,7 @@ func putFunc(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	method := "PUT"
+	method := "GET"
 
 	// set content-type
 	header := make(http.Header)
@@ -167,14 +159,12 @@ func putFunc(cmd *cobra.Command, args []string) {
 	w := &requester.Work{
 		Request:            req,
 		RequestURL:			func() string {
-			k := make([]byte, keySize)
-			binary.PutVarint(k, int64(rand.Intn(keySpaceSize)))
+			k := make([]byte, gKeySize)
+			binary.PutVarint(k, int64(rand.Intn(gKeySpaceSize)))
 			return fmt.Sprintf( "%s/v1/kv/%s", args[0], base64.StdEncoding.EncodeToString(k))
 		},
 		RequestBody:        func() []byte {
-			fmt.Fprintln(os.Stdout, "HHHHHHHHHHHHHHHHHHHHHHHHHH")
-			v := mustRandBytes(valSize)
-			return v
+			return nil
 		},
 		N:                  num,
 		C:                  conc,

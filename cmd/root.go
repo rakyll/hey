@@ -16,6 +16,10 @@
 package cmd
 
 import (
+	"fmt"
+	"math/rand"
+	"os"
+	"regexp"
 	"runtime"
 	"time"
 
@@ -28,6 +32,12 @@ var RootCmd = &cobra.Command{
 	Short: "A low-level benchmark tool for consul",
 	Long: `hey-consul is a low-level benchmark tool for consul.`,
 }
+
+const (
+	headerRegexp = `^([\w-]+):\s*(.+)`
+	authRegexp   = `^(.+):([^\s].+)`
+	heyUA        = "hey/0.0.1"
+)
 
 var (
 	headers     string
@@ -75,4 +85,50 @@ func init() {
 	RootCmd.PersistentFlags().BoolVar(&disableKeepAlives, "disable-keepalive", false, "Disable keep-alive, prevents re-use of TCP connections between different HTTP requests")
 	RootCmd.PersistentFlags().BoolVar(&disableRedirects, "disable-redirects", false, "Disable following of HTTP redirects")
 	RootCmd.PersistentFlags().StringVar(&proxyAddr, "x", "", "HTTP Proxy address as host:port.")
+}
+
+func errAndExit(msg string) {
+	fmt.Fprintf(os.Stderr, msg)
+	fmt.Fprintf(os.Stderr, "\n")
+	os.Exit(1)
+}
+
+func usageAndExit(msg string) {
+	if msg != "" {
+		fmt.Fprintf(os.Stderr, msg)
+		fmt.Fprintf(os.Stderr, "\n\n")
+	}
+	//flag.Usage()
+	fmt.Fprintf(os.Stderr, "\n")
+	os.Exit(1)
+}
+
+func parseInputWithRegexp(input, regx string) ([]string, error) {
+	re := regexp.MustCompile(regx)
+	matches := re.FindStringSubmatch(input)
+	if len(matches) < 1 {
+		return nil, fmt.Errorf("could not parse the provided input; input = %v", input)
+	}
+	return matches, nil
+}
+
+type headerSlice []string
+
+func (h *headerSlice) String() string {
+	return fmt.Sprintf("%s", *h)
+}
+
+func (h *headerSlice) Set(value string) error {
+	*h = append(*h, value)
+	return nil
+}
+
+func mustRandBytes(n int) []byte {
+	rb := make([]byte, n)
+	_, err := rand.Read(rb)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to generate value: %v\n", err)
+		os.Exit(1)
+	}
+	return rb
 }
