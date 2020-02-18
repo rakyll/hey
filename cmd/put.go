@@ -17,12 +17,10 @@ package cmd
 
 import (
 	"encoding/base64"
-	"encoding/binary"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"math"
-	"math/rand"
 	"net/http"
 	gourl "net/url"
 	"os"
@@ -45,6 +43,7 @@ var (
 	bodyFile    string
 	keySize		int
 	valSize		int
+	seqKeys		uint64
 
 	keySpaceSize int
 )
@@ -55,6 +54,7 @@ func init() {
 	PutCmd.PersistentFlags().StringVar(&bodyFile, "D", "", "HTTP request body from file. For example, /home/user/file.txt or ./file.txt.")
 	PutCmd.Flags().IntVar(&keySize, "key-size", 8, "Key size of put request")
 	PutCmd.Flags().IntVar(&valSize, "val-size", 8, "Value size of put request")
+	PutCmd.Flags().Uint64Var(&seqKeys, "seq-keys", 0, "seq keys start. default 0 (no seq keys)")
 	PutCmd.Flags().IntVar(&keySpaceSize, "key-space-size", 10000000, "Maximum possible keys")
 }
 
@@ -164,21 +164,20 @@ func putFunc(cmd *cobra.Command, args []string) {
 	header.Set("User-Agent", ua)
 	req.Header = header
 
+	ki := seqKeys
 	w := &requester.Work{
 		Request:            req,
 		RequestURL:			func() string {
-			k := make([]byte, keySize)
-			for i := 0; i < keySize; i+=8 {
-				binary.LittleEndian.PutUint64( k[i:i+8], rand.Uint64())
+			if ki > 0 {
+				ki+=1
 			}
+
+			k := initRandBytes(keySize, ki )
+
 			return fmt.Sprintf( "%s/v1/kv/%s", args[0], base64.StdEncoding.EncodeToString(k))
 		},
 		RequestBody:        func() []byte {
-			v := make([]byte, valSize)
-			for i := 0; i < valSize; i+=8 {
-				binary.LittleEndian.PutUint64( v[i:i+8], rand.Uint64())
-			}
-			return v
+			return initRandBytes(valSize, 0)
 		},
 		N:                  num,
 		C:                  conc,

@@ -16,6 +16,7 @@
 package cmd
 
 import (
+	"encoding/binary"
 	"fmt"
 	"math/rand"
 	"os"
@@ -121,6 +122,19 @@ func (h *headerSlice) String() string {
 func (h *headerSlice) Set(value string) error {
 	*h = append(*h, value)
 	return nil
+}
+
+func initRandBytes(n int, v uint64) []byte {
+	k := make([]byte, n)
+	for i := 0; i < n; i+=8 {
+		var cv = v
+		if cv == 0 {
+			cv = rand.Uint64()
+		}
+
+		binary.LittleEndian.PutUint64( k[i:i+8], cv )
+	}
+	return k
 }
 
 func mustRandBytes(n int) []byte {

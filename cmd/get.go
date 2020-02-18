@@ -17,12 +17,10 @@ package cmd
 
 import (
 	"encoding/base64"
-	"encoding/binary"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"math"
-	"math/rand"
 	"net/http"
 	gourl "net/url"
 	"os"
@@ -40,14 +38,14 @@ var GetCmd = &cobra.Command{
 	Run: getFunc,
 }
 var (
-	gKeySize      int
-	gKeySpaceSize int
+	gKeySize	int
+	gSeqKeys	uint64
 )
 
 func init() {
 	RootCmd.AddCommand( GetCmd)
 	GetCmd.Flags().IntVar(&gKeySize, "key-size", 8, "Key size of get request")
-	GetCmd.Flags().IntVar(&gKeySpaceSize, "key-space-size", 10000000, "Maximum possible keys")
+	GetCmd.Flags().Uint64Var(&gSeqKeys, "seq-keys", 0, "seq keys start. default 0 (no seq keys)")
 }
 
 func getFunc(cmd *cobra.Command, args []string) {
@@ -156,13 +154,15 @@ func getFunc(cmd *cobra.Command, args []string) {
 	header.Set("User-Agent", ua)
 	req.Header = header
 
+	ki := gSeqKeys
 	w := &requester.Work{
 		Request:            req,
 		RequestURL:			func() string {
-			k := make([]byte, keySize)
-			for i := 0; i < keySize; i+=8 {
-				binary.PutVarint(k[i:i+8], rand.Int63())
+			if ki > 0 {
+				ki+=1
 			}
+
+			k := initRandBytes(gKeySize, ki )
 			return fmt.Sprintf( "%s/v1/kv/%s", args[0], base64.StdEncoding.EncodeToString(k))
 		},
 		RequestBody:        func() []byte {
