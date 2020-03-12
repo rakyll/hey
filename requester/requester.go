@@ -62,6 +62,9 @@ type Work struct {
 	// H2 is an option to make HTTP/2 requests
 	H2 bool
 
+	// TLSResume is used to decide whether TLS session resumption is enabled between requests
+	TLSResume bool
+
 	// Timeout in seconds.
 	Timeout int
 
@@ -226,10 +229,17 @@ func (b *Work) runWorkers() {
 	var wg sync.WaitGroup
 	wg.Add(b.C)
 
+	var tlsCache tls.ClientSessionCache
+
+	if b.TLSResume {
+		tlsCache = tls.NewLRUClientSessionCache(1) // we only have one target
+	}
+
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
 			ServerName:         b.Request.Host,
+			ClientSessionCache: tlsCache,
 		},
 		MaxIdleConnsPerHost: min(b.C, maxIdleConn),
 		DisableCompression:  b.DisableCompression,
