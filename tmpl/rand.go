@@ -13,7 +13,7 @@ const (
 	maxLengthEmailUserName = 10
 	maxLengthEmailDomain   = 5
 
-	maxlengthString = 10
+	maxLengthString = 10
 
 	letterBytes = "abcdefghijklmnopqrstuvwxyz0123456789"
 )
@@ -32,7 +32,7 @@ func RandomEmail() string {
 }
 
 func RandomString() string {
-	return randStringBytes(maxlengthString)
+	return randStringBytes(maxLengthString)
 }
 
 func RandomTime() string {
