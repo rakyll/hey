@@ -50,7 +50,7 @@ func (tmplItem TemplateItem) String() string {
 	return ""
 }
 
-// Generate randdov value based on tipe TemplateItem
+// Generate random value based on type TemplateItem
 func (tmplItem TemplateItem) Generate() string {
 	switch tmplItem {
 	case RequestID:
@@ -74,24 +74,24 @@ func (tmplItem TemplateItem) Generate() string {
 	return ""
 }
 
-// Convernt node form template to TemplateItem
-func nodeToTemplateItem(node string) TemplateItem {
+// Convert field to TemplateItem
+func fieldToTemplateItem(field string) TemplateItem {
 	switch {
-	case strings.Contains(node, RequestID.String()):
+	case strings.Contains(field, RequestID.String()):
 		return RequestID
-	case strings.Contains(node, Email.String()):
+	case strings.Contains(field, Email.String()):
 		return Email
-	case strings.Contains(node, Integer.String()):
+	case strings.Contains(field, Integer.String()):
 		return Integer
-	case strings.Contains(node, Date.String()):
+	case strings.Contains(field, Date.String()):
 		return Date
-	case strings.Contains(node, Time.String()):
+	case strings.Contains(field, Time.String()):
 		return Time
-	case strings.Contains(node, DateTime.String()):
+	case strings.Contains(field, DateTime.String()):
 		return DateTime
-	case strings.Contains(node, Float.String()):
+	case strings.Contains(field, Float.String()):
 		return Float
-	case strings.Contains(node, String.String()):
+	case strings.Contains(field, String.String()):
 		return String
 	}
 
@@ -126,8 +126,8 @@ func templateString(value string) (*template.Template, error) {
 	}
 
 	i := 0
-	for _, node := range ListTemplFields(tmpl) {
-		if nodeToTemplateItem(node) == Unknown {
+	for _, field := range ListTemplFields(tmpl) {
+		if fieldToTemplateItem(field) == Unknown {
 			i++
 		}
 	}
@@ -173,7 +173,7 @@ func Validate(req *http.Request, body []byte) error {
 func fillTemplate(tmpl *template.Template) (string, error) {
 	tmplItems := make(map[string]string)
 	for _, node := range ListTemplFields(tmpl) {
-		tmplItem := nodeToTemplateItem(node)
+		tmplItem := fieldToTemplateItem(node)
 		if tmplItem == Unknown {
 			continue
 		}
