@@ -27,6 +27,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rakyll/hey/tmpl"
 	"golang.org/x/net/http2"
 )
 
@@ -88,6 +89,9 @@ type Work struct {
 	// Writer is where results will be written. If nil, results are written to stdout.
 	Writer io.Writer
 
+	// Enable templates in Headers and body
+	EnableTemplates bool
+
 	initOnce sync.Once
 	results  chan *result
 	stopCh   chan struct{}
@@ -146,7 +150,14 @@ func (b *Work) makeRequest(c *http.Client) {
 	var code int
 	var dnsStart, connStart, resStart, reqStart, delayStart time.Duration
 	var dnsDuration, connDuration, resDuration, reqDuration, delayDuration time.Duration
-	req := cloneRequest(b.Request, b.RequestBody)
+
+	var req *http.Request
+	if !b.EnableTemplates {
+		req = cloneRequest(b.Request, b.RequestBody)
+	} else {
+		req = tmpl.FillOut(b.Request, b.RequestBody)
+	}
+
 	trace := &httptrace.ClientTrace{
 		DNSStart: func(info httptrace.DNSStartInfo) {
 			dnsStart = now()

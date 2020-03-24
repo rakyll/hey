@@ -63,6 +63,8 @@ var (
 	disableKeepAlives  = flag.Bool("disable-keepalive", false, "")
 	disableRedirects   = flag.Bool("disable-redirects", false, "")
 	proxyAddr          = flag.String("x", "", "")
+
+	enableTemplates = flag.Bool("enable-tmpl", false, "")
 )
 
 var usage = `Usage: hey [options...] <url>
@@ -99,6 +101,14 @@ Options:
   -disable-redirects    Disable following of HTTP redirects
   -cpus                 Number of used cpu cores.
                         (default for current machine is %d cores)
+
+  -enable-tmpl  Header or body may include templates for random requests.
+                Allowed {{.Email}}, {{.RequestID}}, {{.Time}}, {{.DtTm}},
+                {{.Date}}, {{.Integer}}, {{.Float}}, {{.String}}.
+                May be used multiple times in header or body.
+                Ex1: -H 'x-request-id: {{.RequestID}}'
+                Ex2: -d '{ "user_email": "{{.Email}}", "user_login": "{{.String}}" }'
+                Ex3: -d '{ "primary_email": "{{.Email_1}}", "secondary_email": "{{.Email_2}}" }'
 `
 
 func main() {
@@ -225,6 +235,7 @@ func main() {
 		H2:                 *h2,
 		ProxyAddr:          proxyURL,
 		Output:             *output,
+		EnableTemplates:    *enableTemplates,
 	}
 	w.Init()
 
