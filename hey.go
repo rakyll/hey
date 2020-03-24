@@ -102,7 +102,8 @@ Options:
   -cpus                 Number of used cpu cores.
                         (default for current machine is %d cores)
 
-  -enable-tmpl  Header or body may include templates for generating random requests.
+  -enable-tmpl  Header or body may include templates for generating request 
+                with random values.
                 Allowed {{.Email}}, {{.RequestID}}, {{.Time}}, {{.DtTm}},
                 {{.Date}}, {{.Integer}}, {{.Float}}, {{.String}}.
                 May be used multiple times in header or body.
