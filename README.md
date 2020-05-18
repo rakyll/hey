@@ -11,7 +11,14 @@ To preserve the name for its original owner, we renamed this project to hey.
 
 ## Installation
 
-    go get -u github.com/rakyll/hey
+* Linux 64-bit: https://storage.googleapis.com/hey-release/hey_linux_amd64
+* Mac 64-bit: https://storage.googleapis.com/hey-release/hey_darwin_amd64
+* Windows 64-bit: https://storage.googleapis.com/hey-release/hey_windows_amd64
+
+### Package Managers
+
+macOS:
+-  [Homebrew](https://brew.sh/) users can use `brew install hey`.
 
 ## Usage
 
@@ -24,9 +31,9 @@ Usage: hey [options...] <url>
 
 Options:
   -n  Number of requests to run. Default is 200.
-  -c  Number of requests to run concurrently. Total number of requests cannot
+  -c  Number of workers to run concurrently. Total number of requests cannot
       be smaller than the concurrency level. Default is 50.
-  -q  Rate limit, in queries per second (QPS). Default is no rate limit.
+  -q  Rate limit, in queries per second (QPS) per worker. Default is no rate limit.
   -z  Duration of application to send requests. When duration is reached,
       application stops and exits. If duration is specified, n is ignored.
       Examples: -z 10s -z 3m.
@@ -57,5 +64,3 @@ Options:
 ```
 
 Previously known as [github.com/rakyll/boom](https://github.com/rakyll/boom).
-
-Note: Requires go 1.7 or greater.

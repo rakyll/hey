@@ -69,9 +69,9 @@ var usage = `Usage: hey [options...] <url>
 
 Options:
   -n  Number of requests to run. Default is 200.
-  -c  Number of requests to run concurrently. Total number of requests cannot
+  -c  Number of workers to run concurrently. Total number of requests cannot
       be smaller than the concurrency level. Default is 50.
-  -q  Rate limit, in queries per second (QPS). Default is no rate limit.
+  -q  Rate limit, in queries per second (QPS) per worker. Default is no rate limit.
   -z  Duration of application to send requests. When duration is reached,
       application stops and exits. If duration is specified, n is ignored.
       Examples: -z 10s -z 3m.
