@@ -16,14 +16,18 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"math"
+	"mime/multipart"
 	"net/http"
 	gourl "net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -86,6 +90,9 @@ Options:
   -A  HTTP Accept header.
   -d  HTTP request body.
   -D  HTTP request body from file. For example, /home/user/file.txt or ./file.txt.
+  -F  Form-data Filed. if form-data is specified, d,D and H options are ignored. 
+      You can specify as many as needed by repeating the flag. 
+      For example, -F "image=/work/test.jpg" -F "page=12".
   -T  Content-type, defaults to "text/html".
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
@@ -108,6 +115,8 @@ func main() {
 
 	var hs headerSlice
 	flag.Var(&hs, "H", "")
+	var fs headerSlice
+	flag.Var(&fs, "F", "")
 
 	flag.Parse()
 	if flag.NArg() < 1 {
@@ -154,6 +163,10 @@ func main() {
 		header.Set(match[1], match[2])
 	}
 
+	if len(fs) > 0 {
+		header = make(http.Header)
+	}
+
 	if *accept != "" {
 		header.Set("Accept", *accept)
 	}
@@ -178,6 +191,53 @@ func main() {
 			errAndExit(err.Error())
 		}
 		bodyAll = slurp
+	}
+
+	if len(fs) > 0 {
+		buf := new(bytes.Buffer)
+		writer := multipart.NewWriter(buf)
+		for _, v := range fs {
+			func() {
+				params := strings.Split(v, "=")
+
+				if _, err := os.Stat(params[1]); os.IsNotExist(err) {
+					// path/to/whatever does not exist
+
+					formField, err := writer.CreateFormField(params[0])
+					if err != nil {
+						errAndExit(fmt.Sprintf("Create form field failed: %s\n", err))
+					}
+					_, err = formField.Write([]byte(params[1]))
+					if err != nil {
+						errAndExit(fmt.Sprintf("Write to form field falied: %s\n", err))
+					}
+					return
+				} else {
+					_, fName := filepath.Split(params[1])
+
+					formFile, err := writer.CreateFormFile(params[0], fName)
+					if err != nil {
+						errAndExit(fmt.Sprintf("Create form file failed: %s\n", err))
+					}
+
+					srcFile, err := os.Open(params[1])
+					if err != nil {
+						errAndExit(fmt.Sprintf("Open source file failed: %s\n", err))
+					}
+					defer srcFile.Close()
+					_, err = io.Copy(formFile, srcFile)
+					if err != nil {
+						errAndExit(fmt.Sprintf("Write to form file falied: %s\n", err))
+					}
+				}
+			}()
+		}
+
+		// add content type
+		contentType := writer.FormDataContentType()
+		writer.Close()
+		bodyAll = buf.Bytes()
+		header.Set("Content-Type", contentType)
 	}
 
 	var proxyURL *gourl.URL
