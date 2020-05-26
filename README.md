@@ -48,6 +48,9 @@ Options:
   -A  HTTP Accept header.
   -d  HTTP request body.
   -D  HTTP request body from file. For example, /home/user/file.txt or ./file.txt.
+  -F  Form-data key-value fields. If this is specified, -d, -D and -H Content-Type options are overwrited.
+      You can specify as many as needed by repeating the flag.
+      For Example, -F "image=@/home/user/test.jpg" -F "user=1"
   -T  Content-type, defaults to "text/html".
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.

@@ -15,6 +15,8 @@
 package main
 
 import (
+	"io/ioutil"
+	"mime/multipart"
 	"testing"
 )
 
@@ -62,5 +64,22 @@ func TestParseAuthMetaCharacters(t *testing.T) {
 	_, err := parseInputWithRegexp("plus+$*{:boom", authRegexp)
 	if err != nil {
 		t.Errorf("Auth header with a plus sign in the user name errored: %v", err)
+	}
+}
+
+func TestWriteFormField(t *testing.T) {
+	{
+		writer := multipart.NewWriter(ioutil.Discard)
+		defer writer.Close()
+		if err := writeFormField(writer, "test", "val1"); err != nil {
+			t.Error("Failed to write key-value to multipart form writer:", err)
+		}
+	}
+	{
+		writer := multipart.NewWriter(ioutil.Discard)
+		defer writer.Close()
+		if err := writeFormField(writer, "test", "@hey.go"); err != nil {
+			t.Error("Failed to write attach-file to multipart form writer:", err)
+		}
 	}
 }
