@@ -1,3 +1,7 @@
+BUILD_TAGS ?=
+
+PACKAGES = $(shell go list ./... | grep -v '/vendor/')
+
 binary = hey
 
 release:
@@ -7,3 +11,16 @@ release:
 
 push:
 	gsutil cp bin/* gs://$(binary)-release
+
+.PHONY: test
+test:
+	go test -race -covermode=atomic -v -tags="$(BUILD_TAGS)" $(PACKAGES)
+
+.PHONY: build
+build:
+	CGO_ENABLED=0 gox -osarch="linux/amd64" -tags="$(BUILD_TAGS)" -output hey
+
+.PHONY: dist
+dist:
+	mkdir -p dist
+	CGO_ENABLED=0 gox -osarch="linux/amd64" -osarch="darwin/amd64" -osarch="windows/amd64" -tags="$(BUILD_TAGS)" -output "dist/{{.Dir}}_{{.OS}}_{{.Arch}}"
