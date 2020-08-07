@@ -1,0 +1,101 @@
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    container:
+      image: golang:1.14-buster
+      volumes:
+        - "/home/runner/work/$GITHUB_REPOSITORY:/go/src/github.com/$GITHUB_REPOSITORY"
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: restore from cache
+        uses: actions/cache@v1
+        with:
+          path: /go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+
+      - name: create multiple OS dists
+        run: |
+          go install github.com/mitchellh/gox
+          VERSION=$(basename $GITHUB_REF) make dist
+
+      - name: compress build binary
+        run: |
+          tar -czvf dist.tar.gz dist
+
+      - name: upload compressed dist to artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: distribution
+          path: dist.tar.gz
+
+  docker:
+    name: docker
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: downloads compressed dist
+        uses: actions/download-artifact@v1
+        with:
+          name: distribution
+
+      - name: untar dist.tar.gz
+        run: |
+          tar -xzvf distribution/dist.tar.gz
+          mv dist/hey_linux_amd64 hey
+          rm -rf distribution/ dist/
+
+      - name: build docker image
+        run: docker build . --file Dockerfile --tag $(dirname $GITHUB_REPOSITORY)/$(basename $GITHUB_REPOSITORY):$(basename $GITHUB_REF)
+
+      - name: log into docker registry
+        run: echo "${{ secrets.DOCKER_PSW }}" | docker login -u ${{ secrets.DOCKER_USR }} --password-stdin
+
+      - name: push image to docker registry
+        run: |
+          # pushes unique commit sha based tag
+          docker push $(dirname $GITHUB_REPOSITORY)/$(basename $GITHUB_REPOSITORY):$(basename $GITHUB_REF)
+
+  release:
+    name: release
+    runs-on: ubuntu-latest
+    needs:
+      - docker
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: downloads compressed dist
+        uses: actions/download-artifact@v1
+        with:
+          name: distribution
+
+      - name: create dists .tar.gz
+        run: |
+          tar -xzvf distribution/dist.tar.gz
+          for dist_file in $(ls dist);
+          do
+            (cd dist && tar -czvf ../$(basename -- "${dist_file%.*}").tar.gz $dist_file) || exit 1
+          done
+          rm -rf distribution/ dist/
+
+      - run: |
+          set -x
+          assets=()
+          for asset in $(ls *.tar.gz); do
+            assets+=("-a" "$asset")
+          done
+          tag_name=$(basename $GITHUB_REF)
+          hub release create "${assets[@]}" -m "$tag_name" "$tag_name"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
