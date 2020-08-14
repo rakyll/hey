@@ -16,6 +16,7 @@ package requester
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -130,5 +131,34 @@ func TestBody(t *testing.T) {
 	w.Run()
 	if count != 10 {
 		t.Errorf("Expected to work 10 times, found %v", count)
+	}
+}
+
+func TestRequestFunc(t *testing.T) {
+	var m sync.Map
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		b, _ := ioutil.ReadAll(r.Body)
+		m.Store(string(b), struct{}{})
+	}
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+
+	var count int64
+	w := &Work{
+		RequestFunc: func() *http.Request {
+			atomic.AddInt64(&count, int64(1))
+			body := bytes.NewBuffer([]byte(fmt.Sprintf("%v", count)))
+			req, _ := http.NewRequest(http.MethodGet, server.URL, body)
+			return req
+		},
+		N: 100,
+		C: 1,
+	}
+	w.Run()
+	for i := 1; i <= w.N; i++ {
+		_, ok := m.Load(fmt.Sprintf("%v", i))
+		if !ok {
+			t.Errorf("Expected to find %v in map", i)
+		}
 	}
 }
