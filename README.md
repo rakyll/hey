@@ -61,6 +61,18 @@ Options:
   -disable-redirects    Disable following of HTTP redirects
   -cpus                 Number of used cpu cores.
                         (default for current machine is 8 cores)
+
+  -enable-tmpl  Header or body may include templates for generating request
+                with random values.
+                Allowed {{.Email}}, {{.RequestID}}, {{.Time}}, {{.DtTm}},
+                {{.Date}}, {{.Integer}}, {{.Float}}, {{.String}}.
+                May be used multiple times in header or body.
+                Ex1: -H 'x-request-id: {{.RequestID}}'
+                reived x-request-id: 920bdca1fd9546f49cf4d9a0d1117cc8
+                Ex2: -d '{ "user_email": "{{.Email}}", "user_login": "{{.String}}" }'
+                recived { "user_email": " tghr94rql8@i3pj3.com", "user_login": "ee2r2s8qpt" }
+                Ex3: -d '{ "primary_email": "{{.Email_1}}", "secondary_email": "{{.Email_2}}" }'
+                recived { "primary_email": "8l928nbeiu@zhdpp.com", "secondary_email": "all01bcj4l@3s330.com" }
 ```
 
 Previously known as [github.com/rakyll/boom](https://github.com/rakyll/boom).
