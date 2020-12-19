@@ -203,11 +203,12 @@ func main() {
 		req.Host = *hostHeader
 	}
 
-	ua := req.UserAgent()
-	if ua == "" {
-		ua = heyUA
+	var ua string
+	// Set by command line `hey -H "User-Agent: CustomUserAgent"`
+	if header.Get("User-Agent") != "" {
+		ua = header.Get("User-Agent")
 	} else {
-		ua += " " + heyUA
+		ua = heyUA
 	}
 	header.Set("User-Agent", ua)
 	req.Header = header
