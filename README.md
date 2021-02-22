@@ -50,7 +50,7 @@ Options:
   -D  HTTP request body from file. For example, /home/user/file.txt or ./file.txt.
   -T  Content-type, defaults to "text/html".
   -a  Basic authentication, username:password.
-  -x  HTTP Proxy address as host:port.
+  -x  HTTP Proxy address as proto://host:port. For example, http://127.0.0.1:8080
   -h2 Enable HTTP/2.
 
   -host	HTTP Host header.
