@@ -47,6 +47,7 @@ var (
 	contentType = flag.String("T", "text/html", "")
 	authHeader  = flag.String("a", "", "")
 	hostHeader  = flag.String("host", "", "")
+	userAgent   = flag.String("U", "", "")
 
 	output = flag.String("o", "", "")
 
@@ -87,6 +88,7 @@ Options:
   -d  HTTP request body.
   -D  HTTP request body from file. For example, /home/user/file.txt or ./file.txt.
   -T  Content-type, defaults to "text/html".
+  -U  User-Agent, defaults to version "hey/0.0.1".
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
   -h2 Enable HTTP/2.
@@ -203,13 +205,20 @@ func main() {
 		req.Host = *hostHeader
 	}
 
-	ua := req.UserAgent()
+	ua := header.Get("User-Agent")
 	if ua == "" {
 		ua = heyUA
 	} else {
 		ua += " " + heyUA
 	}
 	header.Set("User-Agent", ua)
+
+	// set userAgent header if set
+	if *userAgent != "" {
+		ua = *userAgent + " " + heyUA
+		header.Set("User-Agent", ua)
+	}
+
 	req.Header = header
 
 	w := &requester.Work{
