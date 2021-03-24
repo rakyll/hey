@@ -144,6 +144,11 @@ func (b *Work) Finish() {
 	b.report.finalize(total)
 }
 
+// Report returns a snapshot of the report
+func (b *Work) Report() Report {
+	return b.report.snapshot()
+}
+
 func (b *Work) makeRequest(c *http.Client) {
 	s := now()
 	var size int64
