@@ -137,6 +137,14 @@ func main() {
 		}
 	}
 
+	parsedUrl, err := gourl.Parse(flag.Args()[0])
+	if err != nil {
+		usageAndExit(err.Error())
+	}
+	scheme := strings.ToLower(parsedUrl.Scheme)
+	if scheme == "" || scheme != "http" || scheme != "https" {
+		usageAndExit("unsupported protocol scheme - supported schemes: http(s)")
+	}
 	url := flag.Args()[0]
 	method := strings.ToUpper(*m)
 
