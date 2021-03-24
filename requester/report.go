@@ -132,8 +132,6 @@ func (r *report) print() {
 		return
 	}
 	r.printf(buf.String())
-
-	r.printf("\n")
 }
 
 func (r *report) printf(s string, v ...interface{}) {
