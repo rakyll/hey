@@ -64,6 +64,7 @@ var (
 	disableKeepAlives  = flag.Bool("disable-keepalive", false, "")
 	disableRedirects   = flag.Bool("disable-redirects", false, "")
 	proxyAddr          = flag.String("x", "", "")
+	unixDomainSocket   = flag.String("unix-socket", "", "")
 )
 
 var usage = `Usage: hey [options...] <url>
@@ -95,6 +96,7 @@ Options:
 
   -host	HTTP Host header.
 
+  -unix-socket	Unix Domain socket path.Http request will over unix domain socket
   -disable-compression  Disable compression.
   -disable-keepalive    Disable keep-alive, prevents re-use of TCP
                         connections between different HTTP requests.
@@ -121,6 +123,14 @@ func main() {
 	conc := *c
 	q := *q
 	dur := *z
+	uds := unixDomainSocket
+
+	if len(*uds) > 0 {
+		_, err := os.Stat(*uds);
+		if os.IsNotExist(err){
+			usageAndExit("-unix-socket unix domain socket must exist")
+		}
+	}
 
 	if dur > 0 {
 		num = math.MaxInt32
@@ -232,6 +242,7 @@ func main() {
 		DisableKeepAlives:  *disableKeepAlives,
 		DisableRedirects:   *disableRedirects,
 		H2:                 *h2,
+		UnixDomainSocket:	*uds,
 		ProxyAddr:          proxyURL,
 		Output:             *output,
 	}

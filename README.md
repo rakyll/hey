@@ -54,7 +54,7 @@ Options:
   -h2 Enable HTTP/2.
 
   -host	HTTP Host header.
-
+  -unix-socket	Unix Domain socket path.Http request will over unix domain socket
   -disable-compression  Disable compression.
   -disable-keepalive    Disable keep-alive, prevents re-use of TCP
                         connections between different HTTP requests.
