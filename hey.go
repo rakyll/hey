@@ -16,14 +16,18 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"math"
+	"mime/multipart"
 	"net/http"
 	gourl "net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -87,6 +91,9 @@ Options:
   -A  HTTP Accept header.
   -d  HTTP request body.
   -D  HTTP request body from file. For example, /home/user/file.txt or ./file.txt.
+  -F  Form-data key-value fields. If this is specified, -d, -D and -H Content-Type options are overwrited.
+      You can specify as many as needed by repeating the flag.
+      For Example, -F "image=@/home/user/test.jpg" -F "user=1"
   -T  Content-type, defaults to "text/html".
   -U  User-Agent, defaults to version "hey/0.0.1".
   -a  Basic authentication, username:password.
@@ -110,6 +117,9 @@ func main() {
 
 	var hs headerSlice
 	flag.Var(&hs, "H", "")
+
+	var fs headerSlice
+	flag.Var(&fs, "F", "")
 
 	flag.Parse()
 	if flag.NArg() < 1 {
@@ -156,6 +166,10 @@ func main() {
 		header.Set(match[1], match[2])
 	}
 
+	if len(fs) > 0 {
+		header.Del("Content-Type") // form-data overwrite Content-Type header
+	}
+
 	if *accept != "" {
 		header.Set("Accept", *accept)
 	}
@@ -180,6 +194,20 @@ func main() {
 			errAndExit(err.Error())
 		}
 		bodyAll = slurp
+	}
+	if len(fs) > 0 {
+		buf := new(bytes.Buffer)
+		writer := multipart.NewWriter(buf)
+		for _, v := range fs {
+			keyValue := strings.SplitN(v, "=", 2)
+			if err := writeFormField(writer, keyValue[0], keyValue[1]); err != nil {
+				errAndExit(err.Error())
+			}
+		}
+		writer.Close()
+		contentType := writer.FormDataContentType()
+		bodyAll = buf.Bytes()
+		header.Set("Content-Type", contentType)
 	}
 
 	var proxyURL *gourl.URL
@@ -286,4 +314,31 @@ func (h *headerSlice) String() string {
 func (h *headerSlice) Set(value string) error {
 	*h = append(*h, value)
 	return nil
+}
+
+func writeFormField(w *multipart.Writer, key, value string) error {
+	if value[0] == '@' {
+		fp := value[1:] // Cut '@'
+		if _, err := os.Stat(fp); err != nil {
+			return err
+		}
+		_, filename := filepath.Split(fp)
+		formFile, err := w.CreateFormFile(key, filename)
+		if err != nil {
+			return err
+		}
+		srcFile, err := os.Open(fp)
+		if err != nil {
+			return err
+		}
+		defer srcFile.Close()
+		_, err = io.Copy(formFile, srcFile)
+		return err
+	}
+	formField, err := w.CreateFormField(key)
+	if err != nil {
+		return err
+	}
+	_, err = formField.Write([]byte(value))
+	return err
 }
