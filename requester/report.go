@@ -20,6 +20,7 @@ import (
 	"io"
 	"log"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -81,10 +82,18 @@ func newReport(w io.Writer, results chan *result, output string, n int) *report 
 	}
 }
 
-func runReporter(r *report) {
+func runReporter(r *report, n int) {
+	p := 0
 	// Loop will continue until channel is closed
 	for res := range r.results {
 		r.numRes++
+		if r.Output() == "" {
+			np := int(float64(100*r.numRes) / float64(n))
+			if np != p {
+				fmt.Printf("\r[%s%s] %d/100%%", strings.Repeat("#", np), strings.Repeat(" ", 100-np), np)
+				p = np
+			}
+		}
 		if res.err != nil {
 			r.errorDist[res.err.Error()]++
 		} else {
@@ -123,6 +132,10 @@ func (r *report) finalize(total time.Duration) {
 	r.avgReq = r.avgReq / float64(len(r.lats))
 	r.avgRes = r.avgRes / float64(len(r.lats))
 	r.print()
+}
+
+func (r *report) Output() string {
+	return r.output
 }
 
 func (r *report) print() {

@@ -123,7 +123,7 @@ func (b *Work) Run() {
 	b.report = newReport(b.writer(), b.results, b.Output, b.N)
 	// Run the reporter first, it polls the result channel until it is closed.
 	go func() {
-		runReporter(b.report)
+		runReporter(b.report, b.N)
 	}()
 	b.runWorkers()
 	b.Finish()
