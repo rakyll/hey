@@ -1,0 +1,20 @@
+name: hey
+version: '1.0'
+summary: HTTP load generator, ApacheBench (ab) replacement
+description: |
+  HTTP load generator, ApacheBench (ab) replacement.
+grade: stable
+confinement: strict
+base: core18
+parts:
+  hey:
+    plugin: go
+    source: https://github.com/rakyll/hey.git
+    go-importpath: github.com/rakyll/hey
+    build-packages:
+      - build-essential
+apps:
+  hey:
+    command: bin/hey
+    plugs:
+      - home
