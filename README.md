@@ -48,6 +48,9 @@ Options:
   -A  HTTP Accept header.
   -d  HTTP request body.
   -D  HTTP request body from file. For example, /home/user/file.txt or ./file.txt.
+  -F  Form-data Filed. if form-data is specified, d,D and H options are ignored. 
+      You can specify as many as needed by repeating the flag. 
+      For example, -F "image=/work/test.jpg" -F "page=12".
   -T  Content-type, defaults to "text/html".
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
