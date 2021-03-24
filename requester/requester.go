@@ -63,6 +63,9 @@ type Work struct {
 	// C is the concurrency level, the number of concurrent workers to run.
 	C int
 
+	// Capacity of TLS sesion ticket.
+	S int
+
 	// H2 is an option to make HTTP/2 requests
 	H2 bool
 
@@ -245,6 +248,10 @@ func (b *Work) runWorkers() {
 		DisableKeepAlives:   b.DisableKeepAlives,
 		Proxy:               http.ProxyURL(b.ProxyAddr),
 	}
+	if b.S > 0 {
+		tr.TLSClientConfig.ClientSessionCache = tls.NewLRUClientSessionCache(b.S)
+	}
+
 	if b.H2 {
 		http2.ConfigureTransport(tr)
 	} else {
