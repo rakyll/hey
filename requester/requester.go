@@ -31,7 +31,7 @@ import (
 )
 
 // Max size of the buffer of result channel.
-const maxResult = 1000000
+const maxResult = 2147483647
 const maxIdleConn = 500
 
 type result struct {
