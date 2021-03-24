@@ -38,6 +38,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math"
 	"strings"
 	"text/template"
 )
@@ -80,6 +81,12 @@ func histogram(buckets []Bucket) string {
 			max = v
 		}
 	}
+
+	// Compute the minimum number of characters needed to print the marks and counts 
+	mrkLen := 4 + int32(math.Ceil(math.Log(buckets[len(buckets)-1].Mark + 1)/math.Log(10)))
+	cntLen := 2 + int32(math.Ceil(math.Log(float64(max + 1))/math.Log(10)))
+	fmtStr := fmt.Sprintf("  %%%d.3f %%%ds|%%v\n", mrkLen, cntLen)
+
 	res := new(bytes.Buffer)
 	for i := 0; i < len(buckets); i++ {
 		// Normalize bar lengths.
@@ -87,7 +94,8 @@ func histogram(buckets []Bucket) string {
 		if max > 0 {
 			barLen = (buckets[i].Count*40 + max/2) / max
 		}
-		res.WriteString(fmt.Sprintf("  %4.3f [%v]\t|%v\n", buckets[i].Mark, buckets[i].Count, strings.Repeat(barChar, barLen)))
+
+		fmt.Fprintf(res, fmtStr, buckets[i].Mark, fmt.Sprintf("[%v]", buckets[i].Count), strings.Repeat(barChar, barLen))
 	}
 	return res.String()
 }
