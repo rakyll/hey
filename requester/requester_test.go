@@ -16,9 +16,11 @@ package requester
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -130,5 +132,26 @@ func TestBody(t *testing.T) {
 	w.Run()
 	if count != 10 {
 		t.Errorf("Expected to work 10 times, found %v", count)
+	}
+}
+
+func TestRaceConditionDNSLookup(t *testing.T) {
+	var count int64
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt64(&count, int64(1))
+	}
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+	u, _ := url.Parse(server.URL)
+
+	req, _ := http.NewRequest("GET", fmt.Sprintf("http://localhost:%s", u.Port()), nil)
+	w := &Work{
+		Request: req,
+		N:       5000,
+		C:       20,
+	}
+	w.Run()
+	if count != 5000 {
+		t.Errorf("Expected to send 5000 requests, found %v", count)
 	}
 }
