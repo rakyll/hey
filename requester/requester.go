@@ -285,3 +285,11 @@ func min(a, b int) int {
 	}
 	return b
 }
+
+func (w *Work) ErrorDist() map[string]int {
+	return w.report.errorDist
+}
+
+func (w *Work) StatusCodes() map[int]int {
+	return w.report.statusCodeDist
+}
