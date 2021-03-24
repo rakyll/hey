@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/http/httptrace"
 	"net/url"
@@ -235,10 +236,15 @@ func (b *Work) runWorkers() {
 	var wg sync.WaitGroup
 	wg.Add(b.C)
 
+	hostName, _, err := net.SplitHostPort(b.Request.Host);
+	if err != nil {
+		hostName = b.Request.Host;
+	}
+
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
-			ServerName:         b.Request.Host,
+			ServerName:         hostName,
 		},
 		MaxIdleConnsPerHost: min(b.C, maxIdleConn),
 		DisableCompression:  b.DisableCompression,
