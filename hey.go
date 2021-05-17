@@ -30,6 +30,9 @@ import (
 	"time"
 
 	"github.com/rakyll/hey/requester"
+	"log"
+	"encoding/csv"
+
 )
 
 const (
@@ -48,6 +51,8 @@ var (
 	authHeader  = flag.String("a", "", "")
 	hostHeader  = flag.String("host", "", "")
 	userAgent   = flag.String("U", "", "")
+
+	file_name 	= flag.String("file_name", "", "file path to csv with one column of urls")
 
 	output = flag.String("o", "", "")
 
@@ -69,6 +74,7 @@ var (
 var usage = `Usage: hey [options...] <url>
 
 Options:
+  -file_name Path to csv file
   -n  Number of requests to run. Default is 200.
   -c  Number of workers to run concurrently. Total number of requests cannot
       be smaller than the concurrency level. Default is 50.
@@ -112,15 +118,17 @@ func main() {
 	flag.Var(&hs, "H", "")
 
 	flag.Parse()
-	if flag.NArg() < 1 {
+	// We require that you are passing a file or a url to hit
+	if *file_name == "" && flag.NArg() < 1 {
 		usageAndExit("")
 	}
 
 	runtime.GOMAXPROCS(*cpus)
 	num := *n
 	conc := *c
-	q := *q
+	rateLimit := *q
 	dur := *z
+	fileName := *file_name
 
 	if dur > 0 {
 		num = math.MaxInt32
@@ -137,9 +145,7 @@ func main() {
 		}
 	}
 
-	url := flag.Args()[0]
 	method := strings.ToUpper(*m)
-
 	// set content-type
 	header := make(http.Header)
 	header.Set("Content-Type", *contentType)
@@ -190,7 +196,36 @@ func main() {
 			usageAndExit(err.Error())
 		}
 	}
+	// at this point we will read through the CSV and then use that as the url
 
+	csvfile, err := os.Open(fileName)
+	if err != nil {
+		log.Fatalln("couldnt open the csv file", err)
+	}
+	r := csv.NewReader(csvfile)
+	// TODO remove this after i'm done testing
+	break_early := true
+	for {
+		record, err :=  r.Read()
+		nurl := record[0]
+		// ignore any strings that aren't formatted correctly
+		if strings.Contains(nurl, ".com") == false {
+			continue;
+		}
+		fmt.Printf("the url is: %s\n", nurl)
+
+		//err == io.EOF or
+		if err != nil {
+			log.Fatal(err)
+		}
+		generateRequestAndGetResponse(nurl, method, username, password, *hostHeader, header, dur, bodyAll, num, conc, rateLimit, proxyURL)
+		if break_early {
+			break
+		}
+	}
+}
+
+func generateRequestAndGetResponse(url string, method string, username string, password string, hostHeader string, header http.Header, dur time.Duration, bodyAll []byte, num int, conc int, rateLimit float64, proxyURL *gourl.URL) {
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		usageAndExit(err.Error())
@@ -199,12 +234,10 @@ func main() {
 	if username != "" || password != "" {
 		req.SetBasicAuth(username, password)
 	}
-
 	// set host header if set
-	if *hostHeader != "" {
-		req.Host = *hostHeader
+	if hostHeader != "" {
+		req.Host = hostHeader
 	}
-
 	ua := header.Get("User-Agent")
 	if ua == "" {
 		ua = heyUA
@@ -226,7 +259,7 @@ func main() {
 		RequestBody:        bodyAll,
 		N:                  num,
 		C:                  conc,
-		QPS:                q,
+		QPS:                rateLimit,
 		Timeout:            *t,
 		DisableCompression: *disableCompression,
 		DisableKeepAlives:  *disableKeepAlives,
@@ -251,7 +284,6 @@ func main() {
 	}
 	w.Run()
 }
-
 func errAndExit(msg string) {
 	fmt.Fprintf(os.Stderr, msg)
 	fmt.Fprintf(os.Stderr, "\n")
