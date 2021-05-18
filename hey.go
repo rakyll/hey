@@ -64,6 +64,7 @@ var (
 	disableKeepAlives  = flag.Bool("disable-keepalive", false, "")
 	disableRedirects   = flag.Bool("disable-redirects", false, "")
 	proxyAddr          = flag.String("x", "", "")
+	urlFile            = flag.String("uf", "urls.csv", "")
 )
 
 var usage = `Usage: hey [options...] <url>
@@ -92,6 +93,7 @@ Options:
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
   -h2 Enable HTTP/2.
+  -uf Use CSV file with URls
 
   -host	HTTP Host header.
 
@@ -234,6 +236,7 @@ func main() {
 		H2:                 *h2,
 		ProxyAddr:          proxyURL,
 		Output:             *output,
+		UrlFile:            *urlFile,
 	}
 	w.Init()
 
