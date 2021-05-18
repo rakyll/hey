@@ -104,6 +104,8 @@ type Work struct {
 
 	UrlFile string
 	urls    chan string
+
+	CreateReqFunc func(url string) *http.Request
 }
 
 func (b *Work) writer() io.Writer {
@@ -185,22 +187,11 @@ func (b *Work) makeRequest(c *http.Client) {
 	var dnsStart, connStart, resStart, reqStart, delayStart time.Duration
 	var dnsDuration, connDuration, resDuration, reqDuration, delayDuration time.Duration
 	var req *http.Request
-	if b.RequestFunc != nil {
-		req = b.RequestFunc()
-	} else {
-		req = cloneRequest(b.Request, b.RequestBody)
-	}
 
 	if b.UrlFile != "" {
 		url1 := <-b.urls
-
-		parsed, err := url.Parse(url1)
-		if err == nil {
-			req.URL.Host = parsed.Host
-			req.URL.Path = parsed.Path
-			req.URL.Scheme = "https"
-		}
-		fmt.Printf("makeRequest: request url: %s/%s\n", req.URL.Host, req.URL.Path)
+		fmt.Printf("makeRequest: url1: '%s'\n", url1)
+		req = b.CreateReqFunc(url1)
 	}
 
 	trace := &httptrace.ClientTrace{
@@ -259,11 +250,6 @@ func (b *Work) runWorker(client *http.Client, n int) {
 		throttle = time.Tick(time.Duration(1e6/(b.QPS)) * time.Microsecond)
 	}
 
-	if b.DisableRedirects {
-		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		}
-	}
 	for i := 0; i < n; i++ {
 		// Check if application is stopped. Do not send into a closed channel.
 		select {
@@ -298,6 +284,12 @@ func (b *Work) runWorkers() {
 		tr.TLSNextProto = make(map[string]func(string, *tls.Conn) http.RoundTripper)
 	}
 	client := &http.Client{Transport: tr, Timeout: time.Duration(b.Timeout) * time.Second}
+
+	if b.DisableRedirects {
+		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
+	}
 
 	// Ignore the case where b.N % b.C != 0.
 	for i := 0; i < b.C; i++ {
