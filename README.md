@@ -1,5 +1,7 @@
 ![hey](http://i.imgur.com/szzD9q0.png)
 
+[![go](https://github.com/rakyll/hey/actions/workflows/go.yml/badge.svg)](https://github.com/rakyll/hey/actions/workflows/go.yml)
+
 hey is a tiny program that sends some load to a web application.
 
 hey was originally called boom and was influenced from Tarek Ziade's
