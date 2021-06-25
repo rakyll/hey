@@ -20,6 +20,15 @@ To preserve the name for its original owner, we renamed this project to hey.
 macOS:
 -  [Homebrew](https://brew.sh/) users can use `brew install hey`.
 
+linux:
+```
+$ wget https://hey-release.s3.us-east-2.amazonaws.com/hey_linux_amd64
+$ mv hey_linux_amd64 hey 
+$ chmod +x hey
+$ sudo mv hey /usr/local/bin/
+$ hey --help
+```
+
 ## Usage
 
 hey runs provided number of requests in the provided concurrency level and prints stats.
