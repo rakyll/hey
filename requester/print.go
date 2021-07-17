@@ -89,7 +89,7 @@ func histogram(buckets []Bucket) string {
 		}
 		res.WriteString(fmt.Sprintf("  %4.3f [%v]\t|%v\n", buckets[i].Mark, buckets[i].Count, strings.Repeat(barChar, barLen)))
 	}
-	return res.String()
+	return strings.TrimSuffix(res.String(), "\n")
 }
 
 var (
