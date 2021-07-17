@@ -12,43 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Command hey is an HTTP load generator.
 package main
 
 import (
+	"fmt"
 	"os"
-	"os/signal"
-	"time"
+	"regexp"
 )
 
 const (
-	heyUA = "hey/0.0.1"
+	headerRegexp = `^([\w-]+):\s*(.+)`
+	authRegexp   = `^(.+):([^\s].+)`
 )
 
-func main() {
-	config, err := parseFlags()
-	if err != nil {
-		usageAndExit(err.Error())
+func usageAndExit(msg string) {
+	if msg != "" {
+		fmt.Fprintf(os.Stderr, msg)
+		fmt.Fprintf(os.Stderr, "\n\n")
 	}
+	flags.Usage()
+	fmt.Fprintf(os.Stderr, "\n")
+	os.Exit(1)
+}
 
-	w, err := newWork(config)
-	if err != nil {
-		usageAndExit(err.Error())
+func errAndExit(msg string) {
+	fmt.Fprintf(os.Stderr, msg)
+	fmt.Fprintf(os.Stderr, "\n")
+	os.Exit(1)
+}
+
+func parseInputWithRegexp(input, regx string) ([]string, error) {
+	re := regexp.MustCompile(regx)
+	matches := re.FindStringSubmatch(input)
+	if len(matches) < 1 {
+		return nil, fmt.Errorf("could not parse the provided input; input = %v", input)
 	}
-
-	w.Init()
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		<-c
-		w.Stop()
-	}()
-	if config.dur > 0 {
-		go func() {
-			time.Sleep(config.dur)
-			w.Stop()
-		}()
-	}
-	w.Run()
+	return matches, nil
 }
