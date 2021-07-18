@@ -49,6 +49,7 @@ var (
 	hostHeader  = flag.String("host", "", "")
 	userAgent   = flag.String("U", "", "")
 
+	debug  = flag.Bool("debug", false, "")
 	output = flag.String("o", "", "")
 
 	c = flag.Int("c", 50, "")
@@ -93,7 +94,8 @@ Options:
   -x  HTTP Proxy address as host:port.
   -h2 Enable HTTP/2.
 
-  -host	HTTP Host header.
+  -host  HTTP Host header.
+  -debug Dumps request and response.
 
   -disable-compression  Disable compression.
   -disable-keepalive    Disable keep-alive, prevents re-use of TCP
@@ -234,6 +236,7 @@ func main() {
 		H2:                 *h2,
 		ProxyAddr:          proxyURL,
 		Output:             *output,
+		Debug:              *debug,
 	}
 	w.Init()
 

@@ -18,6 +18,7 @@ package requester
 import (
 	"bytes"
 	"crypto/tls"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -84,6 +85,9 @@ type Work struct {
 	// Output represents the output type. If "csv" is provided, the
 	// output will be dumped as a csv stream.
 	Output string
+
+	// Debug is an option for troubleshooting, printing out request and response dump
+	Debug bool
 
 	// ProxyAddr is the address of HTTP proxy server in the format on "host:port".
 	// Optional.
@@ -183,6 +187,9 @@ func (b *Work) makeRequest(c *http.Client) {
 	}
 	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
 	resp, err := c.Do(req)
+	if b.Debug {
+		dumpRequestResponseAndExit(req, resp, err)
+	}
 	if err == nil {
 		size = resp.ContentLength
 		code = resp.StatusCode
@@ -284,4 +291,15 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func dumpRequestResponseAndExit(req *http.Request, resp *http.Response, respErr error) {
+	fmt.Println(dumpRequest(req))
+	if respErr == nil {
+		fmt.Print(dumpResponse(resp))
+		os.Exit(0)
+	} else {
+		fmt.Fprintf(os.Stderr, "error: %s", respErr.Error())
+		os.Exit(1)
+	}
 }

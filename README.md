@@ -53,7 +53,8 @@ Options:
   -x  HTTP Proxy address as host:port.
   -h2 Enable HTTP/2.
 
-  -host	HTTP Host header.
+  -host  HTTP Host header.
+  -debug Dumps request and response.
 
   -disable-compression  Disable compression.
   -disable-keepalive    Disable keep-alive, prevents re-use of TCP
