@@ -38,6 +38,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httputil"
+	"regexp"
 	"strings"
 	"text/template"
 )
@@ -126,3 +129,21 @@ Status code distribution:{{ range $code, $num := .StatusCodeDist }}
 	csvTmpl = `{{ $connLats := .ConnLats }}{{ $dnsLats := .DnsLats }}{{ $dnsLats := .DnsLats }}{{ $reqLats := .ReqLats }}{{ $delayLats := .DelayLats }}{{ $resLats := .ResLats }}{{ $statusCodeLats := .StatusCodes }}{{ $offsets := .Offsets}}response-time,DNS+dialup,DNS,Request-write,Response-delay,Response-read,status-code,offset{{ range $i, $v := .Lats }}
 {{ formatNumber $v }},{{ formatNumber (index $connLats $i) }},{{ formatNumber (index $dnsLats $i) }},{{ formatNumber (index $reqLats $i) }},{{ formatNumber (index $delayLats $i) }},{{ formatNumber (index $resLats $i) }},{{ formatNumberInt (index $statusCodeLats $i) }},{{ formatNumber (index $offsets $i) }}{{ end }}`
 )
+
+var (
+	re = regexp.MustCompile(`(.*)`)
+)
+
+func appendPrefixToEachLine(s string, prefix string) string {
+	return re.ReplaceAllString(s, prefix+"$1")
+}
+
+func dumpRequest(r *http.Request) string {
+	dump, _ := httputil.DumpRequest(r, true)
+	return "Client's Request:\n" + appendPrefixToEachLine(string(dump), "> ") + "\n"
+}
+
+func dumpResponse(r *http.Response) string {
+	dump, _ := httputil.DumpResponse(r, true)
+	return "Server's Response:\n" + appendPrefixToEachLine(string(dump), "< ")
+}
