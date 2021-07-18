@@ -118,6 +118,10 @@ func main() {
 		usageAndExit("")
 	}
 
+	if *debug {
+		sendOneRequestOnly()
+	}
+
 	runtime.GOMAXPROCS(*cpus)
 	num := *n
 	conc := *c
@@ -289,4 +293,9 @@ func (h *headerSlice) String() string {
 func (h *headerSlice) Set(value string) error {
 	*h = append(*h, value)
 	return nil
+}
+
+func sendOneRequestOnly() {
+	flag.Set("n", "1")
+	flag.Set("c", "1")
 }
