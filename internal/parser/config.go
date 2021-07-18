@@ -28,6 +28,7 @@ type Config struct {
 	AuthHeader  string
 	HostHeader  string
 	UserAgent   string
+	Debug       bool
 
 	Output string
 

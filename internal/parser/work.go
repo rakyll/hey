@@ -83,6 +83,7 @@ func NewWork(conf *Config) (*requester.Work, error) {
 		Request:            req,
 		RequestBody:        bodyAll,
 		N:                  conf.N,
+		Debug:              conf.Debug,
 		C:                  conf.C,
 		QPS:                conf.Q,
 		Timeout:            conf.T,
