@@ -19,6 +19,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -26,6 +27,7 @@ import (
 )
 
 func TestN(t *testing.T) {
+	os.Stdout, _ = os.Open(os.DevNull)
 	var count int64
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		atomic.AddInt64(&count, int64(1))
@@ -73,6 +75,7 @@ func TestQps(t *testing.T) {
 }
 
 func TestRequest(t *testing.T) {
+	os.Stdout, _ = os.Open(os.DevNull)
 	var uri, contentType, some, auth string
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		uri = r.RequestURI
@@ -110,6 +113,7 @@ func TestRequest(t *testing.T) {
 }
 
 func TestBody(t *testing.T) {
+	os.Stdout, _ = os.Open(os.DevNull)
 	var count int64
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		body, _ := ioutil.ReadAll(r.Body)
