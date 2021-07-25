@@ -11,30 +11,50 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-package main
+package parser
 
 import (
+	"errors"
 	"io/ioutil"
+	"math"
 	"net/http"
-	gourl "net/url"
 	"runtime"
 	"strings"
+
+	gourl "net/url"
 
 	"github.com/rakyll/hey/requester"
 )
 
-func newWork(conf *Config) (*requester.Work, error) {
-	runtime.GOMAXPROCS(conf.cpus)
+const (
+	heyUA = "hey/0.0.1"
+)
 
-	method := strings.ToUpper(conf.m)
+func NewWork(conf *Config) (*requester.Work, error) {
+	if conf.Dur > 0 {
+		conf.N = math.MaxInt32
+		if conf.C <= 0 {
+			return nil, errors.New("-c cannot be smaller than 1")
+		}
+	} else {
+		if conf.N <= 0 || conf.C <= 0 {
+			return nil, errors.New("-n and -c cannot be smaller than 1")
+		}
+		if conf.N < conf.C {
+			return nil, errors.New("-n cannot be less than -c")
+		}
+	}
+
+	runtime.GOMAXPROCS(conf.Cpus)
+
+	method := strings.ToUpper(conf.M)
 
 	// set content-type
 	header := make(http.Header)
-	header.Set("Content-Type", conf.contentType)
+	header.Set("Content-Type", conf.ContentType)
 
 	// set any other additional repeatable headers
-	for _, h := range conf.headerSlice {
+	for _, h := range conf.HeaderSlice {
 		match, err := parseInputWithRegexp(h, headerRegexp)
 		if err != nil {
 			return nil, err
@@ -42,14 +62,14 @@ func newWork(conf *Config) (*requester.Work, error) {
 		header.Set(match[1], match[2])
 	}
 
-	if conf.accept != "" {
-		header.Set("Accept", conf.accept)
+	if conf.Accept != "" {
+		header.Set("Accept", conf.Accept)
 	}
 
 	// set basic auth if set
 	var username, password string
-	if conf.authHeader != "" {
-		match, err := parseInputWithRegexp(conf.authHeader, authRegexp)
+	if conf.AuthHeader != "" {
+		match, err := parseInputWithRegexp(conf.AuthHeader, authRegexp)
 		if err != nil {
 			return nil, err
 		}
@@ -57,11 +77,11 @@ func newWork(conf *Config) (*requester.Work, error) {
 	}
 
 	var bodyAll []byte
-	if conf.body != "" {
-		bodyAll = []byte(conf.body)
+	if conf.Body != "" {
+		bodyAll = []byte(conf.Body)
 	}
-	if conf.bodyFile != "" {
-		slurp, err := ioutil.ReadFile(conf.bodyFile)
+	if conf.BodyFile != "" {
+		slurp, err := ioutil.ReadFile(conf.BodyFile)
 		if err != nil {
 			return nil, err
 		}
@@ -69,15 +89,15 @@ func newWork(conf *Config) (*requester.Work, error) {
 	}
 
 	var proxyURL *gourl.URL
-	if conf.proxyAddr != "" {
+	if conf.ProxyAddr != "" {
 		var err error
-		proxyURL, err = gourl.Parse(conf.proxyAddr)
+		proxyURL, err = gourl.Parse(conf.ProxyAddr)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	req, err := http.NewRequest(method, conf.url, nil)
+	req, err := http.NewRequest(method, conf.Url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -87,8 +107,8 @@ func newWork(conf *Config) (*requester.Work, error) {
 	}
 
 	// set host header if set
-	if conf.hostHeader != "" {
-		req.Host = conf.hostHeader
+	if conf.HostHeader != "" {
+		req.Host = conf.HostHeader
 	}
 
 	ua := header.Get("User-Agent")
@@ -100,23 +120,23 @@ func newWork(conf *Config) (*requester.Work, error) {
 	header.Set("User-Agent", ua)
 
 	// set userAgent header if set
-	if conf.userAgent != "" {
-		ua = conf.userAgent + " " + heyUA
+	if conf.UserAgent != "" {
+		ua = conf.UserAgent + " " + heyUA
 		header.Set("User-Agent", ua)
 	}
 
 	return &requester.Work{
 		Request:            req,
 		RequestBody:        bodyAll,
-		N:                  conf.n,
-		C:                  conf.c,
-		QPS:                conf.q,
-		Timeout:            conf.t,
-		DisableCompression: conf.disableCompression,
-		DisableKeepAlives:  conf.disableCompression,
-		DisableRedirects:   conf.disableRedirects,
-		H2:                 conf.h2,
+		N:                  conf.N,
+		C:                  conf.C,
+		QPS:                conf.Q,
+		Timeout:            conf.T,
+		DisableCompression: conf.DisableCompression,
+		DisableKeepAlives:  conf.DisableCompression,
+		DisableRedirects:   conf.DisableRedirects,
+		H2:                 conf.H2,
 		ProxyAddr:          proxyURL,
-		Output:             conf.output,
+		Output:             conf.Output,
 	}, nil
 }

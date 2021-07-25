@@ -11,44 +11,23 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-// Command hey is an HTTP load generator.
-package main
+package parser
 
 import (
-	"os"
-	"os/signal"
-	"time"
+	"fmt"
+	"regexp"
 )
 
 const (
-	heyUA = "hey/0.0.1"
+	headerRegexp = `^([\w-]+):\s*(.+)`
+	authRegexp   = `^(.+):([^\s].+)`
 )
 
-func main() {
-	config, err := parseFlags()
-	if err != nil {
-		usageAndExit(err.Error())
+func parseInputWithRegexp(input, regx string) ([]string, error) {
+	re := regexp.MustCompile(regx)
+	matches := re.FindStringSubmatch(input)
+	if len(matches) < 1 {
+		return nil, fmt.Errorf("could not parse the provided input; input = %v", input)
 	}
-
-	w, err := newWork(config)
-	if err != nil {
-		usageAndExit(err.Error())
-	}
-
-	w.Init()
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		<-c
-		w.Stop()
-	}()
-	if config.dur > 0 {
-		go func() {
-			time.Sleep(config.dur)
-			w.Stop()
-		}()
-	}
-	w.Run()
+	return matches, nil
 }
