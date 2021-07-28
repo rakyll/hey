@@ -51,11 +51,14 @@ var (
 
 	output = flag.String("o", "", "")
 
-	c = flag.Int("c", 50, "")
-	n = flag.Int("n", 200, "")
-	q = flag.Float64("q", 0, "")
-	t = flag.Int("t", 20, "")
-	z = flag.Duration("z", 0, "")
+	c     = flag.Int("c", 50, "")
+	n     = flag.Int("n", 200, "")
+	q     = flag.Float64("q", 0, "")
+	t     = flag.Int("t", 20, "")
+	z     = flag.Duration("z", 0, "")
+	rt    = flag.Int("rt", 0, "")
+	rstep = flag.Int("rstep", 1, "")
+	rmax  = flag.Int("rmax", 0, "")
 
 	h2   = flag.Bool("h2", false, "")
 	cpus = flag.Int("cpus", runtime.GOMAXPROCS(-1), "")
@@ -69,7 +72,7 @@ var (
 var usage = `Usage: hey [options...] <url>
 
 Options:
-  -n  Number of requests to run. Default is 200.
+  -n  Number of requests to run. Default is 200. Does not apply to ramp up workers if -rt is used.
   -c  Number of workers to run concurrently. Total number of requests cannot
       be smaller than the concurrency level. Default is 50.
   -q  Rate limit, in queries per second (QPS) per worker. Default is no rate limit.
@@ -92,6 +95,10 @@ Options:
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
   -h2 Enable HTTP/2.
+
+  -rt    Number of seconds between ramping up workers. Default is 0 (disabled; no ramp up).
+  -rstep Number of workers to ramp up. Default is 1. Only useful together with -rt.
+  -rmax  Maximum number of workers to add. Default is 0 (unlimited).
 
   -host	HTTP Host header.
 
@@ -121,6 +128,9 @@ func main() {
 	conc := *c
 	q := *q
 	dur := *z
+	rampUpInterval := *rt
+	rampUpStepSize := *rstep
+	rampUpMaxWorkers := *rmax
 
 	if dur > 0 {
 		num = math.MaxInt32
@@ -226,6 +236,9 @@ func main() {
 		RequestBody:        bodyAll,
 		N:                  num,
 		C:                  conc,
+		RampUpInterval:     rampUpInterval,
+		RampUpStepSize:     rampUpStepSize,
+		RampUpMaxWorkers:   rampUpMaxWorkers,
 		QPS:                q,
 		Timeout:            *t,
 		DisableCompression: *disableCompression,

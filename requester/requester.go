@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"io"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"net/http/httptrace"
 	"net/url"
@@ -62,6 +63,15 @@ type Work struct {
 
 	// C is the concurrency level, the number of concurrent workers to run.
 	C int
+
+	// RampUpInterval is the time between ramp up events. 0 is disabled.
+	RampUpInterval int
+
+	// RampUpStepSize is the number of workers to add after each RampUpInterval
+	RampUpStepSize int
+
+	// RampUpMaxWorkers is the maximum number of workers to add with ramp up
+	RampUpMaxWorkers int
 
 	// H2 is an option to make HTTP/2 requests
 	H2 bool
@@ -262,7 +272,32 @@ func (b *Work) runWorkers() {
 			wg.Done()
 		}(remainder)
 	}
+
+	if b.RampUpInterval > 0 {
+		go b.rampUp(client)
+	}
+
 	wg.Wait()
+}
+
+func (b *Work) rampUp(client *http.Client) {
+	rampUpAdded := 0
+	for {
+		time.Sleep(time.Duration(b.RampUpInterval) * time.Second)
+
+		select {
+		case <-b.stopCh:
+			return
+		default:
+			rampUpAdded += b.RampUpStepSize
+			if b.RampUpMaxWorkers > 0 && rampUpAdded > b.RampUpMaxWorkers {
+				return
+			}
+			for i := 0; i < b.RampUpStepSize; i++ {
+				go b.runWorker(client, math.MaxInt32)
+			}
+		}
+	}
 }
 
 // cloneRequest returns a clone of the provided *http.Request.
