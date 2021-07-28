@@ -252,12 +252,15 @@ func (b *Work) runWorkers() {
 	}
 	client := &http.Client{Transport: tr, Timeout: time.Duration(b.Timeout) * time.Second}
 
-	// Ignore the case where b.N % b.C != 0.
 	for i := 0; i < b.C; i++ {
-		go func() {
-			b.runWorker(client, b.N/b.C)
+		var remainder int
+		if i == 0 && b.C > 1 {
+			remainder = b.N % b.C
+		}
+		go func(remainder int) {
+			b.runWorker(client, b.N/b.C+remainder)
 			wg.Done()
-		}()
+		}(remainder)
 	}
 	wg.Wait()
 }
