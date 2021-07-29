@@ -30,7 +30,7 @@ It also supports HTTP2 endpoints.
 Usage: hey [options...] <url>
 
 Options:
-  -n  Number of requests to run. Default is 200.
+  -n  Number of requests to run. Default is 200. Does not apply to ramp up workers if -rt is used.
   -c  Number of workers to run concurrently. Total number of requests cannot
       be smaller than the concurrency level. Default is 50.
   -q  Rate limit, in queries per second (QPS) per worker. Default is no rate limit.
@@ -49,9 +49,14 @@ Options:
   -d  HTTP request body.
   -D  HTTP request body from file. For example, /home/user/file.txt or ./file.txt.
   -T  Content-type, defaults to "text/html".
+  -U  User-Agent, defaults to version "hey/0.0.1".
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
   -h2 Enable HTTP/2.
+
+  -rt    Number of seconds between ramping up workers. Default is 0 (disabled; no ramp up).
+  -rstep Number of workers to ramp up. Default is 1. Only useful together with -rt.
+  -rmax  Maximum number of workers to add. Default is 0 (unlimited).
 
   -host	HTTP Host header.
 
