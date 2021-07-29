@@ -19,7 +19,6 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"math"
 	"net/http"
 	gourl "net/url"
 	"os"
@@ -133,7 +132,7 @@ func main() {
 	rampUpMaxWorkers := *rmax
 
 	if dur > 0 {
-		num = math.MaxInt32
+		num = 0
 		if conc <= 0 {
 			usageAndExit("-c cannot be smaller than 1.")
 		}

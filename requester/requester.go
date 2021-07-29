@@ -225,7 +225,7 @@ func (b *Work) runWorker(client *http.Client, n int) {
 			return http.ErrUseLastResponse
 		}
 	}
-	for i := 0; i < n; i++ {
+	for i := 0; i < n || n == 0; i++ {
 		// Check if application is stopped. Do not send into a closed channel.
 		select {
 		case <-b.stopCh:
