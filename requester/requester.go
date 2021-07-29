@@ -141,9 +141,7 @@ func (b *Work) Run() {
 
 func (b *Work) Stop() {
 	// Send stop signal so that workers can stop gracefully.
-	for i := 0; i < b.C; i++ {
-		b.stopCh <- struct{}{}
-	}
+	close(b.stopCh)
 }
 
 func (b *Work) Finish() {
