@@ -16,6 +16,7 @@ package parser
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"math"
 	"net/http"
@@ -32,18 +33,13 @@ const (
 )
 
 func NewWork(conf *Config) (*requester.Work, error) {
+	err := validate(conf)
+	if err != nil {
+		return nil, err
+	}
+
 	if conf.Dur > 0 {
 		conf.N = math.MaxInt32
-		if conf.C <= 0 {
-			return nil, errors.New("-c cannot be smaller than 1")
-		}
-	} else {
-		if conf.N <= 0 || conf.C <= 0 {
-			return nil, errors.New("-n and -c cannot be smaller than 1")
-		}
-		if conf.N < conf.C {
-			return nil, errors.New("-n cannot be less than -c")
-		}
 	}
 
 	runtime.GOMAXPROCS(conf.Cpus)
@@ -140,4 +136,16 @@ func NewWork(conf *Config) (*requester.Work, error) {
 		ProxyAddr:          proxyURL,
 		Output:             conf.Output,
 	}, nil
+}
+
+func validate(conf *Config) error {
+	if conf.N < conf.C {
+		fmt.Printf("-c is larger than -n. Setting -c to (%v) instead.\n", conf.N)
+		conf.C = conf.N
+	}
+
+	if conf.N <= 0 || conf.C <= 0 {
+		return errors.New("-n and -c must be greater than 1")
+	}
+	return nil
 }
