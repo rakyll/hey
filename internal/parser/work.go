@@ -15,6 +15,7 @@
 package parser
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -29,10 +30,11 @@ import (
 )
 
 const (
-	heyUA = "hey/0.0.1"
+	defaultUserAgent = "hey/0.0.1"
 )
 
 func NewWork(conf *Config) (*requester.Work, error) {
+	runtime.GOMAXPROCS(conf.Cpus)
 	err := validate(conf)
 	if err != nil {
 		return nil, err
@@ -42,36 +44,16 @@ func NewWork(conf *Config) (*requester.Work, error) {
 		conf.N = math.MaxInt32
 	}
 
-	runtime.GOMAXPROCS(conf.Cpus)
+	var proxyURL *gourl.URL
+	if conf.ProxyAddr != "" {
+		var err error
+		proxyURL, err = gourl.Parse(conf.ProxyAddr)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	method := strings.ToUpper(conf.M)
-
-	// set content-type
-	header := make(http.Header)
-	header.Set("Content-Type", conf.ContentType)
-
-	// set any other additional repeatable headers
-	for _, h := range conf.HeaderSlice {
-		match, err := parseInputWithRegexp(h, headerRegexp)
-		if err != nil {
-			return nil, err
-		}
-		header.Set(match[1], match[2])
-	}
-
-	if conf.Accept != "" {
-		header.Set("Accept", conf.Accept)
-	}
-
-	// set basic auth if set
-	var username, password string
-	if conf.AuthHeader != "" {
-		match, err := parseInputWithRegexp(conf.AuthHeader, authRegexp)
-		if err != nil {
-			return nil, err
-		}
-		username, password = match[1], match[2]
-	}
 
 	var bodyAll []byte
 	if conf.Body != "" {
@@ -85,43 +67,18 @@ func NewWork(conf *Config) (*requester.Work, error) {
 		bodyAll = slurp
 	}
 
-	var proxyURL *gourl.URL
-	if conf.ProxyAddr != "" {
-		var err error
-		proxyURL, err = gourl.Parse(conf.ProxyAddr)
-		if err != nil {
-			return nil, err
-		}
+	header, err := newHttpHeader(conf)
+	if err != nil {
+		return nil, err
 	}
 
 	req, err := http.NewRequest(method, conf.Url, nil)
 	if err != nil {
 		return nil, err
 	}
+
 	req.ContentLength = int64(len(bodyAll))
-	if username != "" || password != "" {
-		req.SetBasicAuth(username, password)
-	}
-
-	// set host header if set
-	if conf.HostHeader != "" {
-		req.Host = conf.HostHeader
-	}
-
-	ua := header.Get("User-Agent")
-	if ua == "" {
-		ua = heyUA
-	} else {
-		ua += " " + heyUA
-	}
-	header.Set("User-Agent", ua)
-
-	// set userAgent header if set
-	if conf.UserAgent != "" {
-		ua = conf.UserAgent + " " + heyUA
-		header.Set("User-Agent", ua)
-	}
-
+	req.Header = header
 	return &requester.Work{
 		Request:            req,
 		RequestBody:        bodyAll,
@@ -138,6 +95,36 @@ func NewWork(conf *Config) (*requester.Work, error) {
 	}, nil
 }
 
+func newHttpHeader(conf *Config) (http.Header, error) {
+	header := make(http.Header)
+	setHeader(header, "Content-Type", conf.ContentType)
+	setHeader(header, "Accept", conf.Accept)
+	setHeader(header, "Host", conf.HostHeader)
+	setHeader(header, "User-Agent", conf.UserAgent)
+
+	if conf.AuthHeader != "" {
+		match, err := parseInputWithRegexp(conf.AuthHeader, authRegexp)
+		if err != nil {
+			return nil, err
+		}
+		header.Set("Authorization", "Basic "+basicAuth(match[1], match[2]))
+	}
+
+	// set any other additional repeatable headers
+	for _, h := range conf.HeaderSlice {
+		match, err := parseInputWithRegexp(h, headerRegexp)
+		if err != nil {
+			return nil, err
+		}
+		header.Set(match[1], match[2])
+	}
+	ua := header.Get("User-Agent")
+	if ua == "" {
+		header.Set("User-Agent", defaultUserAgent)
+	}
+	return header, nil
+}
+
 func validate(conf *Config) error {
 	if conf.N < conf.C {
 		fmt.Printf("-c is larger than -n. Setting -c to (%v) instead.\n", conf.N)
@@ -148,4 +135,15 @@ func validate(conf *Config) error {
 		return errors.New("-n and -c must be greater than 1")
 	}
 	return nil
+}
+
+func basicAuth(username, password string) string {
+	auth := username + ":" + password
+	return base64.StdEncoding.EncodeToString([]byte(auth))
+}
+
+func setHeader(h http.Header, header string, value string) {
+	if value != "" {
+		h.Set(header, value)
+	}
 }
