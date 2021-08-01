@@ -15,6 +15,7 @@
 package parser
 
 import (
+	"encoding/base64"
 	"fmt"
 	"regexp"
 )
@@ -31,4 +32,9 @@ func parseInputWithRegexp(input, regx string) ([]string, error) {
 		return nil, fmt.Errorf("could not parse the provided input; input = %v", input)
 	}
 	return matches, nil
+}
+
+func basicAuth(username, password string) string {
+	auth := username + ":" + password
+	return base64.StdEncoding.EncodeToString([]byte(auth))
 }

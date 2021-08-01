@@ -15,7 +15,6 @@
 package parser
 
 import (
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -145,7 +144,4 @@ func validate(conf *Config) error {
 	return nil
 }
 
-func basicAuth(username, password string) string {
-	auth := username + ":" + password
-	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
