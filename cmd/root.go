@@ -85,7 +85,6 @@ Examples: -z 10s -z 3m.`)
 metrics in comma-separated values format.
 `)
 
-	rootCmd.Flags().StringVarP(&conf.BodyFile, "data-file", "D", "", "HTTP request body from file. For example, /home/user/file.txt or ./file.txt.")
 	rootCmd.Flags().BoolVar(&conf.DisableCompression, "disable-compression", false, "Disable compression.")
 	rootCmd.Flags().BoolVar(&conf.DisableKeepAlives, "disable-keepalive", false, "Disable keep-alive, prevents re-use of TCP connections between different HTTP requests.")
 	rootCmd.Flags().BoolVar(&conf.DisableRedirects, "disable-redirects", false, "Disable following of HTTP redirects.\n")
@@ -93,7 +92,8 @@ metrics in comma-separated values format.
 	rootCmd.Flags().StringVarP(&conf.M, "request", "X", "GET", "HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.")
 	rootCmd.Flags().StringArrayVarP(&conf.HeaderSlice, "header", "H", nil, "Pass custom header to server, overriding any internal header.")
 	rootCmd.Flags().IntVarP(&conf.T, "connect-timeout", "t", 20, "Maximum time in seconds allowed for a request to take.")
-	rootCmd.Flags().StringVarP(&conf.Body, "data", "d", "", "Sends the specified data in a POST requst to the HTTP server.")
+	// TODO: make this StringArray just like in curl
+	rootCmd.Flags().StringVarP(&conf.Data, "data", "d", "", "Sends the specified data in a POST requst to the HTTP server. If you start the data with \nthe letter @, the rest should be a file name to read the data from.")
 	rootCmd.Flags().StringVarP(&conf.AuthHeader, "user", "u", "", "Server user and password")
 	rootCmd.Flags().StringVarP(&conf.UserAgent, "user-agent", "A", "", "Send User-Agent Header to server.")
 	rootCmd.Flags().StringVarP(&conf.ProxyAddr, "proxy", "x", "", "HTTP Proxy address as host:port.")

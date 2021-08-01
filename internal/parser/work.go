@@ -59,16 +59,17 @@ func NewWork(conf *Config) (*requester.Work, error) {
 
 	method := strings.ToUpper(conf.M)
 
-	var bodyAll []byte
-	if conf.Body != "" {
-		bodyAll = []byte(conf.Body)
-	}
-	if conf.BodyFile != "" {
-		slurp, err := ioutil.ReadFile(conf.BodyFile)
-		if err != nil {
-			return nil, err
+	var body []byte
+	if conf.Data != "" {
+		if strings.HasPrefix(conf.Data, "@") {
+			slurp, err := ioutil.ReadFile(conf.Data[1:])
+			if err != nil {
+				return nil, err
+			}
+			body = slurp
+		} else {
+			body = []byte(conf.Data)
 		}
-		bodyAll = slurp
 	}
 
 	header, err := newHttpHeader(conf)
@@ -81,14 +82,14 @@ func NewWork(conf *Config) (*requester.Work, error) {
 		return nil, err
 	}
 
-	req.ContentLength = int64(len(bodyAll))
+	req.ContentLength = int64(len(body))
 	req.Header = header
 	if h := header.Get("Host"); h != "" {
 		req.Host = h
 	}
 	return &requester.Work{
 		Request:            req,
-		RequestBody:        bodyAll,
+		RequestBody:        body,
 		N:                  conf.N,
 		Debug:              conf.Debug,
 		C:                  conf.C,
