@@ -85,10 +85,7 @@ Examples: -z 10s -z 3m.`)
 metrics in comma-separated values format.
 `)
 
-	rootCmd.Flags().StringVar(&conf.HostHeader, "host", "", "HTTP Host header.")
 	rootCmd.Flags().StringVarP(&conf.BodyFile, "data-file", "D", "", "HTTP request body from file. For example, /home/user/file.txt or ./file.txt.")
-	rootCmd.Flags().StringVar(&conf.ContentType, "content-type", "text/html", "Content-type.")
-	rootCmd.Flags().StringVar(&conf.Accept, "accept", "", "HTTP Accept header.")
 	rootCmd.Flags().BoolVar(&conf.DisableCompression, "disable-compression", false, "Disable compression.")
 	rootCmd.Flags().BoolVar(&conf.DisableKeepAlives, "disable-keepalive", false, "Disable keep-alive, prevents re-use of TCP connections between different HTTP requests.")
 	rootCmd.Flags().BoolVar(&conf.DisableRedirects, "disable-redirects", false, "Disable following of HTTP redirects.\n")

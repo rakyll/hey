@@ -105,10 +105,9 @@ func NewWork(conf *Config) (*requester.Work, error) {
 
 func newHttpHeader(conf *Config) (http.Header, error) {
 	header := make(http.Header)
-	setHeader(header, "Content-Type", conf.ContentType)
-	setHeader(header, "Accept", conf.Accept)
-	setHeader(header, "Host", conf.HostHeader)
-	setHeader(header, "User-Agent", conf.UserAgent)
+	if conf.UserAgent != "" {
+		header.Set("User-Agent", conf.UserAgent)
+	}
 
 	if conf.AuthHeader != "" {
 		match, err := parseInputWithRegexp(conf.AuthHeader, authRegexp)
@@ -148,10 +147,4 @@ func validate(conf *Config) error {
 func basicAuth(username, password string) string {
 	auth := username + ":" + password
 	return base64.StdEncoding.EncodeToString([]byte(auth))
-}
-
-func setHeader(h http.Header, header string, value string) {
-	if value != "" {
-		h.Set(header, value)
-	}
 }
