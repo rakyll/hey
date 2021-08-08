@@ -25,6 +25,7 @@ import (
 
 	gourl "net/url"
 
+	"github.com/rakyll/hey/internal/config"
 	"github.com/rakyll/hey/requester"
 )
 
@@ -32,7 +33,7 @@ const (
 	defaultUserAgent = "hey/0.0.1"
 )
 
-func NewWork(conf *Config) (*requester.Work, error) {
+func NewWork(conf *config.Config) (*requester.Work, error) {
 	runtime.GOMAXPROCS(conf.Cpus)
 	err := validate(conf)
 	if err != nil {
@@ -95,7 +96,7 @@ func NewWork(conf *Config) (*requester.Work, error) {
 	}, nil
 }
 
-func newHttpHeader(conf *Config) (http.Header, error) {
+func newHttpHeader(conf *config.Config) (http.Header, error) {
 	header := make(http.Header)
 	if conf.UserAgent != "" {
 		header.Set("User-Agent", conf.UserAgent)
@@ -124,7 +125,7 @@ func newHttpHeader(conf *Config) (http.Header, error) {
 	return header, nil
 }
 
-func validate(c *Config) error {
+func validate(c *config.Config) error {
 	if c.N <= 0 || c.C <= 0 {
 		return errors.New("-n and -c must be greater than 1")
 	}
@@ -132,7 +133,7 @@ func validate(c *Config) error {
 }
 
 // Overrides some of the default value
-func sensibleDefaultOverrides(c *Config) *Config {
+func sensibleDefaultOverrides(c *config.Config) *config.Config {
 	c.M = strings.ToUpper(c.M)
 
 	if c.N < c.C {

@@ -19,11 +19,12 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/rakyll/hey/internal/config"
 	"github.com/rakyll/hey/internal/parser"
 	"github.com/spf13/cobra"
 )
 
-var conf parser.Config
+var conf config.Config
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
