@@ -23,10 +23,7 @@ type Config struct {
 	HeaderSlice []string
 	Body        string
 	BodyFile    string
-	Accept      string
-	ContentType string
 	AuthHeader  string
-	HostHeader  string
 	UserAgent   string
 	Debug       bool
 
