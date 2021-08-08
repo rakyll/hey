@@ -18,8 +18,8 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/rakyll/hey/internal/config"
-	"github.com/rakyll/hey/internal/parser"
+	"github.com/angkeith/hey/internal/config"
+	"github.com/angkeith/hey/internal/parser"
 	"github.com/spf13/cobra"
 )
 

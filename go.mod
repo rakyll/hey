@@ -1,4 +1,4 @@
-module github.com/rakyll/hey
+module github.com/angkeith/hey
 
 require (
 	github.com/spf13/cobra v1.2.1

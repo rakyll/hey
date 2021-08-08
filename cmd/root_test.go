@@ -20,9 +20,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rakyll/hey/internal/config"
-	"github.com/rakyll/hey/internal/parser"
-	"github.com/rakyll/hey/requester"
+	"github.com/angkeith/hey/internal/config"
+	"github.com/angkeith/hey/internal/parser"
+	"github.com/angkeith/hey/requester"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 )

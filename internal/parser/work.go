@@ -25,8 +25,8 @@ import (
 
 	gourl "net/url"
 
-	"github.com/rakyll/hey/internal/config"
-	"github.com/rakyll/hey/requester"
+	"github.com/angkeith/hey/internal/config"
+	"github.com/angkeith/hey/requester"
 )
 
 const (
