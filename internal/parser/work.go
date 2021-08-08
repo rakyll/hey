@@ -83,6 +83,9 @@ func NewWork(conf *Config) (*requester.Work, error) {
 
 	req.ContentLength = int64(len(bodyAll))
 	req.Header = header
+	if h := header.Get("Host"); h != "" {
+		req.Host = h
+	}
 	return &requester.Work{
 		Request:            req,
 		RequestBody:        bodyAll,
