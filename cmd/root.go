@@ -84,7 +84,7 @@ Examples: -z 10s -z 3m.`)
 metrics in comma-separated values format.
 `)
 
-	rootCmd.Flags().StringVarP(&conf.M, "request-method", "m", "GET", "HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.")
+	rootCmd.Flags().StringVarP(&conf.M, "request", "X", "GET", "HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.")
 	rootCmd.Flags().StringArrayVarP(&conf.HeaderSlice, "header", "H", nil, `Custom HTTP header. You can specify as many as needed by repeating the flag.
 For example, -H "Accept: text/html" -H "Content-Type: application/xml". `)
 	rootCmd.Flags().IntVarP(&conf.T, "timeout", "t", 20, "Timeout for each request in seconds. Use 0 for infinite.")
