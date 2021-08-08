@@ -98,7 +98,8 @@ For example, -H "Accept: text/html" -H "Content-Type: application/xml". `)
 	rootCmd.Flags().StringVarP(&conf.ProxyAddr, "proxy", "x", "", "HTTP Proxy address as host:port.")
 	rootCmd.Flags().BoolVar(&conf.H2, "h2", false, "Enable HTTP/2.\n")
 
-	rootCmd.Flags().StringVar(&conf.HostHeader, "host", "", "HTTP Host header.\n")
+	rootCmd.Flags().StringVar(&conf.HostHeader, "host", "", "HTTP Host header.")
+	rootCmd.Flags().BoolVar(&conf.Debug, "debug", false, "Dumps request and response.\n")
 
 	rootCmd.Flags().BoolVar(&conf.DisableCompression, "disable-compression", false, "Disable compression.")
 	rootCmd.Flags().BoolVar(&conf.DisableKeepAlives, "disable-keepalive", false, "Disable keep-alive, prevents re-use of TCP connections between different HTTP requests.")

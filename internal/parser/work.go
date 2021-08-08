@@ -43,6 +43,10 @@ func NewWork(conf *Config) (*requester.Work, error) {
 	if conf.Dur > 0 {
 		conf.N = math.MaxInt32
 	}
+	if conf.Debug {
+		conf.N = 1
+		conf.C = 1
+	}
 
 	var proxyURL *gourl.URL
 	if conf.ProxyAddr != "" {
@@ -83,6 +87,7 @@ func NewWork(conf *Config) (*requester.Work, error) {
 		Request:            req,
 		RequestBody:        bodyAll,
 		N:                  conf.N,
+		Debug:              conf.Debug,
 		C:                  conf.C,
 		QPS:                conf.Q,
 		Timeout:            conf.T,
