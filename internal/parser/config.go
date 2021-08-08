@@ -21,8 +21,7 @@ type Config struct {
 	// method
 	M           string
 	HeaderSlice []string
-	Body        string
-	BodyFile    string
+	Data        string
 	AuthHeader  string
 	UserAgent   string
 	Debug       bool
