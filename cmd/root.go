@@ -79,30 +79,27 @@ be smaller than the concurrency level.`)
 	rootCmd.Flags().DurationVarP(&conf.Dur, "duration", "z", 0, `Duration of application to send requests. When duration is reached,
 application stops and exits. If duration is specified, n is ignored.
 Examples: -z 10s -z 3m.`)
+	rootCmd.Flags().IntVar(&conf.Cpus, "cpus", runtime.GOMAXPROCS(-1), "Number of cpu cores to use.")
 	rootCmd.Flags().StringVarP(&conf.Output, "output", "o", "", `Output type. If none provided, a summary is printed.
 "csv" is the only supported alternative. Dumps the response
 metrics in comma-separated values format.
 `)
 
-	rootCmd.Flags().StringVarP(&conf.M, "request", "X", "GET", "HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.")
-	rootCmd.Flags().StringArrayVarP(&conf.HeaderSlice, "header", "H", nil, `Custom HTTP header. You can specify as many as needed by repeating the flag.
-For example, -H "Accept: text/html" -H "Content-Type: application/xml". `)
-	rootCmd.Flags().IntVarP(&conf.T, "timeout", "t", 20, "Timeout for each request in seconds. Use 0 for infinite.")
-
-	rootCmd.Flags().StringVarP(&conf.Accept, "accept", "A", "", "HTTP Accept header.")
-	rootCmd.Flags().StringVarP(&conf.Body, "body", "d", "", "HTTP request body.")
-	rootCmd.Flags().StringVarP(&conf.BodyFile, "body-file", "D", "", "HTTP request body from file. For example, /home/user/file.txt or ./file.txt.")
-	rootCmd.Flags().StringVarP(&conf.ContentType, "content-type", "T", "text/html", "Content-type.")
-	rootCmd.Flags().StringVarP(&conf.UserAgent, "user-agent", "U", "", `User-Agent, defaults to version "hey/0.0.1".`)
-	rootCmd.Flags().StringVarP(&conf.AuthHeader, "auth-header", "a", "", "Basic authentication, username:password.")
-	rootCmd.Flags().StringVarP(&conf.ProxyAddr, "proxy", "x", "", "HTTP Proxy address as host:port.")
-	rootCmd.Flags().BoolVar(&conf.H2, "h2", false, "Enable HTTP/2.\n")
-
 	rootCmd.Flags().StringVar(&conf.HostHeader, "host", "", "HTTP Host header.")
-	rootCmd.Flags().BoolVar(&conf.Debug, "debug", false, "Dumps request and response.\n")
-
+	rootCmd.Flags().StringVarP(&conf.BodyFile, "data-file", "D", "", "HTTP request body from file. For example, /home/user/file.txt or ./file.txt.")
+	rootCmd.Flags().StringVar(&conf.ContentType, "content-type", "text/html", "Content-type.")
+	rootCmd.Flags().StringVar(&conf.Accept, "accept", "", "HTTP Accept header.")
 	rootCmd.Flags().BoolVar(&conf.DisableCompression, "disable-compression", false, "Disable compression.")
 	rootCmd.Flags().BoolVar(&conf.DisableKeepAlives, "disable-keepalive", false, "Disable keep-alive, prevents re-use of TCP connections between different HTTP requests.")
-	rootCmd.Flags().BoolVar(&conf.DisableRedirects, "disable-redirects", false, "Disable following of HTTP redirects.")
-	rootCmd.Flags().IntVar(&conf.Cpus, "cpus", runtime.GOMAXPROCS(-1), "Number of cpu cores to use.")
+	rootCmd.Flags().BoolVar(&conf.DisableRedirects, "disable-redirects", false, "Disable following of HTTP redirects.\n")
+
+	rootCmd.Flags().StringVarP(&conf.M, "request", "X", "GET", "HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.")
+	rootCmd.Flags().StringArrayVarP(&conf.HeaderSlice, "header", "H", nil, "Pass custom header to server, overriding any internal header.")
+	rootCmd.Flags().IntVarP(&conf.T, "connect-timeout", "t", 20, "Maximum time in seconds allowed for a request to take.")
+	rootCmd.Flags().StringVarP(&conf.Body, "data", "d", "", "Sends the specified data in a POST requst to the HTTP server.")
+	rootCmd.Flags().StringVarP(&conf.AuthHeader, "user", "u", "", "Server user and password")
+	rootCmd.Flags().StringVarP(&conf.UserAgent, "user-agent", "A", "", "Send User-Agent Header to server.")
+	rootCmd.Flags().StringVarP(&conf.ProxyAddr, "proxy", "x", "", "HTTP Proxy address as host:port.")
+	rootCmd.Flags().BoolVar(&conf.H2, "http2", false, "Use HTTP 2.")
+	rootCmd.Flags().BoolVarP(&conf.Debug, "verbose", "v", false, "Dumps request and response.")
 }
