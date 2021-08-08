@@ -15,7 +15,6 @@
 package parser
 
 import (
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -40,12 +39,11 @@ func NewWork(conf *Config) (*requester.Work, error) {
 		return nil, err
 	}
 
-	if conf.Dur > 0 {
-		conf.N = math.MaxInt32
-	}
-	if conf.Debug {
-		conf.N = 1
-		conf.C = 1
+	conf = sensibleDefaultOverrides(conf)
+
+	req, err := http.NewRequest(conf.M, conf.Url, nil)
+	if err != nil {
+		return nil, err
 	}
 
 	var proxyURL *gourl.URL
@@ -56,8 +54,6 @@ func NewWork(conf *Config) (*requester.Work, error) {
 			return nil, err
 		}
 	}
-
-	method := strings.ToUpper(conf.M)
 
 	var body []byte
 	if conf.Data != "" {
@@ -73,11 +69,6 @@ func NewWork(conf *Config) (*requester.Work, error) {
 	}
 
 	header, err := newHttpHeader(conf)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(method, conf.Url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -133,19 +124,30 @@ func newHttpHeader(conf *Config) (http.Header, error) {
 	return header, nil
 }
 
-func validate(conf *Config) error {
-	if conf.N < conf.C {
-		fmt.Printf("-c is larger than -n. Setting -c to (%v) instead.\n", conf.N)
-		conf.C = conf.N
-	}
-
-	if conf.N <= 0 || conf.C <= 0 {
+func validate(c *Config) error {
+	if c.N <= 0 || c.C <= 0 {
 		return errors.New("-n and -c must be greater than 1")
 	}
 	return nil
 }
 
-func basicAuth(username, password string) string {
-	auth := username + ":" + password
-	return base64.StdEncoding.EncodeToString([]byte(auth))
+// Overrides some of the default value
+func sensibleDefaultOverrides(c *Config) *Config {
+	c.M = strings.ToUpper(c.M)
+
+	if c.N < c.C {
+		fmt.Printf("-c is larger than -n. Setting -c to (%v) instead.\n", c.N)
+		c.C = c.N
+	}
+
+	if c.Dur > 0 {
+		c.N = math.MaxInt32
+	}
+
+	if c.Debug {
+		c.N = 1
+		c.C = 1
+	}
+
+	return c
 }
