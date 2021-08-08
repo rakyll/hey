@@ -89,7 +89,7 @@ metrics in comma-separated values format.
 	rootCmd.Flags().BoolVar(&conf.DisableKeepAlives, "disable-keepalive", false, "Disable keep-alive, prevents re-use of TCP connections between different HTTP requests.")
 	rootCmd.Flags().BoolVar(&conf.DisableRedirects, "disable-redirects", false, "Disable following of HTTP redirects.\n")
 
-	rootCmd.Flags().StringVarP(&conf.M, "request", "X", "GET", "HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.")
+	rootCmd.Flags().StringVarP(&conf.M, "request", "X", "", "HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.")
 	rootCmd.Flags().StringArrayVarP(&conf.HeaderSlice, "header", "H", nil, "Pass custom header to server, overriding any internal header.")
 	rootCmd.Flags().IntVarP(&conf.T, "connect-timeout", "t", 20, "Maximum time in seconds allowed for a request to take.")
 	// TODO: make this StringArray just like in curl

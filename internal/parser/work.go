@@ -144,6 +144,11 @@ func sensibleDefaultOverrides(c *Config) *Config {
 		c.N = math.MaxInt32
 	}
 
+	if c.Data != "" && c.M == "" {
+		c.M = "POST"
+		c.HeaderSlice = append([]string{"Content-Type: application/x-www-form-urlencoded"}, c.HeaderSlice...)
+	}
+
 	if c.Debug {
 		c.N = 1
 		c.C = 1
