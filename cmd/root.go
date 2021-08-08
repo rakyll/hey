@@ -16,7 +16,6 @@ package cmd
 import (
 	"os"
 	"os/signal"
-	"runtime"
 	"time"
 
 	"github.com/rakyll/hey/internal/config"
@@ -73,31 +72,31 @@ func init() {
 	rootCmd.Flags().MarkHidden("help")
 
 	// Define flags here.
-	rootCmd.Flags().IntVarP(&conf.N, "number-of-requests", "n", 200, "Number of requests to run.")
-	rootCmd.Flags().IntVarP(&conf.C, "concurrency", "c", 50, `Number of workers to run concurrently. Total number of requests cannot
+	rootCmd.Flags().IntVarP(&conf.N, "number-of-requests", "n", conf.N, "Number of requests to run.")
+	rootCmd.Flags().IntVarP(&conf.C, "concurrency", "c", conf.C, `Number of workers to run concurrently. Total number of requests cannot
 be smaller than the concurrency level.`)
-	rootCmd.Flags().Float64VarP(&conf.Q, "rate-limit", "q", 0, "Rate limit, in queries per second (QPS) per worker. Default is no rate limit.")
-	rootCmd.Flags().DurationVarP(&conf.Dur, "duration", "z", 0, `Duration of application to send requests. When duration is reached,
+	rootCmd.Flags().Float64VarP(&conf.Q, "rate-limit", "q", conf.Q, "Rate limit, in queries per second (QPS) per worker. Default is no rate limit.")
+	rootCmd.Flags().DurationVarP(&conf.Dur, "duration", "z", conf.Dur, `Duration of application to send requests. When duration is reached,
 application stops and exits. If duration is specified, n is ignored.
 Examples: -z 10s -z 3m.`)
-	rootCmd.Flags().IntVar(&conf.Cpus, "cpus", runtime.GOMAXPROCS(-1), "Number of cpu cores to use.")
-	rootCmd.Flags().StringVarP(&conf.Output, "output", "o", "", `Output type. If none provided, a summary is printed.
+	rootCmd.Flags().IntVar(&conf.Cpus, "cpus", conf.Cpus, "Number of cpu cores to use.")
+	rootCmd.Flags().StringVarP(&conf.Output, "output", "o", conf.Output, `Output type. If none provided, a summary is printed.
 "csv" is the only supported alternative. Dumps the response
 metrics in comma-separated values format.
 `)
 
-	rootCmd.Flags().BoolVar(&conf.DisableCompression, "disable-compression", false, "Disable compression.")
-	rootCmd.Flags().BoolVar(&conf.DisableKeepAlives, "disable-keepalive", false, "Disable keep-alive, prevents re-use of TCP connections between different HTTP requests.")
-	rootCmd.Flags().BoolVar(&conf.DisableRedirects, "disable-redirects", false, "Disable following of HTTP redirects.\n")
+	rootCmd.Flags().BoolVar(&conf.DisableCompression, "disable-compression", conf.DisableCompression, "Disable compression.")
+	rootCmd.Flags().BoolVar(&conf.DisableKeepAlives, "disable-keepalive", conf.DisableKeepAlives, "Disable keep-alive, prevents re-use of TCP connections between different HTTP requests.")
+	rootCmd.Flags().BoolVar(&conf.DisableRedirects, "disable-redirects", conf.DisableRedirects, "Disable following of HTTP redirects.\n")
 
-	rootCmd.Flags().StringVarP(&conf.M, "request", "X", "", "HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.")
-	rootCmd.Flags().StringArrayVarP(&conf.HeaderSlice, "header", "H", nil, "Pass custom header to server, overriding any internal header.")
-	rootCmd.Flags().IntVarP(&conf.T, "connect-timeout", "t", 20, "Maximum time in seconds allowed for a request to take.")
+	rootCmd.Flags().StringVarP(&conf.M, "request", "X", conf.M, "HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.")
+	rootCmd.Flags().StringArrayVarP(&conf.HeaderSlice, "header", "H", conf.HeaderSlice, "Pass custom header to server, overriding any internal header.")
+	rootCmd.Flags().IntVarP(&conf.T, "connect-timeout", "t", conf.T, "Maximum time in seconds allowed for a request to take.")
 	// TODO: make this StringArray just like in curl
-	rootCmd.Flags().StringVarP(&conf.Data, "data", "d", "", "Sends the specified data in a POST requst to the HTTP server. If you start the data with \nthe letter @, the rest should be a file name to read the data from.")
-	rootCmd.Flags().StringVarP(&conf.AuthHeader, "user", "u", "", "Server user and password")
-	rootCmd.Flags().StringVarP(&conf.UserAgent, "user-agent", "A", "", "Send User-Agent Header to server.")
-	rootCmd.Flags().StringVarP(&conf.ProxyAddr, "proxy", "x", "", "HTTP Proxy address as host:port.")
-	rootCmd.Flags().BoolVar(&conf.H2, "http2", false, "Use HTTP 2.")
-	rootCmd.Flags().BoolVarP(&conf.Debug, "verbose", "v", false, "Dumps request and response.")
+	rootCmd.Flags().StringVarP(&conf.Data, "data", "d", conf.Data, "Sends the specified data in a POST requst to the HTTP server. If you start the data with \nthe letter @, the rest should be a file name to read the data from.")
+	rootCmd.Flags().StringVarP(&conf.AuthHeader, "user", "u", conf.AuthHeader, "Server user and password")
+	rootCmd.Flags().StringVarP(&conf.UserAgent, "user-agent", "A", conf.UserAgent, "Send User-Agent Header to server.")
+	rootCmd.Flags().StringVarP(&conf.ProxyAddr, "proxy", "x", conf.ProxyAddr, "HTTP Proxy address as host:port.")
+	rootCmd.Flags().BoolVar(&conf.H2, "http2", conf.H2, "Use HTTP 2.")
+	rootCmd.Flags().BoolVarP(&conf.Debug, "verbose", "v", conf.Debug, "Dumps request and response.")
 }
