@@ -75,8 +75,8 @@ type Config struct {
 	ProxyAddr          string
 }
 
-func New(url string) *Config {
-	return &Config{
+func NewConfigV(url string) Config {
+	return Config{
 		Url:                url,
 		M:                  Request,
 		HeaderSlice:        HeaderSlice,
