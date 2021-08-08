@@ -1,3 +1,4 @@
+[![codecov](https://codecov.io/gh/ANGkeith/hey/branch/master/graph/badge.svg?token=060YSNII8G)](https://codecov.io/gh/ANGkeith/hey)
 ## Description
 This is a fork from the [rakyll/hey](https://github.com/rakyll/hey).
 
