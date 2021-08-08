@@ -43,8 +43,9 @@ func Execute() {
 
 func NewRootCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:  "hey [flags] <url>",
-		Args: cobra.ExactArgs(1),
+		Use:     "hey [flags] <url>",
+		Version: config.Version,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			conf.Url = args[0]
 
