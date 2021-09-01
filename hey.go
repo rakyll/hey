@@ -112,7 +112,7 @@ func main() {
 	flag.Var(&hs, "H", "")
 
 	flag.Parse()
-	if flag.NArg() < 1 {
+	if flag.NArg() != 1 {
 		usageAndExit("")
 	}
 
