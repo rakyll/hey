@@ -329,7 +329,7 @@ func (wu writeWindowUpdate) writeFrame(ctx writeContext) error {
 }
 
 // encodeHeaders encodes an http.Header. If keys is not nil, then (k, h[k])
-// is encoded only only if k is in keys.
+// is encoded only if k is in keys.
 func encodeHeaders(enc *hpack.Encoder, h http.Header, keys []string) {
 	if keys == nil {
 		sorter := sorterPool.Get().(*sorter)
@@ -341,7 +341,12 @@ func encodeHeaders(enc *hpack.Encoder, h http.Header, keys []string) {
 	}
 	for _, k := range keys {
 		vv := h[k]
-		k = lowerHeader(k)
+		k, ascii := lowerHeader(k)
+		if !ascii {
+			// Skip writing invalid headers. Per RFC 7540, Section 8.1.2, header
+			// field names have to be ASCII characters (just as in HTTP/1.x).
+			continue
+		}
 		if !validWireHeaderFieldName(k) {
 			// Skip it as backup paranoia. Per
 			// golang.org/issue/14048, these should
