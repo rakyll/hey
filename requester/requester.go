@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/http/httptrace"
 	"net/url"
@@ -259,6 +260,18 @@ func DuplicateNextRequest(request *http.Request, body []byte) func() *http.Reque
 	}
 }
 
+// DuplicateNextRequestWithRandomBody returns a func that duplicate the request and
+// pick a random body everytime it's called.
+func DuplicateNextRequestWithRandomBody(request *http.Request, bodies [][]byte) func() *http.Request {
+	return func() *http.Request {
+		if len(bodies) != 0 {
+			randomBody := bodies[rand.Intn(len(bodies))]
+			return cloneRequest(request, randomBody)
+		}
+		return cloneRequest(request, []byte{})
+	}
+}
+
 // cloneRequest returns a clone of the provided *http.Request.
 // The clone is a shallow copy of the struct and its Header map.
 func cloneRequest(r *http.Request, body []byte) *http.Request {
@@ -272,6 +285,7 @@ func cloneRequest(r *http.Request, body []byte) *http.Request {
 	}
 	if len(body) > 0 {
 		r2.Body = ioutil.NopCloser(bytes.NewReader(body))
+		r2.ContentLength = int64(len(body))
 	}
 	return r2
 }

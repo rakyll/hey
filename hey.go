@@ -24,6 +24,7 @@ import (
 	gourl "net/url"
 	"os"
 	"os/signal"
+	"path"
 	"regexp"
 	"runtime"
 	"strings"
@@ -43,6 +44,7 @@ var (
 	headers     = flag.String("h", "", "")
 	body        = flag.String("d", "", "")
 	bodyFile    = flag.String("D", "", "")
+	bodyDir     = flag.String("R", "", "")
 	accept      = flag.String("A", "", "")
 	contentType = flag.String("T", "text/html", "")
 	authHeader  = flag.String("a", "", "")
@@ -87,6 +89,7 @@ Options:
   -A  HTTP Accept header.
   -d  HTTP request body.
   -D  HTTP request body from file. For example, /home/user/file.txt or ./file.txt.
+  -R  HTTP request body from files in directory. For example, ./dir.
   -T  Content-type, defaults to "text/html".
   -U  User-Agent, defaults to version "hey/0.0.1".
   -a  Basic authentication, username:password.
@@ -181,6 +184,28 @@ func main() {
 		}
 		bodyAll = slurp
 	}
+	var bodyAllDir [][]byte
+	if *bodyDir != "" {
+		if bodyAll != nil {
+			errAndExit("Cannot use both body and directory.")
+		}
+
+		files, err := ioutil.ReadDir(*bodyDir)
+		if err != nil {
+			errAndExit(err.Error())
+		}
+
+		bodyAllDir = make([][]byte, len(files))
+		for i, f := range files {
+			if !f.IsDir() {
+				slurp, err := ioutil.ReadFile(path.Join(*bodyDir, f.Name()))
+				if err != nil {
+					errAndExit(err.Error())
+				}
+				bodyAllDir[i] = slurp
+			}
+		}
+	}
 
 	var proxyURL *gourl.URL
 	if *proxyAddr != "" {
@@ -222,7 +247,6 @@ func main() {
 	req.Header = header
 
 	w := &requester.Work{
-		NextRequest:        requester.DuplicateNextRequest(req, bodyAll),
 		N:                  num,
 		C:                  conc,
 		QPS:                q,
@@ -233,6 +257,11 @@ func main() {
 		H2:                 *h2,
 		ProxyAddr:          proxyURL,
 		Output:             *output,
+	}
+	if *bodyDir != "" {
+		w.NextRequest = requester.DuplicateNextRequest(req, bodyAll)
+	} else {
+		w.NextRequest = requester.DuplicateNextRequestWithRandomBody(req, bodyAllDir)
 	}
 	w.Init()
 
