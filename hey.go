@@ -222,8 +222,7 @@ func main() {
 	req.Header = header
 
 	w := &requester.Work{
-		Request:            req,
-		RequestBody:        bodyAll,
+		NextRequest:        requester.DuplicateNextRequest(req, bodyAll),
 		N:                  num,
 		C:                  conc,
 		QPS:                q,
