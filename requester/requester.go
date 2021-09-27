@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/http/httptrace"
 	"net/url"
@@ -48,14 +49,9 @@ type result struct {
 }
 
 type Work struct {
-	// Request is the request to be made.
-	Request *http.Request
-
-	RequestBody []byte
-
-	// RequestFunc is a function to generate requests. If it is nil, then
-	// Request and RequestData are cloned for each request.
-	RequestFunc func() *http.Request
+	// NextRequest is a function to generate requests.
+	// It allow setting different request strategies for different use case.
+	NextRequest func() *http.Request
 
 	// N is the total number of requests to make.
 	N int
@@ -150,12 +146,8 @@ func (b *Work) makeRequest(c *http.Client) {
 	var code int
 	var dnsStart, connStart, resStart, reqStart, delayStart time.Duration
 	var dnsDuration, connDuration, resDuration, reqDuration, delayDuration time.Duration
-	var req *http.Request
-	if b.RequestFunc != nil {
-		req = b.RequestFunc()
-	} else {
-		req = cloneRequest(b.Request, b.RequestBody)
-	}
+
+	req := b.NextRequest()
 	trace := &httptrace.ClientTrace{
 		DNSStart: func(info httptrace.DNSStartInfo) {
 			dnsStart = now()
@@ -238,7 +230,6 @@ func (b *Work) runWorkers() {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
-			ServerName:         b.Request.Host,
 		},
 		MaxIdleConnsPerHost: min(b.C, maxIdleConn),
 		DisableCompression:  b.DisableCompression,
@@ -262,6 +253,25 @@ func (b *Work) runWorkers() {
 	wg.Wait()
 }
 
+// DuplicateNextRequest returns a func that duplicate the request and body everytime it's called.
+func DuplicateNextRequest(request *http.Request, body []byte) func() *http.Request {
+	return func() *http.Request {
+		return cloneRequest(request, body)
+	}
+}
+
+// DuplicateNextRequestWithRandomBody returns a func that duplicate the request and
+// pick a random body everytime it's called.
+func DuplicateNextRequestWithRandomBody(request *http.Request, bodies [][]byte) func() *http.Request {
+	return func() *http.Request {
+		if len(bodies) != 0 {
+			randomBody := bodies[rand.Intn(len(bodies))]
+			return cloneRequest(request, randomBody)
+		}
+		return cloneRequest(request, []byte{})
+	}
+}
+
 // cloneRequest returns a clone of the provided *http.Request.
 // The clone is a shallow copy of the struct and its Header map.
 func cloneRequest(r *http.Request, body []byte) *http.Request {
@@ -275,6 +285,7 @@ func cloneRequest(r *http.Request, body []byte) *http.Request {
 	}
 	if len(body) > 0 {
 		r2.Body = ioutil.NopCloser(bytes.NewReader(body))
+		r2.ContentLength = int64(len(body))
 	}
 	return r2
 }

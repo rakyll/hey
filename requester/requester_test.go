@@ -35,9 +35,9 @@ func TestN(t *testing.T) {
 
 	req, _ := http.NewRequest("GET", server.URL, nil)
 	w := &Work{
-		Request: req,
-		N:       20,
-		C:       2,
+		NextRequest: DuplicateNextRequest(req, []byte{}),
+		N:           20,
+		C:           2,
 	}
 	w.Run()
 	if count != 20 {
@@ -56,10 +56,10 @@ func TestQps(t *testing.T) {
 
 	req, _ := http.NewRequest("GET", server.URL, nil)
 	w := &Work{
-		Request: req,
-		N:       20,
-		C:       2,
-		QPS:     1,
+		NextRequest: DuplicateNextRequest(req, []byte{}),
+		N:           20,
+		C:           2,
+		QPS:         1,
 	}
 	wg.Add(1)
 	time.AfterFunc(time.Second, func() {
@@ -90,9 +90,9 @@ func TestRequest(t *testing.T) {
 	req.Header = header
 	req.SetBasicAuth("username", "password")
 	w := &Work{
-		Request: req,
-		N:       1,
-		C:       1,
+		NextRequest: DuplicateNextRequest(req, []byte{}),
+		N:           1,
+		C:           1,
 	}
 	w.Run()
 	if uri != "/" {
@@ -122,13 +122,40 @@ func TestBody(t *testing.T) {
 
 	req, _ := http.NewRequest("POST", server.URL, bytes.NewBuffer([]byte("Body")))
 	w := &Work{
-		Request:     req,
-		RequestBody: []byte("Body"),
+		NextRequest: DuplicateNextRequest(req, []byte("Body")),
 		N:           10,
 		C:           1,
 	}
 	w.Run()
 	if count != 10 {
 		t.Errorf("Expected to work 10 times, found %v", count)
+	}
+}
+
+func TestRandomBody(t *testing.T) {
+	var countBody1 int64
+	var countBody2 int64
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		body, _ := ioutil.ReadAll(r.Body)
+		if string(body) == "Body1" {
+			atomic.AddInt64(&countBody1, 1)
+		}
+		if string(body) == "Body2" {
+			atomic.AddInt64(&countBody2, 1)
+		}
+	}
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+
+	req, _ := http.NewRequest("POST", server.URL, bytes.NewBuffer([]byte("Body")))
+	w := &Work{
+		NextRequest: DuplicateNextRequestWithRandomBody(req, [][]byte{[]byte("Body1"), []byte("Body2")}),
+		N:           100,
+		C:           1,
+	}
+	w.Run()
+	if (10 >= countBody1 && countBody1 <= 50) ||
+		(10 >= countBody2 && countBody2 <= 50) {
+		t.Errorf("Unexpected random statistic found")
 	}
 }
