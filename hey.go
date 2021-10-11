@@ -57,6 +57,7 @@ var (
 	t = flag.Int("t", 20, "")
 	z = flag.Duration("z", 0, "")
 
+	k    = flag.Bool("k", false, "")
 	h2   = flag.Bool("h2", false, "")
 	cpus = flag.Int("cpus", runtime.GOMAXPROCS(-1), "")
 
@@ -91,6 +92,7 @@ Options:
   -U  User-Agent, defaults to version "hey/0.0.1".
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
+  -k  Allow insecure server connections when using SSL.
   -h2 Enable HTTP/2.
 
   -host	HTTP Host header.
@@ -232,6 +234,7 @@ func main() {
 		DisableKeepAlives:  *disableKeepAlives,
 		DisableRedirects:   *disableRedirects,
 		H2:                 *h2,
+		K:                  *k,
 		ProxyAddr:          proxyURL,
 		Output:             *output,
 	}

@@ -63,6 +63,9 @@ type Work struct {
 	// C is the concurrency level, the number of concurrent workers to run.
 	C int
 
+	// K is an option to allow insecure server connections when using SSL.
+	K bool
+
 	// H2 is an option to make HTTP/2 requests
 	H2 bool
 
@@ -237,7 +240,7 @@ func (b *Work) runWorkers() {
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
+			InsecureSkipVerify: b.K,
 			ServerName:         b.Request.Host,
 		},
 		MaxIdleConnsPerHost: min(b.C, maxIdleConn),
