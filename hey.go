@@ -93,7 +93,7 @@ Options:
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
   -h2 Enable HTTP/2.
-	-k  Enable keylog writer for decrypting TLS in a network traffic capture. INSECURE; only used for debugging. Example: -k <file>
+  -k  Enable keylog writer for decrypting TLS in a network traffic capture. INSECURE; only used for debugging. Example: -k <file>
 
   -host	HTTP Host header.
 
