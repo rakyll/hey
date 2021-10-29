@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptrace"
 	"net/url"
@@ -65,6 +66,9 @@ type Work struct {
 
 	// H2 is an option to make HTTP/2 requests
 	H2 bool
+
+	// Log to a keylog file to allow the user to decrypt TLS traffic in a network packet capture
+	KeyLogFile string
 
 	// Timeout in seconds.
 	Timeout int
@@ -235,10 +239,24 @@ func (b *Work) runWorkers() {
 	var wg sync.WaitGroup
 	wg.Add(b.C)
 
+	var keyLogWriter io.Writer
+	if b.KeyLogFile != "" {
+		log.Printf("!!!!! WARNING !!!!! Logging TLS secrets to %v. Your TLS traffic can be decrypted with this file.", b.KeyLogFile)
+
+		var err error
+		keyLogWriter, err = os.OpenFile(b.KeyLogFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+
+		if err != nil {
+			log.Fatalf("Failed to open keylog file for writing: %v", err)
+			os.Exit(1)
+		}
+	}
+
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
 			ServerName:         b.Request.Host,
+			KeyLogWriter:       keyLogWriter,
 		},
 		MaxIdleConnsPerHost: min(b.C, maxIdleConn),
 		DisableCompression:  b.DisableCompression,
