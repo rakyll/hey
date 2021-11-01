@@ -244,7 +244,8 @@ func (b *Work) runWorkers() {
 		log.Printf("!!!!! WARNING !!!!! Logging TLS secrets to %v. Your TLS traffic can be decrypted with this file.", b.KeyLogFile)
 
 		var err error
-		keyLogWriter, err = os.OpenFile(b.KeyLogFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+		// Append so that you can run `hey` multiple times and still log to a single keyfile
+		keyLogWriter, err = os.OpenFile(b.KeyLogFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
 
 		if err != nil {
 			log.Fatalf("Failed to open keylog file for writing: %v", err)
