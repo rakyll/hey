@@ -15,7 +15,12 @@
 package main
 
 import (
+	"crypto/tls"
+	"errors"
+	"math"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParseValidHeaderFlag(t *testing.T) {
@@ -62,5 +67,84 @@ func TestParseAuthMetaCharacters(t *testing.T) {
 	_, err := parseInputWithRegexp("plus+$*{:boom", authRegexp)
 	if err != nil {
 		t.Errorf("Auth header with a plus sign in the user name errored: %v", err)
+	}
+}
+
+func TestTranslateTLSVersions(t *testing.T) {
+	tests := []struct {
+		tlsVersion     string
+		expectedResult uint16
+		expectedError  error
+	}{
+		{ // TLS 1.0
+			tlsVersion:     "1.0",
+			expectedResult: tls.VersionTLS10,
+		},
+		{ // TLS 1.1
+			tlsVersion:     "1.1",
+			expectedResult: tls.VersionTLS11,
+		},
+		{ // TLS 1.2
+			tlsVersion:     "1.2",
+			expectedResult: tls.VersionTLS12,
+		},
+		{ // TLS 1.3
+			tlsVersion:     "1.3",
+			expectedResult: tls.VersionTLS13,
+		},
+		{ // no version specified
+			tlsVersion:     "",
+			expectedResult: 0,
+		},
+		{ // invalid version
+			tlsVersion:     "1.4",
+			expectedResult: math.MaxUint16,
+			expectedError:  errors.New("could not parse TLS version: 1.4"),
+		},
+	}
+
+	for _, test := range tests {
+		actualResult, actualError := translateTLSVersion(test.tlsVersion)
+		assert.Equal(t, test.expectedResult, actualResult)
+		assert.Equal(t, test.expectedError, actualError)
+	}
+}
+
+func TestValidateTLSVersions(t *testing.T) {
+	tests := []struct {
+		minTLSVersion uint16
+		maxTLSVersion uint16
+		expectedError error
+	}{
+		{ // neither version specified
+			minTLSVersion: 0,
+			maxTLSVersion: 0,
+		},
+		{ // only min specified
+			minTLSVersion: tls.VersionTLS11,
+			maxTLSVersion: 0,
+		},
+		{ // only max specified
+			minTLSVersion: 0,
+			maxTLSVersion: tls.VersionTLS12,
+		},
+		{ // both specified
+			minTLSVersion: tls.VersionTLS12,
+			maxTLSVersion: tls.VersionTLS13,
+		},
+		{ // both specified and equal
+			minTLSVersion: tls.VersionTLS13,
+			maxTLSVersion: tls.VersionTLS13,
+		},
+		{ // invalid choices
+			minTLSVersion: tls.VersionTLS12,
+			maxTLSVersion: tls.VersionTLS10,
+			expectedError: errors.New("min TLS version cannot be greater than max TLS version"),
+		},
+	}
+
+	for _, test := range tests {
+		actualError := validateTLSVersions(test.minTLSVersion, test.maxTLSVersion)
+		assert.Equal(t, test.expectedError, actualError)
 	}
 }

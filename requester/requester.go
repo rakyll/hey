@@ -72,6 +72,10 @@ type Work struct {
 	// Qps is the rate limit in queries per second.
 	QPS float64
 
+	// Specify the minimum and maximum TLS versions
+	MinTLSVersion uint16
+	MaxTLSVersion uint16
+
 	// DisableCompression is an option to disable compression in response
 	DisableCompression bool
 
@@ -239,6 +243,8 @@ func (b *Work) runWorkers() {
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
 			ServerName:         b.Request.Host,
+			MinVersion:         b.MinTLSVersion,
+			MaxVersion:         b.MaxTLSVersion,
 		},
 		MaxIdleConnsPerHost: min(b.C, maxIdleConn),
 		DisableCompression:  b.DisableCompression,

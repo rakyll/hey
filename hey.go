@@ -16,6 +16,8 @@
 package main
 
 import (
+	"crypto/tls"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -60,6 +62,8 @@ var (
 	h2   = flag.Bool("h2", false, "")
 	cpus = flag.Int("cpus", runtime.GOMAXPROCS(-1), "")
 
+	minTLSVersion      = flag.String("min-tls-version", "", "")
+	maxTLSVersion      = flag.String("max-tls-version", "", "")
 	disableCompression = flag.Bool("disable-compression", false, "")
 	disableKeepAlives  = flag.Bool("disable-keepalive", false, "")
 	disableRedirects   = flag.Bool("disable-redirects", false, "")
@@ -95,6 +99,8 @@ Options:
 
   -host	HTTP Host header.
 
+  -min-tls-version      Set minimum version for TLS. Allowed values: 1.0, 1.1, 1.2, 1.3
+  -max-tls-version      Set maximum version for TLS. Allowed values: 1.0, 1.1, 1.2, 1.3. Cannot be less than -max-tls-version
   -disable-compression  Disable compression.
   -disable-keepalive    Disable keep-alive, prevents re-use of TCP
                         connections between different HTTP requests.
@@ -221,6 +227,21 @@ func main() {
 
 	req.Header = header
 
+	minTLSVersionInt, err := translateTLSVersion(*minTLSVersion)
+	if err != nil {
+		errAndExit(err.Error())
+	}
+
+	maxTLSVersionInt, err := translateTLSVersion(*maxTLSVersion)
+	if err != nil {
+		errAndExit(err.Error())
+	}
+
+	err = validateTLSVersions(minTLSVersionInt, maxTLSVersionInt)
+	if err != nil {
+		errAndExit(err.Error())
+	}
+
 	w := &requester.Work{
 		Request:            req,
 		RequestBody:        bodyAll,
@@ -231,6 +252,8 @@ func main() {
 		DisableCompression: *disableCompression,
 		DisableKeepAlives:  *disableKeepAlives,
 		DisableRedirects:   *disableRedirects,
+		MinTLSVersion:      minTLSVersionInt,
+		MaxTLSVersion:      maxTLSVersionInt,
 		H2:                 *h2,
 		ProxyAddr:          proxyURL,
 		Output:             *output,
@@ -285,5 +308,40 @@ func (h *headerSlice) String() string {
 
 func (h *headerSlice) Set(value string) error {
 	*h = append(*h, value)
+	return nil
+}
+
+func translateTLSVersion(commandLineArg string) (uint16, error) {
+	var version uint16 = math.MaxUint16
+
+	switch commandLineArg {
+	case "":
+		version = 0
+	case "1.0":
+		version = tls.VersionTLS10
+	case "1.1":
+		version = tls.VersionTLS11
+	case "1.2":
+		version = tls.VersionTLS12
+	case "1.3":
+		version = tls.VersionTLS13
+	}
+
+	if version == math.MaxUint16 {
+		return version, fmt.Errorf("could not parse TLS version: %v", commandLineArg)
+	}
+
+	return version, nil
+}
+
+func validateTLSVersions(minTLSVersion uint16, maxTLSVersion uint16) error {
+	if minTLSVersion == 0 || maxTLSVersion == 0 {
+		return nil
+	}
+
+	if minTLSVersion > maxTLSVersion {
+		return errors.New("min TLS version cannot be greater than max TLS version")
+	}
+
 	return nil
 }
