@@ -48,6 +48,7 @@ var (
 	authHeader  = flag.String("a", "", "")
 	hostHeader  = flag.String("host", "", "")
 	userAgent   = flag.String("U", "", "")
+	keyLogFile  = flag.String("k", "", "")
 
 	output = flag.String("o", "", "")
 
@@ -92,6 +93,7 @@ Options:
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
   -h2 Enable HTTP/2.
+  -k  Enable keylog writer for decrypting TLS in a network traffic capture. INSECURE; only used for debugging. Example: -k <file>
 
   -host	HTTP Host header.
 
@@ -232,6 +234,7 @@ func main() {
 		DisableKeepAlives:  *disableKeepAlives,
 		DisableRedirects:   *disableRedirects,
 		H2:                 *h2,
+		KeyLogFile:         *keyLogFile,
 		ProxyAddr:          proxyURL,
 		Output:             *output,
 	}
