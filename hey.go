@@ -16,6 +16,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -191,7 +192,10 @@ func main() {
 		}
 	}
 
-	req, err := http.NewRequest(method, url, nil)
+	parentCtx, parentCtxCancel := context.WithCancel(context.Background())
+	defer parentCtxCancel()
+
+	req, err := http.NewRequestWithContext(parentCtx, method, url, nil)
 	if err != nil {
 		usageAndExit(err.Error())
 	}
@@ -241,11 +245,13 @@ func main() {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		<-c
+		parentCtxCancel()
 		w.Stop()
 	}()
 	if dur > 0 {
 		go func() {
 			time.Sleep(dur)
+			parentCtxCancel()
 			w.Stop()
 		}()
 	}
