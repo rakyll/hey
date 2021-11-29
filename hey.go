@@ -198,6 +198,7 @@ func main() {
 	req.ContentLength = int64(len(bodyAll))
 	if username != "" || password != "" {
 		req.SetBasicAuth(username, password)
+		header.Set("Authorization", req.Header.Get("Authorization"))
 	}
 
 	// set host header if set
