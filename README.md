@@ -18,7 +18,7 @@ To preserve the name for its original owner, we renamed this project to hey.
 ### Package Managers
 
 Nix/NixOS:
--  [Nix](https://nixos.org/nix/) users can use `nix-env -if https://github.com/lionello/hey/archive/add-nix.tar.gz`.
+-  [Nix](https://nixos.org/nix/) users can use `nix-env -if https://github.com/rakyll/hey/archive/master.tar.gz`.
 
 macOS:
 -  [Homebrew](https://brew.sh/) users can use `brew install hey`.
