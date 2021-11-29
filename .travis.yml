@@ -1,3 +1,4 @@
+dist: bionic
 language: go
 go:
-  - "1.12"
+  - "1.13"

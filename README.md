@@ -11,9 +11,9 @@ To preserve the name for its original owner, we renamed this project to hey.
 
 ## Installation
 
-* Linux 64-bit: https://storage.googleapis.com/hey-release/hey_linux_amd64
-* Mac 64-bit: https://storage.googleapis.com/hey-release/hey_darwin_amd64
-* Windows 64-bit: https://storage.googleapis.com/hey-release/hey_windows_amd64
+* Linux 64-bit: https://hey-release.s3.us-east-2.amazonaws.com/hey_linux_amd64
+* Mac 64-bit: https://hey-release.s3.us-east-2.amazonaws.com/hey_darwin_amd64
+* Windows 64-bit: https://hey-release.s3.us-east-2.amazonaws.com/hey_windows_amd64
 
 ### Package Managers
 
