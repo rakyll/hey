@@ -24,6 +24,12 @@ builds:
   - -trimpath
   ldflags:
   - -s -w
+dockers:
+- image_templates:
+  - ghcr.io/sylr/hey:{{ .Tag }}
+  use: buildx
+  build_flag_templates:
+  - --platform=linux/amd64,linux/arm64
 archives:
 - name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
 checksum:
