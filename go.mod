@@ -1,4 +1,4 @@
-module github.com/rakyll/hey
+module github.com/sylr/hey
 
 go 1.17
 
