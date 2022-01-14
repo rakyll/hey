@@ -1,0 +1,40 @@
+# This is an example .goreleaser.yml file with some sensible defaults.
+# Make sure to check the documentation at https://goreleaser.com
+before:
+  hooks:
+  - go mod tidy
+builds:
+- env:
+  - CGO_ENABLED=0
+  goos:
+  - linux
+  - freebsd
+  - openbsd
+  - windows
+  - darwin
+  goarch:
+  - "386"
+  - amd64
+  - arm
+  - arm64
+  goarm:
+  - 6
+  - 7
+  flags:
+  - -trimpath
+  ldflags:
+  - -s -w
+archives:
+- name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+checksum:
+  name_template: '{{ .ProjectName }}-{{ .Version }}-checksums.txt'
+signs:
+- artifacts: checksum
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
