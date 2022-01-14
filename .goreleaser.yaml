@@ -25,10 +25,10 @@ builds:
   ldflags:
   - -s -w
 archives:
-- name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+- name_template: "{{ .ProjectName }}-v{{ .Version }}-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
   format: binary
 checksum:
-  name_template: '{{ .ProjectName }}-{{ .Version }}-checksums.txt'
+  name_template: '{{ .ProjectName }}-v{{ .Version }}-checksums.txt'
 snapshot:
   name_template: "{{ incpatch .Version }}-next"
 changelog:
