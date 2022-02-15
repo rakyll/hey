@@ -27,6 +27,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/lucas-clemente/quic-go"
+	"github.com/lucas-clemente/quic-go/http3"
 	"golang.org/x/net/http2"
 )
 
@@ -65,6 +67,9 @@ type Work struct {
 
 	// H2 is an option to make HTTP/2 requests
 	H2 bool
+
+	// H3 is an option to make HTTP/3 (QUIC) requests
+	H3 bool
 
 	// Timeout in seconds.
 	Timeout int
@@ -235,22 +240,37 @@ func (b *Work) runWorkers() {
 	var wg sync.WaitGroup
 	wg.Add(b.C)
 
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-			ServerName:         b.Request.Host,
-		},
-		MaxIdleConnsPerHost: min(b.C, maxIdleConn),
-		DisableCompression:  b.DisableCompression,
-		DisableKeepAlives:   b.DisableKeepAlives,
-		Proxy:               http.ProxyURL(b.ProxyAddr),
+	tlsConf := &tls.Config{
+		InsecureSkipVerify: true,
+		ServerName:         b.Request.Host,
 	}
-	if b.H2 {
-		http2.ConfigureTransport(tr)
+
+	var client *http.Client
+	if b.H3 {
+		client = &http.Client{
+			Transport: &http3.RoundTripper{
+				TLSClientConfig:    tlsConf,
+				QuicConfig:         &quic.Config{KeepAlive: !b.DisableKeepAlives},
+				DisableCompression: b.DisableCompression,
+			},
+			Timeout: time.Duration(b.Timeout) * time.Second,
+		}
+
 	} else {
-		tr.TLSNextProto = make(map[string]func(string, *tls.Conn) http.RoundTripper)
+		tr := &http.Transport{
+			TLSClientConfig:     tlsConf,
+			MaxIdleConnsPerHost: min(b.C, maxIdleConn),
+			DisableCompression:  b.DisableCompression,
+			DisableKeepAlives:   b.DisableKeepAlives,
+			Proxy:               http.ProxyURL(b.ProxyAddr),
+		}
+		if b.H2 {
+			http2.ConfigureTransport(tr)
+		} else {
+			tr.TLSNextProto = make(map[string]func(string, *tls.Conn) http.RoundTripper)
+		}
+		client = &http.Client{Transport: tr, Timeout: time.Duration(b.Timeout) * time.Second}
 	}
-	client := &http.Client{Transport: tr, Timeout: time.Duration(b.Timeout) * time.Second}
 
 	// Ignore the case where b.N % b.C != 0.
 	for i := 0; i < b.C; i++ {
