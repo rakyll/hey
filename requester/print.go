@@ -102,7 +102,8 @@ Summary:
   Requests/sec:	{{ formatNumber .Rps }}
   {{ if gt .SizeTotal 0 }}
   Total data:	{{ .SizeTotal }} bytes
-  Size/request:	{{ .SizeReq }} bytes{{ end }}
+  Size/request:	{{ .SizeReq }} bytes
+  Size/sec:	{{ .SizeSec }} bytes {{ end }}
 
 Response time histogram:
 {{ histogram .Histogram }}
