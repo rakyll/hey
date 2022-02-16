@@ -24,7 +24,8 @@ macOS:
 
 hey runs provided number of requests in the provided concurrency level and prints stats.
 
-It also supports HTTP2 endpoints.
+~~It also supports HTTP2 endpoints.~~
+**It now supports HTTP/3 (QUIC) endpoints**
 
 ```
 Usage: hey [options...] <url>
@@ -52,6 +53,7 @@ Options:
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
   -h2 Enable HTTP/2.
+  -h3 Enable HTTP/3 (QUIC).
 
   -host	HTTP Host header.
 
