@@ -9,7 +9,7 @@ tool at [tarekziade/boom](https://github.com/tarekziade/boom). Using the same na
 where binary name conflicts created confusion.
 To preserve the name for its original owner, we renamed this project to hey.
 
-## Installation
+## ~~Installation~~ Build it on your own if you want to use this fork
 
 * Linux 64-bit: https://hey-release.s3.us-east-2.amazonaws.com/hey_linux_amd64
 * Mac 64-bit: https://hey-release.s3.us-east-2.amazonaws.com/hey_darwin_amd64
@@ -24,7 +24,8 @@ macOS:
 
 hey runs provided number of requests in the provided concurrency level and prints stats.
 
-It also supports HTTP2 endpoints.
+~~It also supports HTTP2 endpoints.~~
+**It now supports HTTP/3 (QUIC) endpoints**
 
 ```
 Usage: hey [options...] <url>
@@ -52,6 +53,7 @@ Options:
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
   -h2 Enable HTTP/2.
+  -h3 Enable HTTP/3 (QUIC).
 
   -host	HTTP Host header.
 
