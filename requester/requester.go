@@ -182,12 +182,13 @@ func (b *Work) makeRequest(c *http.Client) {
 		},
 	}
 	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
+	req.Close = true
 	resp, err := c.Do(req)
 	if err == nil {
 		size = resp.ContentLength
 		code = resp.StatusCode
 		io.Copy(ioutil.Discard, resp.Body)
-		resp.Body.Close()
+		defer resp.Body.Close()
 	}
 	t := now()
 	resDuration = t - resStart
