@@ -6,3 +6,5 @@ require (
 )
 
 go 1.13
+
+replace github.com/rakyll/hey => github.com/mhnaufal/hey master
