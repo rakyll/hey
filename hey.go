@@ -29,7 +29,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mhnaufal/hey/requester"
+	"github.com/rakyll/hey/requester"
 )
 
 const (
