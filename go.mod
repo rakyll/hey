@@ -1,4 +1,4 @@
-module github.com/rakyll/hey
+module github.com/mhnaufal/hey
 
 require (
 	golang.org/x/net v0.0.0-20191009170851-d66e71096ffb
@@ -6,5 +6,3 @@ require (
 )
 
 go 1.13
-
-replace github.com/rakyll/hey => github.com/mhnaufal/hey master
