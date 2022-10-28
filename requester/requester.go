@@ -98,6 +98,9 @@ type Work struct {
 	start    time.Duration
 
 	report *report
+
+	// optional tls config
+	TLSClientConfig *tls.Config
 }
 
 func (b *Work) writer() io.Writer {
@@ -236,15 +239,20 @@ func (b *Work) runWorkers() {
 	wg.Add(b.C)
 
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-			ServerName:         b.Request.Host,
-		},
 		MaxIdleConnsPerHost: min(b.C, maxIdleConn),
 		DisableCompression:  b.DisableCompression,
 		DisableKeepAlives:   b.DisableKeepAlives,
 		Proxy:               http.ProxyURL(b.ProxyAddr),
 	}
+	if b.TLSClientConfig != nil {
+		tr.TLSClientConfig = b.TLSClientConfig
+	} else {
+		tr.TLSClientConfig = &tls.Config{
+			InsecureSkipVerify: true,
+			ServerName:         b.Request.Host,
+		}
+	}
+
 	if b.H2 {
 		http2.ConfigureTransport(tr)
 	} else {
