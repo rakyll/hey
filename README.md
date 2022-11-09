@@ -19,6 +19,7 @@ To preserve the name for its original owner, we renamed this project to hey.
 
 macOS:
 -  [Homebrew](https://brew.sh/) users can use `brew install hey`.
+-  [MacPorts](https://macports.org/) users can use `sudo port install hey`.
 
 ## Usage
 
