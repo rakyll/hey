@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        go: ["1.18"]
+        go: ["1.19"]
     steps:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v3
