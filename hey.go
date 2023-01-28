@@ -223,6 +223,7 @@ func main() {
 	w := &requester.Work{
 		Request:            req,
 		RequestBody:        bodyAll,
+		RequestFunc:        requester.RequestGenerator(req, bodyAll),
 		N:                  num,
 		C:                  conc,
 		QPS:                q,
