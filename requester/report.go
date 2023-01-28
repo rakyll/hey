@@ -20,6 +20,7 @@ import (
 	"io"
 	"log"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -131,8 +132,7 @@ func (r *report) print() {
 		log.Println("error:", err.Error())
 		return
 	}
-	r.printf(buf.String())
-
+	r.printf(strings.TrimRight(buf.String(), " \n"))
 	r.printf("\n")
 }
 
