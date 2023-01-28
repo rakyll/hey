@@ -208,7 +208,7 @@ func (b *Work) makeRequest(c *http.Client) {
 func (b *Work) runWorker(client *http.Client, n int) {
 	var throttle <-chan time.Time
 	if b.QPS > 0 {
-		throttle = time.Tick(time.Duration(1e6/(b.QPS)) * time.Microsecond)
+		throttle = time.NewTicker(time.Duration(1e6/(b.QPS)) * time.Microsecond).C
 	}
 
 	if b.DisableRedirects {
