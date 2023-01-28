@@ -48,11 +48,24 @@ func RequestGenerator(req *http.Request, body []byte) func() *http.Request {
 			holders[token] = [][]byte{match[0]}
 		}
 
-		min, max := toInt(match[2]), toInt(match[3])
+		min, max := 1, 10
+		if len(match[2]) > 0 {
+			min = toInt(match[2])
+		}
+		if len(match[3]) > 0 {
+			max = toInt(match[3])
+		}
+		if max < min {
+			max = min
+		}
 
 		switch match[1][0] {
 		case 'i': // int
 			replacers[token] = func() []byte {
+				if max == min {
+					val := fmt.Sprintf("%d", min)
+					return []byte(val)
+				}
 				rand.Seed(time.Now().UnixNano())
 				val := fmt.Sprintf("%d", rand.Intn(max-min)+min)
 				return []byte(val)
@@ -60,13 +73,20 @@ func RequestGenerator(req *http.Request, body []byte) func() *http.Request {
 		case 'f': // float
 			replacers[token] = func() []byte {
 				rand.Seed(time.Now().UnixNano())
+				if max == min {
+					val := fmt.Sprintf("%d.%d", min, rand.Intn(99))
+					return []byte(val)
+				}
 				val := fmt.Sprintf("%d.%d", rand.Intn(max-min)+min, rand.Intn(99))
 				return []byte(val)
 			}
 		case 's': // string
 			replacers[token] = func() []byte {
 				rand.Seed(time.Now().UnixNano())
-				sLen := rand.Intn(max-min) + min
+				sLen := min
+				if min != max {
+					sLen = rand.Intn(max-min) + min
+				}
 				val := make([]byte, sLen)
 				for i := 0; i < sLen; i++ {
 					val[i] = charPool[rand.Intn(poolLen)]
