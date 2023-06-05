@@ -56,6 +56,8 @@ var (
 	q = flag.Float64("q", 0, "")
 	t = flag.Int("t", 20, "")
 	z = flag.Duration("z", 0, "")
+	j = flag.Bool("j", false, "")
+	b = flag.Bool("b", false, "")
 
 	h2   = flag.Bool("h2", false, "")
 	cpus = flag.Int("cpus", runtime.GOMAXPROCS(-1), "")
@@ -92,6 +94,8 @@ Options:
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
   -h2 Enable HTTP/2.
+  -b  Enable HTTP cookies.
+  -j  Enable Junk HTTP cookies which are reset before every request.
 
   -host	HTTP Host header.
 
@@ -231,6 +235,8 @@ func main() {
 		DisableCompression: *disableCompression,
 		DisableKeepAlives:  *disableKeepAlives,
 		DisableRedirects:   *disableRedirects,
+		EnableCookies:      *b,
+		EnableJunkCookies:  *j,
 		H2:                 *h2,
 		ProxyAddr:          proxyURL,
 		Output:             *output,
