@@ -52,6 +52,8 @@ Options:
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
   -h2 Enable HTTP/2.
+  -b  Enable HTTP cookies.
+  -j  Enable Junk HTTP cookies which are reset before every request.
 
   -host	HTTP Host header.
 

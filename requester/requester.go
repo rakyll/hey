@@ -21,6 +21,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptrace"
 	"net/url"
 	"os"
@@ -80,6 +81,12 @@ type Work struct {
 
 	// DisableRedirects is an option to prevent the following of HTTP redirects
 	DisableRedirects bool
+
+	// EnableCookies is an option to enable HTTP Cookies
+	EnableCookies bool
+
+	// EnableJunkCookies is an option to enable Junk HTTP Cookies which reset on each request
+	EnableJunkCookies bool
 
 	// Output represents the output type. If "csv" is provided, the
 	// output will be dumped as a csv stream.
@@ -217,6 +224,11 @@ func (b *Work) runWorker(client *http.Client, n int) {
 			return http.ErrUseLastResponse
 		}
 	}
+
+	if b.EnableCookies {
+		client.Jar, _ = cookiejar.New(nil)
+	}
+
 	for i := 0; i < n; i++ {
 		// Check if application is stopped. Do not send into a closed channel.
 		select {
@@ -226,7 +238,15 @@ func (b *Work) runWorker(client *http.Client, n int) {
 			if b.QPS > 0 {
 				<-throttle
 			}
-			b.makeRequest(client)
+
+			if b.EnableJunkCookies {
+				// Make a new cookiejar for this client by copying it.
+				cc := *client
+				cc.Jar, _ = cookiejar.New(nil)
+				b.makeRequest(&cc)
+			} else {
+				b.makeRequest(client)
+			}
 		}
 	}
 }
