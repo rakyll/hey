@@ -5,21 +5,30 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
 var tmplRegex = regexp.MustCompile(`\{(i\d*|f\d*|s\d*)(?::(\d+):(\d+))?\}`)
 var charPool = []byte("abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789")
+var pathEnc = strings.NewReplacer("%7B", "{", "%7D", "}")
 var poolLen = len(charPool) - 1
 
-// RequestGenerator yields a func that gives request with dynamic Body
-// OR, nil if the request payload is not dynamic (based on placeholder).
+// RequestGenerator yields a func that gives request with dynamic Body or URI path/params.
+// OR, nil if the request payload and path/params are not dynamic (based on placeholder).
 func RequestGenerator(req *http.Request, body []byte) func() *http.Request {
+	// Check if URL path has dynamic placeholder tokens
+	fullPath := []byte(pathEnc.Replace(req.URL.String()))
+	umatches := tmplRegex.FindAllSubmatch(fullPath, -1)
+
 	// Check if body has dynamic placeholder tokens
 	matches := tmplRegex.FindAllSubmatch(body, -1)
-	if len(matches) == 0 {
+	dynaBody, dynaURI := len(matches) > 0, len(umatches) > 0
+
+	if !dynaBody && !dynaURI {
 		return nil
 	}
 
@@ -32,6 +41,7 @@ func RequestGenerator(req *http.Request, body []byte) func() *http.Request {
 	nameTokens := map[string]string{}
 	holders := map[string][][]byte{}
 
+	matches = append(matches, umatches...)
 	for _, match := range matches {
 		token, name := string(match[0]), string(match[1])
 		if _, ok := replacers[token]; ok {
@@ -99,15 +109,25 @@ func RequestGenerator(req *http.Request, body []byte) func() *http.Request {
 	// All the preparations are already done,
 	// So the final function just replaces the token placeholders
 	return func() *http.Request {
-		newBody := body
+		newBody, newPath := body, fullPath
 		for token, replacer := range replacers {
 			val := replacer()
 			for _, holder := range holders[token] {
-				newBody = bytes.Replace(newBody, holder, val, -1)
+				if dynaBody {
+					newBody = bytes.Replace(newBody, holder, val, -1)
+				}
+				if dynaURI {
+					newPath = bytes.Replace(newPath, holder, val, -1)
+				}
 			}
 		}
 		newReq := cloneRequest(req, newBody)
-		newReq.ContentLength = int64(len(newBody))
+		if dynaBody {
+			newReq.ContentLength = int64(len(newBody))
+		}
+		if dynaURI {
+			newReq.URL, _ = url.Parse(string(newPath))
+		}
 		return newReq
 	}
 }
