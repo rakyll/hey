@@ -16,6 +16,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -64,6 +65,9 @@ var (
 	disableKeepAlives  = flag.Bool("disable-keepalive", false, "")
 	disableRedirects   = flag.Bool("disable-redirects", false, "")
 	proxyAddr          = flag.String("x", "", "")
+
+	certFile = flag.String("cert", "", "")
+	certKey  = flag.String("cert-key", "", "")
 )
 
 var usage = `Usage: hey [options...] <url>
@@ -101,6 +105,9 @@ Options:
   -disable-redirects    Disable following of HTTP redirects
   -cpus                 Number of used cpu cores.
                         (default for current machine is %d cores)
+
+  -cert      file path to the X509 certificate
+  -cert-key  file path to the X509 certidicate key
 `
 
 func main() {
@@ -221,6 +228,14 @@ func main() {
 
 	req.Header = header
 
+	var cert tls.Certificate
+	if *certFile != "" && *certKey != "" {
+		cert, err = tls.LoadX509KeyPair(*certFile, *certKey)
+		if err != nil {
+			usageAndExit(err.Error())
+		}
+	}
+
 	w := &requester.Work{
 		Request:            req,
 		RequestBody:        bodyAll,
@@ -234,6 +249,7 @@ func main() {
 		H2:                 *h2,
 		ProxyAddr:          proxyURL,
 		Output:             *output,
+		Cert:               &cert,
 	}
 	w.Init()
 
