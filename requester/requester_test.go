@@ -16,6 +16,8 @@ package requester
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -130,5 +132,69 @@ func TestBody(t *testing.T) {
 	w.Run()
 	if count != 10 {
 		t.Errorf("Expected to work 10 times, found %v", count)
+	}
+}
+
+func TestCert(t *testing.T) {
+	var count int64
+	const clientCertFile = "unittestClient.crt"
+	const clientKeyFile = "unittestClient.key"
+	const serverCertFile = "unittestServer.crt"
+	const serverKeyFile = "unittestServer.key"
+
+	// Set up and run server
+	go func() {
+		// Route
+		handler := func(w http.ResponseWriter, r *http.Request) {
+			atomic.AddInt64(&count, int64(1))
+		}
+		mux := http.NewServeMux()
+		mux.HandleFunc("/", handler)
+
+		// Cert validation
+		cert, _ := ioutil.ReadFile(clientCertFile)
+		certPool := x509.NewCertPool()
+		certPool.AppendCertsFromPEM(cert)
+		tlsConfig := &tls.Config{
+			ClientCAs:  certPool,
+			ClientAuth: tls.RequireAndVerifyClientCert,
+		}
+		tlsConfig.BuildNameToCertificate()
+
+		server := &http.Server{
+			Addr:      ":7788",
+			Handler:   mux,
+			TLSConfig: tlsConfig,
+		}
+
+		// Note client does not need to validate the server cert
+		// because `Work` has `InsecureSkipVerify: true`
+		// Here we specify server cert just to make it a HTTPS server
+		err := server.ListenAndServeTLS(serverCertFile, serverKeyFile)
+		if err != nil && err != http.ErrServerClosed {
+			t.Errorf("Failed to start HTTPS server: %v", err)
+		}
+	}()
+
+	// Have this just to ensure the server is up and running
+	time.Sleep(100)
+
+	// Set up and run clients
+	const numOfRun int64 = 20
+	cert, _ := tls.LoadX509KeyPair(clientCertFile, clientKeyFile)
+	req, _ := http.NewRequest("GET", "https://localhost:7788/", nil)
+	w := &Work{
+		Request: req,
+		N:       int(numOfRun),
+		C:       2,
+		Cert:    &cert,
+	}
+	w.Run()
+
+	// Assert on number of requests handled by the server
+	// Note the test should have failed before here with `tls: bad certificate`
+	// if `Worker` does not handle `Cert` properly
+	if count != numOfRun {
+		t.Errorf("Expected to send %v requests, found %v", numOfRun, count)
 	}
 }

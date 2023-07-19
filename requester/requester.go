@@ -98,6 +98,9 @@ type Work struct {
 	start    time.Duration
 
 	report *report
+
+	// X509 Certificate
+	Cert *tls.Certificate
 }
 
 func (b *Work) writer() io.Writer {
@@ -245,6 +248,10 @@ func (b *Work) runWorkers() {
 		DisableKeepAlives:   b.DisableKeepAlives,
 		Proxy:               http.ProxyURL(b.ProxyAddr),
 	}
+	if b.Cert != nil {
+		tr.TLSClientConfig.Certificates = []tls.Certificate{*b.Cert}
+	}
+
 	if b.H2 {
 		http2.ConfigureTransport(tr)
 	} else {
