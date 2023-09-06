@@ -154,7 +154,7 @@ func (b *Work) makeRequest(c *http.Client) {
 	if b.RequestFunc != nil {
 		req = b.RequestFunc()
 	} else {
-		req = cloneRequest(b.Request, b.RequestBody)
+		req = CloneRequest(b.Request, b.RequestBody)
 	}
 	trace := &httptrace.ClientTrace{
 		DNSStart: func(info httptrace.DNSStartInfo) {
@@ -262,9 +262,9 @@ func (b *Work) runWorkers() {
 	wg.Wait()
 }
 
-// cloneRequest returns a clone of the provided *http.Request.
+// CloneRequest returns a clone of the provided *http.Request.
 // The clone is a shallow copy of the struct and its Header map.
-func cloneRequest(r *http.Request, body []byte) *http.Request {
+func CloneRequest(r *http.Request, body []byte) *http.Request {
 	// shallow copy of the struct
 	r2 := new(http.Request)
 	*r2 = *r
