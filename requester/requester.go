@@ -276,6 +276,8 @@ func CloneRequest(r *http.Request, body []byte) *http.Request {
 	if len(body) > 0 {
 		r2.Body = ioutil.NopCloser(bytes.NewReader(body))
 	}
+	r2.ContentLength = int64(len(body))
+
 	return r2
 }
 
