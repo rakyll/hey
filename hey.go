@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math"
+	"math/rand"
 	"net/http"
 	gourl "net/url"
 	"os"
@@ -29,7 +30,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rakyll/hey/requester"
+	"github.com/lakeraai/hey/requester"
 )
 
 const (
@@ -48,6 +49,7 @@ var (
 	authHeader  = flag.String("a", "", "")
 	hostHeader  = flag.String("host", "", "")
 	userAgent   = flag.String("U", "", "")
+	randRequest = flag.Bool("r", false, "")
 
 	output = flag.String("o", "", "")
 
@@ -68,7 +70,7 @@ var (
 
 var usage = `Usage: hey [options...] <url>
 
-Options:
+Options:  
   -n  Number of requests to run. Default is 200.
   -c  Number of workers to run concurrently. Total number of requests cannot
       be smaller than the concurrency level. Default is 50.
@@ -86,7 +88,11 @@ Options:
   -t  Timeout for each request in seconds. Default is 20, use 0 for infinite.
   -A  HTTP Accept header.
   -d  HTTP request body.
+  	  If -r is set, each line of the string will be treated as a separate request body.
+	  For that the lines are expected to be splitted by \n (make sure \n is specified
+	  as a special character, not as two characters).
   -D  HTTP request body from file. For example, /home/user/file.txt or ./file.txt.
+      If -r is set, each line in the file will be treated as a separate request body.
   -T  Content-type, defaults to "text/html".
   -U  User-Agent, defaults to version "hey/0.0.1".
   -a  Basic authentication, username:password.
@@ -101,9 +107,15 @@ Options:
   -disable-redirects    Disable following of HTTP redirects
   -cpus                 Number of used cpu cores.
                         (default for current machine is %d cores)
+
+  -r  If specified, the HTTP request will be randomly selected from the ones passed
+      via -d or -D argument.
 `
 
 func main() {
+	// Specify seed for random generator
+	rand.Seed(time.Now().UnixNano())
+
 	flag.Usage = func() {
 		fmt.Fprint(os.Stderr, fmt.Sprintf(usage, runtime.NumCPU()))
 	}
@@ -191,11 +203,11 @@ func main() {
 		}
 	}
 
+	// Construct a base request
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		usageAndExit(err.Error())
 	}
-	req.ContentLength = int64(len(bodyAll))
 	if username != "" || password != "" {
 		req.SetBasicAuth(username, password)
 	}
@@ -221,9 +233,32 @@ func main() {
 
 	req.Header = header
 
+	// Request generating function
+	var reqFunc func() *http.Request
+	if *randRequest {
+		// Split bodyAll by newlines and select random entry if -r is set
+		var bodyAllSplit []string = strings.Split(string(bodyAll), "\n")
+
+		reqFunc = func() *http.Request {
+			var randInd int = rand.Intn(len(bodyAllSplit))
+			var bodyRand []byte = []byte(
+				bodyAllSplit[randInd],
+			)
+
+			return requester.CloneRequest(req, bodyRand)
+		}
+	} else {
+		// Add bodyAll to the request and always return it
+		var r2 *http.Request = requester.CloneRequest(req, bodyAll)
+
+		reqFunc = func() *http.Request {
+			return r2
+		}
+	}
+
 	w := &requester.Work{
 		Request:            req,
-		RequestBody:        bodyAll,
+		RequestFunc:        reqFunc,
 		N:                  num,
 		C:                  conc,
 		QPS:                q,
