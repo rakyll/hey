@@ -1,4 +1,4 @@
-FROM golang:1.15 as build
+FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.21 as build
 
 # Create appuser.
 # See https://stackoverflow.com/a/55757473/12429735
@@ -14,16 +14,19 @@ RUN adduser \
     "${USER}"
 
 RUN apt-get update && apt-get install -y ca-certificates
-RUN go get github.com/rakyll/hey
 
 # Build
 WORKDIR /go/src/github.com/rakyll/hey
+COPY go.* ./
 RUN go mod download
-RUN CGO_ENABLED=0 GOOS=linux go build -o /go/bin/hey hey.go
+COPY . .
+ARG TARGETOS TARGETARCH
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH \
+  CGO_ENABLED=0 go build -o /go/bin/hey hey.go
 
 ###############################################################################
 # final stage
-FROM scratch
+FROM --platform=${TARGETPLATFORM:-linux/amd64} scratch
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=build /etc/passwd /etc/passwd
 COPY --from=build /etc/group /etc/group
