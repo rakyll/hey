@@ -14,11 +14,12 @@ RUN adduser \
     "${USER}"
 
 RUN apt-get update && apt-get install -y ca-certificates
-RUN go get github.com/rakyll/hey
 
 # Build
 WORKDIR /go/src/github.com/rakyll/hey
+COPY go.* ./
 RUN go mod download
+COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o /go/bin/hey hey.go
 
 ###############################################################################
