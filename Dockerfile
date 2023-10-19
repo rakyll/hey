@@ -1,4 +1,4 @@
-FROM golang:1.15 as build
+FROM golang:1.21 as build
 
 # Create appuser.
 # See https://stackoverflow.com/a/55757473/12429735
