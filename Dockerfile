@@ -13,6 +13,7 @@ RUN adduser \
     --uid "${UID}" \
     "${USER}"
 
+ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y ca-certificates
 RUN go get github.com/rakyll/hey
 
