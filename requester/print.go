@@ -38,6 +38,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math"
 	"strings"
 	"text/template"
 )
@@ -58,6 +59,16 @@ var tmplFuncMap = template.FuncMap{
 	"formatNumberInt": formatNumberInt,
 	"histogram":       histogram,
 	"jsonify":         jsonify,
+	"formatBytes":     formatBytes,
+}
+
+// Convert size in bytes to B/KB/MB/GB/TB
+func formatBytes(sizeByte int64) string {
+	units := []string{"B", "KB", "MB", "GB", "TB"}
+	unitIdx := math.Floor(math.Log(float64(sizeByte)) / math.Log(1024))
+	size := float64(sizeByte) / math.Pow(1024, unitIdx)
+	unit := units[int64(unitIdx)]
+	return fmt.Sprintf("%v %v", formatNumber(size), unit)
 }
 
 func jsonify(v interface{}) string {
@@ -101,8 +112,10 @@ Summary:
   Average:	{{ formatNumber .Average }} secs
   Requests/sec:	{{ formatNumber .Rps }}
   {{ if gt .SizeTotal 0 }}
-  Total data:	{{ .SizeTotal }} bytes
-  Size/request:	{{ .SizeReq }} bytes{{ end }}
+  Total data:	{{ .SizeTotal }} bytes ({{ formatBytes .SizeTotal }})
+  Size/request:	{{ .SizeReq }} bytes ({{ formatBytes .SizeReq }})
+  Size/sec:	{{ .SizeSec }} bytes ({{ formatBytes .SizeSec }})
+  {{ end }}
 
 Response time histogram:
 {{ histogram .Histogram }}

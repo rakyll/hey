@@ -169,6 +169,7 @@ func (r *report) snapshot() Report {
 	}
 
 	snapshot.SizeReq = r.sizeTotal / int64(len(r.lats))
+	snapshot.SizeSec = int64(float64(r.sizeTotal) / r.total.Seconds())
 
 	copy(snapshot.Lats, r.lats)
 	copy(snapshot.ConnLats, r.connLats)
@@ -306,6 +307,7 @@ type Report struct {
 	SizeTotal      int64
 	SizeReq        int64
 	NumRes         int64
+	SizeSec        int64 // size per second
 
 	LatencyDistribution []LatencyDistribution
 	Histogram           []Bucket
