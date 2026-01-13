@@ -17,6 +17,7 @@ package requester
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"io"
 	"net/http"
@@ -32,6 +33,7 @@ import (
 // Max size of the buffer of result channel.
 const maxResult = 1000000
 const maxIdleConn = 500
+const requestTimeout = 30
 
 type result struct {
 	err           error
@@ -110,7 +112,7 @@ func (b *Work) writer() io.Writer {
 func (b *Work) Init() {
 	b.initOnce.Do(func() {
 		b.results = make(chan *result, min(b.C*1000, maxResult))
-		b.stopCh = make(chan struct{}, b.C)
+		b.stopCh = make(chan struct{})
 	})
 }
 
@@ -129,10 +131,7 @@ func (b *Work) Run() {
 }
 
 func (b *Work) Stop() {
-	// Send stop signal so that workers can stop gracefully.
-	for i := 0; i < b.C; i++ {
-		b.stopCh <- struct{}{}
-	}
+	close(b.stopCh)
 }
 
 func (b *Work) Finish() {
@@ -143,7 +142,10 @@ func (b *Work) Finish() {
 	b.report.finalize(total)
 }
 
-func (b *Work) makeRequest(c *http.Client) {
+func (b *Work) makeRequest(ctx context.Context, c *http.Client, wait chan struct{}) {
+	defer func() {
+		wait <- struct{}{}
+	}()
 	s := now()
 	var size int64
 	var code int
@@ -180,7 +182,7 @@ func (b *Work) makeRequest(c *http.Client) {
 			resStart = now()
 		},
 	}
-	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
+	req = req.WithContext(httptrace.WithClientTrace(ctx, trace))
 	resp, err := c.Do(req)
 	if err == nil {
 		size = resp.ContentLength
@@ -220,14 +222,19 @@ func (b *Work) runWorker(client *http.Client, n int) {
 	}
 	for i := 0; i < n; i++ {
 		// Check if application is stopped. Do not send into a closed channel.
+		if b.QPS > 0 {
+			<-throttle
+		}
+
+		wait := make(chan struct{})
+		ctx, cancel := context.WithTimeout(context.Background(), requestTimeout*time.Second)
+		go b.makeRequest(ctx, client, wait)
 		select {
+		case <-wait:
+			continue
 		case <-b.stopCh:
+			cancel()
 			return
-		default:
-			if b.QPS > 0 {
-				<-throttle
-			}
-			b.makeRequest(client)
 		}
 	}
 }
