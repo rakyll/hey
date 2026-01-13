@@ -201,6 +201,7 @@ func main() {
 	}
 
 	// set host header if set
+	req.Host = header.Get("Host")
 	if *hostHeader != "" {
 		req.Host = *hostHeader
 	}
