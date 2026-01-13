@@ -141,8 +141,11 @@ func main() {
 	method := strings.ToUpper(*m)
 
 	// set content-type
+	// trim content-type if present in flag
+	ct := strings.TrimPrefix(*contentType, "Content-Type:")
+	ct = strings.TrimSpace(ct)
 	header := make(http.Header)
-	header.Set("Content-Type", *contentType)
+	header.Set("Content-Type", ct)
 	// set any other additional headers
 	if *headers != "" {
 		usageAndExit("Flag '-h' is deprecated, please use '-H' instead.")
