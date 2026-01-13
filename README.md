@@ -51,6 +51,8 @@ Options:
   -x  HTTP Proxy address as host:port.
   -h2 Enable HTTP/2.
 
+  -tls-session-resume Enable TLS session resumption.
+
   -host	HTTP Host header.
 
   -disable-compression  Disable compression.

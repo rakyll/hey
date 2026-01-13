@@ -60,6 +60,8 @@ var (
 	h2   = flag.Bool("h2", false, "")
 	cpus = flag.Int("cpus", runtime.GOMAXPROCS(-1), "")
 
+	tlsResume = flag.Bool("tls-session-resume", false, "")
+
 	disableCompression = flag.Bool("disable-compression", false, "")
 	disableKeepAlives  = flag.Bool("disable-keepalive", false, "")
 	disableRedirects   = flag.Bool("disable-redirects", false, "")
@@ -92,6 +94,8 @@ Options:
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
   -h2 Enable HTTP/2.
+
+  -tls-session-resume Enable TLS session resumption.
 
   -host	HTTP Host header.
 
@@ -232,6 +236,7 @@ func main() {
 		DisableKeepAlives:  *disableKeepAlives,
 		DisableRedirects:   *disableRedirects,
 		H2:                 *h2,
+		TLSResume:          *tlsResume,
 		ProxyAddr:          proxyURL,
 		Output:             *output,
 	}
