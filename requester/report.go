@@ -28,7 +28,7 @@ const (
 )
 
 // We report for max 1M results.
-const maxRes = 1000000
+const maxRes = 2147483647
 
 type report struct {
 	avgTotal float64
