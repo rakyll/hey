@@ -88,6 +88,9 @@ type Work struct {
 	// Optional.
 	ProxyAddr *url.URL
 
+	// Optional set of client certificates to use for mTLS:
+	Certs []tls.Certificate
+
 	// Writer is where results will be written. If nil, results are written to stdout.
 	Writer io.Writer
 
@@ -240,6 +243,7 @@ func (b *Work) runWorkers() {
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
 			ServerName:         b.Request.Host,
+			Certificates:       b.Certs,
 		},
 		MaxIdleConnsPerHost: min(b.C, maxIdleConn),
 		DisableCompression:  b.DisableCompression,
