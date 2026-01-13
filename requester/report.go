@@ -64,20 +64,20 @@ type report struct {
 }
 
 func newReport(w io.Writer, results chan *result, output string, n int) *report {
-	cap := min(n, maxRes)
+	capacity := min(n, maxRes)
 	return &report{
 		output:      output,
 		results:     results,
 		done:        make(chan bool, 1),
 		errorDist:   make(map[string]int),
 		w:           w,
-		connLats:    make([]float64, 0, cap),
-		dnsLats:     make([]float64, 0, cap),
-		reqLats:     make([]float64, 0, cap),
-		resLats:     make([]float64, 0, cap),
-		delayLats:   make([]float64, 0, cap),
-		lats:        make([]float64, 0, cap),
-		statusCodes: make([]int, 0, cap),
+		connLats:    make([]float64, 0, capacity),
+		dnsLats:     make([]float64, 0, capacity),
+		reqLats:     make([]float64, 0, capacity),
+		resLats:     make([]float64, 0, capacity),
+		delayLats:   make([]float64, 0, capacity),
+		lats:        make([]float64, 0, capacity),
+		statusCodes: make([]int, 0, capacity),
 	}
 }
 
