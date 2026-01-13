@@ -203,6 +203,8 @@ func main() {
 	// set host header if set
 	if *hostHeader != "" {
 		req.Host = *hostHeader
+	} else if v := header.Get("Host"); v != "" {
+		req.Host = v
 	}
 
 	ua := header.Get("User-Agent")
