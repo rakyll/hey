@@ -116,12 +116,12 @@ func runReporter(r *report) {
 func (r *report) finalize(total time.Duration) {
 	r.total = total
 	r.rps = float64(r.numRes) / r.total.Seconds()
-	r.average = r.avgTotal / float64(len(r.lats))
-	r.avgConn = r.avgConn / float64(len(r.lats))
-	r.avgDelay = r.avgDelay / float64(len(r.lats))
-	r.avgDNS = r.avgDNS / float64(len(r.lats))
-	r.avgReq = r.avgReq / float64(len(r.lats))
-	r.avgRes = r.avgRes / float64(len(r.lats))
+	r.average = r.avgTotal / float64(r.numRes)
+	r.avgConn = r.avgConn / float64(r.numRes)
+	r.avgDelay = r.avgDelay / float64(r.numRes)
+	r.avgDNS = r.avgDNS / float64(r.numRes)
+	r.avgReq = r.avgReq / float64(r.numRes)
+	r.avgRes = r.avgRes / float64(r.numRes)
 	r.print()
 }
 
@@ -321,3 +321,4 @@ type Bucket struct {
 	Count     int
 	Frequency float64
 }
+
