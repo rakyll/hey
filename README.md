@@ -7,7 +7,7 @@ tool at [tarekziade/boom](https://github.com/tarekziade/boom). Using the same na
 where binary name conflicts created confusion.
 To preserve the name for its original owner, we renamed this project to hey.
 
-## Installation
+## Installation...
 
   - Linux (amd64): https://storage.googleapis.com/hey-releases/hey_linux_amd64
   - macOS (amd64): https://storage.googleapis.com/hey-releases/hey_darwin_amd64
