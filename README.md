@@ -15,8 +15,9 @@ To preserve the name for its original owner, we renamed this project to hey.
 
 ### Package Managers
 
-macOS:
--  [Homebrew](https://brew.sh/) users can use `brew install hey`.
+* Linux - Debian/Ubuntu: `apt install hey`.
+* macOS:
+  -  [Homebrew](https://brew.sh/) users can use `brew install hey`.
 
 ## Usage
 
