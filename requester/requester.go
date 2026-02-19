@@ -47,6 +47,8 @@ type result struct {
 }
 
 type Work struct {
+	// TLS configuration for the HTTP transport.
+	TLSConfig *tls.Config
 	// Request is the request to be made.
 	Request *http.Request
 
@@ -237,10 +239,7 @@ func (b *Work) runWorkers() {
 	wg.Add(b.C)
 
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-			ServerName:         b.Request.Host,
-		},
+		TLSClientConfig:     b.TLSConfig,
 		MaxIdleConnsPerHost: min(b.C, maxIdleConn),
 		DisableCompression:  b.DisableCompression,
 		DisableKeepAlives:   b.DisableKeepAlives,
@@ -271,4 +270,3 @@ func cloneRequest(r *http.Request, body []byte) *http.Request {
 	}
 	return r2
 }
-

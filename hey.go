@@ -16,9 +16,10 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"net/http"
 	gourl "net/url"
@@ -48,6 +49,11 @@ var (
 	authHeader  = flag.String("a", "", "")
 	hostHeader  = flag.String("host", "", "")
 	userAgent   = flag.String("U", "", "")
+
+	ca       = flag.String("ca", "", "")
+	cert     = flag.String("cert", "", "")
+	key      = flag.String("key", "", "")
+	insecure = flag.Bool("insecure", false, "")
 
 	output = flag.String("o", "", "")
 
@@ -93,6 +99,11 @@ Options:
   -x  HTTP Proxy address as host:port.
   -h2 Enable HTTP/2.
 
+  -ca        TLS certificate authority file
+  -cert      TLS client certificate file
+  -key       TLS client key file
+  -insecure  Disables TLS verification
+
   -host	HTTP Host header.
 
   -disable-compression  Disable compression.
@@ -114,6 +125,29 @@ func main() {
 	flag.Parse()
 	if flag.NArg() < 1 {
 		usageAndExit("")
+	}
+
+	var tlsCertificates []tls.Certificate = nil
+	var certPool *x509.CertPool = nil
+
+	if *cert != "" && *key != "" {
+		certificate, err := tls.LoadX509KeyPair(*cert, *key)
+		if err != nil {
+			panic(fmt.Errorf("Failed to load TLS cert/key: %w", err))
+		}
+
+		tlsCertificates = []tls.Certificate{certificate}
+	}
+
+	if *ca != "" {
+		certPool = x509.NewCertPool()
+		caBytes, err := os.ReadFile(*ca)
+		if err != nil {
+			panic(fmt.Errorf("Failed to read CA file: %w", err))
+		}
+		if ok := certPool.AppendCertsFromPEM(caBytes); !ok {
+			panic(fmt.Errorf("failed to add CA to pool"))
+		}
 	}
 
 	runtime.GOMAXPROCS(*cpus)
@@ -175,7 +209,7 @@ func main() {
 		bodyAll = []byte(*body)
 	}
 	if *bodyFile != "" {
-		slurp, err := ioutil.ReadFile(*bodyFile)
+		slurp, err := os.ReadFile(*bodyFile)
 		if err != nil {
 			errAndExit(err.Error())
 		}
@@ -200,9 +234,16 @@ func main() {
 		req.SetBasicAuth(username, password)
 	}
 
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: *insecure,
+		Certificates:       tlsCertificates,
+		RootCAs:            certPool,
+	}
+
 	// set host header if set
 	if *hostHeader != "" {
 		req.Host = *hostHeader
+		tlsConfig.ServerName = *hostHeader
 	}
 
 	ua := header.Get("User-Agent")
@@ -222,6 +263,7 @@ func main() {
 	req.Header = header
 
 	w := &requester.Work{
+		TLSConfig:          tlsConfig,
 		Request:            req,
 		RequestBody:        bodyAll,
 		N:                  num,
