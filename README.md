@@ -9,6 +9,7 @@ To preserve the name for its original owner, we renamed this project to hey.
 
 ## Installation
 
+  - FreeBSD (amd64): https://storage.googleapis.com/hey-releases/hey_freebsd_amd64
   - Linux (amd64): https://storage.googleapis.com/hey-releases/hey_linux_amd64
   - macOS (amd64): https://storage.googleapis.com/hey-releases/hey_darwin_amd64
   - Windows (amd64): https://storage.googleapis.com/hey-releases/hey_windows_amd64
