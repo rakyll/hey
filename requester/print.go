@@ -108,7 +108,7 @@ Response time histogram:
 {{ histogram .Histogram }}
 
 Latency distribution:{{ range .LatencyDistribution }}
-  {{ .Percentage }}%% in {{ formatNumber .Latency }} secs{{ end }}
+  {{ .Percentage }}% in {{ formatNumber .Latency }} secs{{ end }}
 
 Details (average, fastest, slowest):
   DNS+dialup:	{{ formatNumber .AvgConn }} secs, {{ formatNumber .ConnMax }} secs, {{ formatNumber .ConnMin }} secs
