@@ -23,6 +23,8 @@ import (
 	"time"
 )
 
+import "github.com/dennis-tra/go-server-timing"
+
 const (
 	barChar = "■"
 )
@@ -37,18 +39,19 @@ type report struct {
 	average  float64
 	rps      float64
 
-	avgConn     float64
-	avgDNS      float64
-	avgReq      float64
-	avgRes      float64
-	avgDelay    float64
-	connLats    []float64
-	dnsLats     []float64
-	reqLats     []float64
-	resLats     []float64
-	delayLats   []float64
-	offsets     []float64
-	statusCodes []int
+	avgConn      float64
+	avgDNS       float64
+	avgReq       float64
+	avgRes       float64
+	avgDelay     float64
+	connLats     []float64
+	dnsLats      []float64
+	reqLats      []float64
+	resLats      []float64
+	delayLats    []float64
+	offsets      []float64
+	statusCodes  []int
+	serverTiming []string
 
 	results chan *result
 	done    chan bool
@@ -66,18 +69,19 @@ type report struct {
 func newReport(w io.Writer, results chan *result, output string, n int) *report {
 	cap := min(n, maxRes)
 	return &report{
-		output:      output,
-		results:     results,
-		done:        make(chan bool, 1),
-		errorDist:   make(map[string]int),
-		w:           w,
-		connLats:    make([]float64, 0, cap),
-		dnsLats:     make([]float64, 0, cap),
-		reqLats:     make([]float64, 0, cap),
-		resLats:     make([]float64, 0, cap),
-		delayLats:   make([]float64, 0, cap),
-		lats:        make([]float64, 0, cap),
-		statusCodes: make([]int, 0, cap),
+		output:       output,
+		results:      results,
+		done:         make(chan bool, 1),
+		errorDist:    make(map[string]int),
+		w:            w,
+		connLats:     make([]float64, 0, cap),
+		dnsLats:      make([]float64, 0, cap),
+		reqLats:      make([]float64, 0, cap),
+		resLats:      make([]float64, 0, cap),
+		delayLats:    make([]float64, 0, cap),
+		lats:         make([]float64, 0, cap),
+		statusCodes:  make([]int, 0, cap),
+		serverTiming: make([]string, 0, cap),
 	}
 }
 
@@ -102,6 +106,7 @@ func runReporter(r *report) {
 				r.delayLats = append(r.delayLats, res.delayDuration.Seconds())
 				r.resLats = append(r.resLats, res.resDuration.Seconds())
 				r.statusCodes = append(r.statusCodes, res.statusCode)
+				r.serverTiming = append(r.serverTiming, res.serverTiming...)
 				r.offsets = append(r.offsets, res.offset.Seconds())
 			}
 			if res.contentLength > 0 {
@@ -191,6 +196,7 @@ func (r *report) snapshot() Report {
 
 	snapshot.Histogram = r.histogram()
 	snapshot.LatencyDistribution = r.latencies()
+	snapshot.ServerTiming = r.serverTimings()
 
 	snapshot.Fastest = r.fastest
 	snapshot.Slowest = r.slowest
@@ -267,6 +273,42 @@ func (r *report) histogram() []Bucket {
 	return res
 }
 
+func (r *report) serverTimings() []ServerTiming {
+	entries := make([]*servertiming.Metric, 0)
+	for _, field := range r.serverTiming {
+		fieldEntries, _ := servertiming.ParseHeader(field)
+		entries = append(entries, fieldEntries.Metrics()...)
+	}
+
+	timings := map[string][]float64{}
+
+	for _, entry := range entries {
+		_, ok := timings[entry.Name]
+		if !ok {
+			timings[entry.Name] = make([]float64, 0)
+		}
+		timings[entry.Name] = append(timings[entry.Name], float64(entry.Duration.Seconds()))
+	}
+
+	res := make([]ServerTiming, 0)
+	for name, timing := range timings {
+		sort.Float64s(timing)
+
+		var avg float64
+		for _, item := range timing {
+			avg += item
+		}
+
+		res = append(res, ServerTiming{
+			Name: name,
+			Avg:  avg / float64(len(timing)),
+			Max:  timing[0],
+			Min:  timing[len(timing)-1],
+		})
+	}
+	return res
+}
+
 type Report struct {
 	AvgTotal float64
 	Fastest  float64
@@ -309,6 +351,7 @@ type Report struct {
 
 	LatencyDistribution []LatencyDistribution
 	Histogram           []Bucket
+	ServerTiming        []ServerTiming
 }
 
 type LatencyDistribution struct {
@@ -320,4 +363,11 @@ type Bucket struct {
 	Mark      float64
 	Count     int
 	Frequency float64
+}
+
+type ServerTiming struct {
+	Name string
+	Avg  float64
+	Max  float64
+	Min  float64
 }
