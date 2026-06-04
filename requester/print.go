@@ -116,7 +116,10 @@ Details (average, fastest, slowest):
   req write:	{{ formatNumber .AvgReq }} secs, {{ formatNumber .ReqMax }} secs, {{ formatNumber .ReqMin }} secs
   resp wait:	{{ formatNumber .AvgDelay }} secs, {{ formatNumber .DelayMax }} secs, {{ formatNumber .DelayMin }} secs
   resp read:	{{ formatNumber .AvgRes }} secs, {{ formatNumber .ResMax }} secs, {{ formatNumber .ResMin }} secs
-
+{{ if .ServerTiming }}
+Server-Timing (average, fastest, slowest):{{ range .ServerTiming }}
+  {{ printf "%-15s" .Name }}:	{{ formatNumber .Avg }} secs, {{ formatNumber .Max }} secs, {{ formatNumber .Min }} secs{{ end }}
+{{ end }}
 Status code distribution:{{ range $code, $num := .StatusCodeDist }}
   [{{ $code }}]	{{ $num }} responses{{ end }}
 

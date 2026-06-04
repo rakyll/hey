@@ -1,3 +1,5 @@
+github.com/dennis-tra/go-server-timing v0.0.0-20260424084111-3fe297726e8a h1:k4qgoZyPyHlN/c5HjCqqewAmwj86zWhDFK7cgNSwcIg=
+github.com/dennis-tra/go-server-timing v0.0.0-20260424084111-3fe297726e8a/go.mod h1:GuNU9tVMXFAf05hzg8ARvdlhzyUY25RPEDS55+DLrQY=
 golang.org/x/net v0.48.0 h1:zyQRTTrjc33Lhh0fBgT/H3oZq9WuvRR5gPC70xpDiQU=
 golang.org/x/net v0.48.0/go.mod h1:+ndRgGjkh8FGtu1w1FGbEC31if4VrNVMuKTgcAAnQRY=
 golang.org/x/text v0.33.0 h1:B3njUFyqtHDUI5jMn1YIr5B0IE2U0qck04r6d4KPAxE=

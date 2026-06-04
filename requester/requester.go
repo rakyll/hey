@@ -44,6 +44,7 @@ type result struct {
 	resDuration   time.Duration // response "read" duration
 	delayDuration time.Duration // delay between response and request
 	contentLength int64
+	serverTiming  []string
 }
 
 type Work struct {
@@ -147,6 +148,7 @@ func (b *Work) makeRequest(c *http.Client) {
 	s := now()
 	var size int64
 	var code int
+	var serverTiming []string
 	var dnsStart, connStart, resStart, reqStart, delayStart time.Duration
 	var dnsDuration, connDuration, resDuration, reqDuration, delayDuration time.Duration
 	var req *http.Request
@@ -185,6 +187,7 @@ func (b *Work) makeRequest(c *http.Client) {
 	if err == nil {
 		size = resp.ContentLength
 		code = resp.StatusCode
+		serverTiming = resp.Header["Server-Timing"]
 		io.Copy(io.Discard, resp.Body)
 		resp.Body.Close()
 	}
@@ -202,6 +205,7 @@ func (b *Work) makeRequest(c *http.Client) {
 		reqDuration:   reqDuration,
 		resDuration:   resDuration,
 		delayDuration: delayDuration,
+		serverTiming:  serverTiming,
 	}
 }
 
@@ -271,4 +275,3 @@ func cloneRequest(r *http.Request, body []byte) *http.Request {
 	}
 	return r2
 }
-
