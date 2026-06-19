@@ -18,7 +18,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"net/http"
 	gourl "net/url"
@@ -175,7 +174,7 @@ func main() {
 		bodyAll = []byte(*body)
 	}
 	if *bodyFile != "" {
-		slurp, err := ioutil.ReadFile(*bodyFile)
+		slurp, err := os.ReadFile(*bodyFile)
 		if err != nil {
 			errAndExit(err.Error())
 		}
