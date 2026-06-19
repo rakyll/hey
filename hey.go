@@ -105,7 +105,7 @@ Options:
 
 func main() {
 	flag.Usage = func() {
-		fmt.Fprint(os.Stderr, fmt.Sprintf(usage, runtime.NumCPU()))
+		fmt.Fprintf(os.Stderr, usage, runtime.NumCPU())
 	}
 
 	var hs headerSlice
