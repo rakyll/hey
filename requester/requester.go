@@ -213,11 +213,6 @@ func (b *Work) runWorker(client *http.Client, n int) {
 		throttle = ticker.C
 	}
 
-	if b.DisableRedirects {
-		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		}
-	}
 	for i := 0; i < n; i++ {
 		// Check if application is stopped. Do not send into a closed channel.
 		select {
@@ -252,6 +247,14 @@ func (b *Work) runWorkers() {
 		tr.TLSNextProto = make(map[string]func(string, *tls.Conn) http.RoundTripper)
 	}
 	client := &http.Client{Transport: tr, Timeout: time.Duration(b.Timeout) * time.Second}
+	// Set CheckRedirect once on the shared client before starting workers.
+	// Assigning it inside each worker goroutine is a data race on the shared
+	// *http.Client (detected by -race).
+	if b.DisableRedirects {
+		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
+	}
 
 	// Ignore the case where b.N % b.C != 0.
 	for i := 0; i < b.C; i++ {
@@ -271,4 +274,3 @@ func cloneRequest(r *http.Request, body []byte) *http.Request {
 	}
 	return r2
 }
-
