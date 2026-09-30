@@ -31,6 +31,19 @@ func TestParseValidHeaderFlag(t *testing.T) {
 	}
 }
 
+func TestParseHeaderFlagWithPeriod(t *testing.T) {
+	match, err := parseInputWithRegexp("CONSUMER.ID: 1234", headerRegexp)
+	if err != nil {
+		t.Fatalf("dotted header name was rejected: %v", err)
+	}
+	if got, want := match[1], "CONSUMER.ID"; got != want {
+		t.Errorf("got header name %q; want %q", got, want)
+	}
+	if got, want := match[2], "1234"; got != want {
+		t.Errorf("got header value %q; want %q", got, want)
+	}
+}
+
 func TestParseInvalidHeaderFlag(t *testing.T) {
 	_, err := parseInputWithRegexp("X|oh|bad-input: badbadbad", headerRegexp)
 	if err == nil {
