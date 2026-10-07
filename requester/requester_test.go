@@ -132,3 +132,19 @@ func TestBody(t *testing.T) {
 		t.Errorf("Expected to work 10 times, found %v", count)
 	}
 }
+
+func TestResponseBodyReadError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Length", "100")
+		io.WriteString(w, "short")
+	}))
+	defer server.Close()
+	req, _ := http.NewRequest("GET", server.URL, nil)
+	work := &Work{Request: req, N: 1, C: 1}
+	work.Init()
+	work.makeRequest(server.Client())
+	result := <-work.results
+	if result.err != io.ErrUnexpectedEOF {
+		t.Fatalf("truncated response error = %v, want %v", result.err, io.ErrUnexpectedEOF)
+	}
+}
