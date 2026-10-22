@@ -15,24 +15,21 @@
 package requester
 
 import (
+	"bytes"
+	"fmt"
+	"strings"
 	"testing"
 )
 
 func TestSnapshotMinMaxFields(t *testing.T) {
-	lats := []float64{0.5, 0.2, 0.9, 0.3, 0.7}
-	connLats := []float64{0.030, 0.010, 0.050, 0.020, 0.040}
-	dnsLats := []float64{0.006, 0.002, 0.010, 0.004, 0.008}
-	reqLats := []float64{0.0003, 0.0001, 0.0005, 0.0002, 0.0004}
-	delayLats := []float64{0.300, 0.100, 0.500, 0.200, 0.400}
-	resLats := []float64{0.060, 0.020, 0.100, 0.040, 0.080}
 
 	r := &report{
-		lats:      lats,
-		connLats:  connLats,
-		dnsLats:   dnsLats,
-		reqLats:   reqLats,
-		delayLats: delayLats,
-		resLats:   resLats,
+		lats:      []float64{0.5, 0.2, 0.9, 0.3, 0.7},
+		connLats:  []float64{0.030, 0.010, 0.050, 0.020, 0.040},
+		dnsLats:   []float64{0.006, 0.002, 0.010, 0.004, 0.008},
+		reqLats:   []float64{0.0003, 0.0001, 0.0005, 0.0002, 0.0004},
+		delayLats: []float64{0.300, 0.100, 0.500, 0.200, 0.400},
+		resLats:   []float64{0.060, 0.020, 0.100, 0.040, 0.080},
 	}
 
 	s := r.snapshot()
@@ -57,6 +54,55 @@ func TestSnapshotMinMaxFields(t *testing.T) {
 	for _, tt := range tests {
 		if tt.got != tt.want {
 			t.Errorf("%s = %v, want %v", tt.name, tt.got, tt.want)
+		}
+	}
+}
+
+func TestDetailsRenderedFastestBeforeSlowest(t *testing.T) {
+	r := &report{
+		lats:      []float64{0.5, 0.2, 0.9, 0.3, 0.7},
+		connLats:  []float64{0.030, 0.010, 0.050, 0.020, 0.040},
+		dnsLats:   []float64{0.006, 0.002, 0.010, 0.004, 0.008},
+		reqLats:   []float64{0.0003, 0.0001, 0.0005, 0.0002, 0.0004},
+		delayLats: []float64{0.300, 0.100, 0.500, 0.200, 0.400},
+		resLats:   []float64{0.060, 0.020, 0.100, 0.040, 0.080},
+	}
+	s := r.snapshot()
+
+	var buf bytes.Buffer
+	if err := newTemplate("").Execute(&buf, s); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		prefix   string
+		min, max float64
+	}{
+		{"DNS+dialup:", s.ConnMin, s.ConnMax},
+		{"DNS-lookup:", s.DnsMin, s.DnsMax},
+		{"req write:", s.ReqMin, s.ReqMax},
+		{"resp wait:", s.DelayMin, s.DelayMax},
+		{"resp read:", s.ResMin, s.ResMax},
+	}
+
+	for _, tt := range tests {
+		var line string
+		for _, l := range strings.Split(buf.String(), "\n") {
+			if strings.Contains(l, tt.prefix) {
+				line = l
+				break
+			}
+		}
+		if line == "" {
+			t.Errorf("%s line not found in output", tt.prefix)
+			continue
+		}
+		minStr := fmt.Sprintf("%4.4f", tt.min)
+		maxStr := fmt.Sprintf("%4.4f", tt.max)
+		minIdx := strings.Index(line, minStr)
+		maxIdx := strings.Index(line, maxStr)
+		if minIdx < 0 || maxIdx < 0 || minIdx > maxIdx {
+			t.Errorf("%s: want %s before %s, got %q", tt.prefix, minStr, maxStr, line)
 		}
 	}
 }
