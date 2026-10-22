@@ -78,11 +78,11 @@ func TestDetailsRenderedFastestBeforeSlowest(t *testing.T) {
 		prefix   string
 		min, max float64
 	}{
-		{"DNS+dialup:", s.ConnMin, s.ConnMax},
-		{"DNS-lookup:", s.DnsMin, s.DnsMax},
-		{"req write:", s.ReqMin, s.ReqMax},
-		{"resp wait:", s.DelayMin, s.DelayMax},
-		{"resp read:", s.ResMin, s.ResMax},
+		{"DNS+dialup:", 0.010, 0.050},
+		{"DNS-lookup:", 0.002, 0.010},
+		{"req write:", 0.0001, 0.0005},
+		{"resp wait:", 0.100, 0.500},
+		{"resp read:", 0.020, 0.100},
 	}
 
 	for _, tt := range tests {
