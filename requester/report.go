@@ -194,16 +194,16 @@ func (r *report) snapshot() Report {
 
 	snapshot.Fastest = r.fastest
 	snapshot.Slowest = r.slowest
-	snapshot.ConnMax = r.connLats[0]
-	snapshot.ConnMin = r.connLats[len(r.connLats)-1]
-	snapshot.DnsMax = r.dnsLats[0]
-	snapshot.DnsMin = r.dnsLats[len(r.dnsLats)-1]
-	snapshot.ReqMax = r.reqLats[0]
-	snapshot.ReqMin = r.reqLats[len(r.reqLats)-1]
-	snapshot.DelayMax = r.delayLats[0]
-	snapshot.DelayMin = r.delayLats[len(r.delayLats)-1]
-	snapshot.ResMax = r.resLats[0]
-	snapshot.ResMin = r.resLats[len(r.resLats)-1]
+	snapshot.ConnMax = r.connLats[len(r.connLats)-1]
+	snapshot.ConnMin = r.connLats[0]
+	snapshot.DnsMax = r.dnsLats[len(r.dnsLats)-1]
+	snapshot.DnsMin = r.dnsLats[0]
+	snapshot.ReqMax = r.reqLats[len(r.reqLats)-1]
+	snapshot.ReqMin = r.reqLats[0]
+	snapshot.DelayMax = r.delayLats[len(r.delayLats)-1]
+	snapshot.DelayMin = r.delayLats[0]
+	snapshot.ResMax = r.resLats[len(r.resLats)-1]
+	snapshot.ResMin = r.resLats[0]
 
 	statusCodeDist := make(map[int]int, len(snapshot.StatusCodes))
 	for _, statusCode := range snapshot.StatusCodes {
