@@ -24,7 +24,7 @@ import (
 func now() time.Duration {
 	var now int64
 	syscall.Syscall(queryPerformanceCounterProc.Addr(), 1, uintptr(unsafe.Pointer(&now)), 0, 0)
-	return time.Duration(now) * time.Second / (time.Duration(qpcFrequency) * time.Nanosecond)
+	return qpcDuration(now, qpcFrequency)
 }
 
 // precision timing
