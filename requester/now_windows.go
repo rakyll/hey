@@ -27,12 +27,6 @@ func now() time.Duration {
 	return qpcDuration(now, qpcFrequency)
 }
 
-func qpcDuration(ticks, frequency int64) time.Duration {
-	seconds := ticks / frequency
-	remainder := ticks % frequency
-	return time.Duration(seconds)*time.Second + time.Duration(remainder)*time.Second/time.Duration(frequency)
-}
-
 // precision timing
 var (
 	modkernel32                   = syscall.NewLazyDLL("kernel32.dll")
