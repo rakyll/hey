@@ -225,7 +225,11 @@ func (b *Work) runWorker(client *http.Client, n int) {
 			return
 		default:
 			if b.QPS > 0 {
-				<-throttle
+				select {
+				case <-b.stopCh:
+					return
+				case <-throttle:
+				}
 			}
 			b.makeRequest(client)
 		}
@@ -271,4 +275,3 @@ func cloneRequest(r *http.Request, body []byte) *http.Request {
 	}
 	return r2
 }
-

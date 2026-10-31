@@ -63,8 +63,8 @@ func TestQps(t *testing.T) {
 	}
 	wg.Add(1)
 	time.AfterFunc(time.Second, func() {
-		if count > 2 {
-			t.Errorf("Expected to work at most 2 times, found %v", count)
+		if got := atomic.LoadInt64(&count); got > 2 {
+			t.Errorf("Expected to work at most 2 times, found %v", got)
 		}
 		wg.Done()
 	})
