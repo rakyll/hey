@@ -16,6 +16,8 @@ package requester
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -130,5 +132,44 @@ func TestBody(t *testing.T) {
 	w.Run()
 	if count != 10 {
 		t.Errorf("Expected to work 10 times, found %v", count)
+	}
+}
+
+func TestResponseBodyReadError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Length", "100")
+		io.WriteString(w, "short")
+	}))
+	defer server.Close()
+	req, _ := http.NewRequest("GET", server.URL, nil)
+	work := &Work{Request: req, N: 1, C: 1}
+	work.Init()
+	work.makeRequest(server.Client())
+	result := <-work.results
+	if !errors.Is(result.err, io.ErrUnexpectedEOF) {
+		t.Fatalf("truncated response error = %v, want %v", result.err, io.ErrUnexpectedEOF)
+	}
+}
+
+func TestResponseBodyReadTimeout(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Length", "100")
+		io.WriteString(w, "short")
+		w.(http.Flusher).Flush()
+		<-r.Context().Done()
+	}))
+	defer server.Close()
+	client := server.Client()
+	client.Timeout = time.Second
+	req, _ := http.NewRequest("GET", server.URL, nil)
+	work := &Work{Request: req, N: 1, C: 1}
+	work.Init()
+	work.makeRequest(client)
+	result := <-work.results
+	if result.statusCode != http.StatusOK {
+		t.Fatalf("status = %d; want response headers before the timeout", result.statusCode)
+	}
+	if !errors.Is(result.err, context.DeadlineExceeded) {
+		t.Fatalf("body read error = %v, want deadline exceeded", result.err)
 	}
 }
