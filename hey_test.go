@@ -15,6 +15,7 @@
 package main
 
 import (
+	"net/http"
 	"testing"
 )
 
@@ -62,5 +63,35 @@ func TestParseAuthMetaCharacters(t *testing.T) {
 	_, err := parseInputWithRegexp("plus+$*{:boom", authRegexp)
 	if err != nil {
 		t.Errorf("Auth header with a plus sign in the user name errored: %v", err)
+	}
+}
+
+func TestResolveUserAgentDefault(t *testing.T) {
+	header := http.Header{}
+	if got, want := resolveUserAgent(header, ""), heyUA; got != want {
+		t.Errorf("got %v; want %v", got, want)
+	}
+}
+
+func TestResolveUserAgentFromFlag(t *testing.T) {
+	header := http.Header{}
+	if got, want := resolveUserAgent(header, "MyAgent/9.9"), "MyAgent/9.9"; got != want {
+		t.Errorf("got %v; want %v", got, want)
+	}
+}
+
+func TestResolveUserAgentFromHeader(t *testing.T) {
+	header := http.Header{}
+	header.Set("User-Agent", "HeaderAgent/1.0")
+	if got, want := resolveUserAgent(header, ""), "HeaderAgent/1.0"; got != want {
+		t.Errorf("got %v; want %v", got, want)
+	}
+}
+
+func TestResolveUserAgentFlagPrecedence(t *testing.T) {
+	header := http.Header{}
+	header.Set("User-Agent", "HeaderAgent/1.0")
+	if got, want := resolveUserAgent(header, "MyAgent/9.9"), "MyAgent/9.9"; got != want {
+		t.Errorf("got %v; want %v", got, want)
 	}
 }

@@ -205,19 +205,9 @@ func main() {
 		req.Host = *hostHeader
 	}
 
-	ua := header.Get("User-Agent")
-	if ua == "" {
-		ua = heyUA
-	} else {
-		ua += " " + heyUA
-	}
-	header.Set("User-Agent", ua)
-
-	// set userAgent header if set
-	if *userAgent != "" {
-		ua = *userAgent + " " + heyUA
-		header.Set("User-Agent", ua)
-	}
+	// A user agent set explicitly via -U or -H "User-Agent: ..." is sent
+	// verbatim; otherwise the default hey user agent is used.
+	header.Set("User-Agent", resolveUserAgent(header, *userAgent))
 
 	req.Header = header
 
@@ -275,6 +265,16 @@ func parseInputWithRegexp(input, regx string) ([]string, error) {
 		return nil, fmt.Errorf("could not parse the provided input; input = %v", input)
 	}
 	return matches, nil
+}
+
+func resolveUserAgent(header http.Header, userAgent string) string {
+	if userAgent != "" {
+		return userAgent
+	}
+	if ua := header.Get("User-Agent"); ua != "" {
+		return ua
+	}
+	return heyUA
 }
 
 type headerSlice []string
