@@ -16,6 +16,7 @@ package requester
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -130,5 +131,53 @@ func TestBody(t *testing.T) {
 	w.Run()
 	if count != 10 {
 		t.Errorf("Expected to work 10 times, found %v", count)
+	}
+}
+
+// Status counts and averages include successful results beyond the sample cap.
+func TestReportBeyondSampleLimit(t *testing.T) {
+	results := make(chan *result, 3)
+	for i, status := range []int{http.StatusOK, http.StatusInternalServerError} {
+		d := time.Duration(2*i+1) * time.Second
+		results <- &result{statusCode: status, duration: d, connDuration: 2 * d,
+			dnsDuration: 3 * d, reqDuration: 4 * d, delayDuration: 5 * d,
+			resDuration: 6 * d, contentLength: int64(10 * (2*i + 1))}
+	}
+	results <- &result{err: errors.New("request failed")}
+	close(results)
+	r := newReport(io.Discard, results, "{{.NumRes}}", 3)
+	runReporter(r, 1)
+	r.finalize(time.Second)
+	got := r.snapshot()
+	if got.NumRes != 3 || got.Rps != 3 || got.ErrorDist["request failed"] != 1 {
+		t.Errorf("request/error accounting = %d/%g/%v, want 3/3/one failure", got.NumRes, got.Rps, got.ErrorDist)
+	}
+	if len(got.StatusCodeDist) != 2 || got.StatusCodeDist[http.StatusOK] != 1 || got.StatusCodeDist[http.StatusInternalServerError] != 1 {
+		t.Errorf("status distribution = %v, want one OK and one server error", got.StatusCodeDist)
+	}
+	for i, average := range []float64{got.Average, got.AvgConn / 2, got.AvgDNS / 3, got.AvgReq / 4, got.AvgDelay / 5, got.AvgRes / 6} {
+		if average != 2 {
+			t.Errorf("normalized average %d = %g, want 2", i, average)
+		}
+	}
+	if got.SizeReq != 20 || got.SizeTotal != 40 || len(got.Lats) != 1 || len(got.StatusCodes) != 1 {
+		t.Errorf("size/sample accounting = %d/%d/%d/%d, want 20/40/1/1", got.SizeReq, got.SizeTotal, len(got.Lats), len(got.StatusCodes))
+	}
+}
+
+func TestReportNoSuccessfulResults(t *testing.T) {
+	for _, requestError := range []error{nil, errors.New("request failed")} {
+		var output bytes.Buffer
+		results := make(chan *result, 1)
+		if requestError != nil {
+			results <- &result{err: requestError}
+		}
+		close(results)
+		r := newReport(&output, results, "{{jsonify .StatusCodeDist}}", 1)
+		runReporter(r, 1)
+		r.finalize(time.Second)
+		if output.String() != "null\n" {
+			t.Errorf("status JSON for error %v = %q, want null", requestError, output.String())
+		}
 	}
 }
